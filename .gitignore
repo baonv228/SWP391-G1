@@ -1,0 +1,28 @@
+# ===== Build =====
+/target/
+*.class
+
+# ===== IntelliJ =====
+.idea/
+*.iml
+
+# ===== NetBeans =====
+/nbproject/
+/build/
+/dist/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+
+# SQL Server database files
+*.mdf
+*.ldf
+*.bak
+
+# Local dev notes
+database/local_applied_migrations.txt
+/SWP391/target/
