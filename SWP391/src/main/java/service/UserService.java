@@ -25,6 +25,24 @@ public class UserService {
         return userDao.loginByEmailPassword(email, rawPassword);
     }
 
+    // ----- Login with Google -----
+    // Tim user theo email Google tra ve. Neu chua co thi tu tao tai khoan Student.
+    public User loginWithGoogle(String email, String fullName) {
+        User user = userDao.findByEmail(email);
+        if (user != null) {
+            if (user.getStatus() == null || !user.getStatus().equalsIgnoreCase("Active")) {
+                return null;
+            }
+            return user;
+        }
+        // Tai khoan dang nhap bang Google chua ton tai -> tao moi voi mat khau ngau nhien
+        String randomPassword = UUID.randomUUID().toString();
+        String safeName = (fullName == null || fullName.isBlank())
+                ? email.substring(0, email.indexOf("@")) : fullName;
+        boolean ok = userDao.register(safeName, email, null, randomPassword, "Student");
+        return ok ? userDao.findByEmail(email) : null;
+    }
+
     // ----- Register -----
     public ServiceResult register(String fullName, String email, String phone, String rawPassword) {
         if (userDao.existsEmail(email)) {
