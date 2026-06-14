@@ -22,6 +22,7 @@ Mở `src/main/java/dao/DBContext.java` và sửa `USER` / `PASSWORD` cho khớp
 |---|---|---|
 | Home Page | `/index.jsp` | Hiển thị theo trạng thái đăng nhập |
 | User Login | `/login` | |
+| Login with Google | `/login/google` | OAuth2 - cần cấu hình ở mục 5 |
 | User Register | `/register` | Vai trò mặc định: Student |
 | Logout | `/logout` | |
 | User Profile | `/profile` | Cần đăng nhập |
@@ -29,3 +30,13 @@ Mở `src/main/java/dao/DBContext.java` và sửa `USER` / `PASSWORD` cho khớp
 | Password Reset | `/forgot-password` → `/reset-password` | Token dùng một lần, hiệu lực 30 phút |
 
 > Lưu ý: chức năng Password Reset hiện hiển thị liên kết đặt lại trực tiếp trên trang (chế độ dev) do hệ thống chưa tích hợp Email Service.
+
+## 5. Cấu hình Login with Google (OAuth2)
+1. Vào https://console.cloud.google.com/ → tạo Project.
+2. **APIs & Services → OAuth consent screen**: chọn External, thêm email test.
+3. **APIs & Services → Credentials → Create Credentials → OAuth client ID** → loại **Web application**.
+4. Thêm **Authorized redirect URI** trùng khớp với `REDIRECT_URI` trong code, ví dụ:
+   `http://localhost:8080/SWP391_war_exploded/login/google/callback`
+5. Mở `src/main/java/service/GoogleOAuthConfig.java`, điền `CLIENT_ID`, `CLIENT_SECRET`, và sửa `REDIRECT_URI` cho khớp context path khi deploy.
+
+> ⚠️ Không commit Client Secret thật lên GitHub công khai.
