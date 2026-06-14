@@ -2,15 +2,15 @@
 
 Module thực hiện theo cấu trúc SDS: **View (.jsp) → controller (servlet) → service → model → dao**.
 
-## 1. Cơ sở dữ liệu (MySQL)
-1. Mở MySQL Workbench hoặc tab Database trong IntelliJ.
-2. Chạy script `schema_mysql.sql` để tạo database `tpms_db`, các bảng `Role`, `User`, `PasswordResetToken` và dữ liệu mẫu.
+## 1. Cơ sở dữ liệu (SQL Server)
+1. Mở SSMS / Azure Data Studio hoặc tab Database trong IntelliJ.
+2. Chạy script `schema_sqlserver.sql` để tạo database `TPMS_DB`, các bảng `Role`, `User`, `PasswordResetToken` và dữ liệu mẫu.
 3. Tài khoản admin mẫu:
    - Email: `admin@gmail.com`
    - Mật khẩu: `123456`
 
 ## 2. Cấu hình kết nối
-Mở `src/main/java/dao/DBContext.java` và sửa `USER` / `PASSWORD` cho khớp MySQL trên máy bạn (mặc định `root` / `123`).
+Mở `src/main/java/dao/DBContext.java` và sửa `USER` / `PASSWORD` cho khớp SQL Server trên máy bạn (mặc định `sa` / `123`).
 
 ## 3. Chạy ứng dụng (IntelliJ)
 1. Cấu hình một server Tomcat 10/11 (Jakarta Servlet 6).

@@ -15,8 +15,8 @@ public class UserDao extends DBContext {
     private static final String BASE_SELECT = """
             SELECT u.UserID, u.RoleID, u.Email, u.Phone, u.PasswordHash, u.FullName,
                    u.Status, u.CreatedAt, r.RoleName, r.Description
-            FROM `User` u
-            JOIN `Role` r ON u.RoleID = r.RoleID
+            FROM dbo.[User] u
+            JOIN dbo.[Role] r ON u.RoleID = r.RoleID
             """;
 
     // Doc 1 user tu ResultSet hien tai
@@ -109,8 +109,8 @@ public class UserDao extends DBContext {
         }
         String passwordHash = hashPassword(rawPassword);
         String sql = """
-                INSERT INTO `User`(RoleID, Email, Phone, PasswordHash, FullName, Status, CreatedAt)
-                VALUES (?, ?, ?, ?, ?, 'Active', NOW())
+                INSERT INTO dbo.[User](RoleID, Email, Phone, PasswordHash, FullName, Status, CreatedAt)
+                VALUES (?, ?, ?, ?, ?, 'Active', GETDATE())
                 """;
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, roleId);
@@ -127,7 +127,7 @@ public class UserDao extends DBContext {
 
     // Cap nhat thong tin ho so (User Profile)
     public boolean updateProfile(int userId, String fullName, String phone) {
-        String sql = "UPDATE `User` SET FullName = ?, Phone = ? WHERE UserID = ?";
+        String sql = "UPDATE dbo.[User] SET FullName = ?, Phone = ? WHERE UserID = ?";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, fullName);
             ps.setString(2, phone);
@@ -141,7 +141,7 @@ public class UserDao extends DBContext {
 
     // Cap nhat mat khau (dung cho Change Password va Password Reset)
     public boolean updatePassword(int userId, String newRawPassword) {
-        String sql = "UPDATE `User` SET PasswordHash = ? WHERE UserID = ?";
+        String sql = "UPDATE dbo.[User] SET PasswordHash = ? WHERE UserID = ?";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, hashPassword(newRawPassword));
             ps.setInt(2, userId);
@@ -157,7 +157,7 @@ public class UserDao extends DBContext {
     }
 
     public boolean existsEmail(String email) {
-        String sql = "SELECT COUNT(*) FROM `User` WHERE Email = ?";
+        String sql = "SELECT COUNT(*) FROM dbo.[User] WHERE Email = ?";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
@@ -170,7 +170,7 @@ public class UserDao extends DBContext {
     }
 
     public Integer getRoleIdByName(String roleName) {
-        String sql = "SELECT RoleID FROM `Role` WHERE RoleName = ?";
+        String sql = "SELECT RoleID FROM dbo.[Role] WHERE RoleName = ?";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, roleName);
             try (ResultSet rs = ps.executeQuery()) {

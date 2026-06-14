@@ -9,13 +9,13 @@ import java.util.List;
 import model.Role;
 
 /**
- * Truy van bang Role (MySQL).
+ * Truy van bang Role (SQL Server).
  */
 public class RoleDao {
 
     public List<Role> getAllRole() throws SQLException {
         List<Role> list = new ArrayList<>();
-        String sql = "SELECT RoleID, RoleName, Description FROM `Role` ORDER BY RoleID";
+        String sql = "SELECT RoleID, RoleName, Description FROM dbo.[Role] ORDER BY RoleID";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -31,7 +31,7 @@ public class RoleDao {
     }
 
     public Role getRoleById(int roleId) {
-        String sql = "SELECT RoleID, RoleName, Description FROM `Role` WHERE RoleID = ?";
+        String sql = "SELECT RoleID, RoleName, Description FROM dbo.[Role] WHERE RoleID = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, roleId);

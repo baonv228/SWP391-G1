@@ -6,21 +6,19 @@ import java.sql.SQLException;
 
 public class DBContext {
 
-    // Cau hinh ket noi MySQL. Sua lai user/password cho dung may cua ban.
+    // Cau hinh ket noi SQL Server. Sua lai databaseName/user/password cho dung may cua ban.
     private static final String URL =
-            "jdbc:mysql://localhost:3306/tpms_db"
-            + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh"
-            + "&useUnicode=true&characterEncoding=UTF-8";
-    private static final String USER = "root";       // username MySQL cua ban
-    private static final String PASSWORD = "123";     // mat khau MySQL cua ban
+            "jdbc:sqlserver://localhost:1433;databaseName=TPMS_DB;encrypt=false";
+    private static final String USER = "sa";       // username SQL Server cua ban
+    private static final String PASSWORD = "123";   // mat khau SQL Server cua ban
 
     // Ket noi co so du lieu
     public static Connection getConnection() throws SQLException {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             return DriverManager.getConnection(URL, USER, PASSWORD);
         } catch (ClassNotFoundException e) {
-            throw new SQLException("MySQL JDBC Driver not found", e);
+            throw new SQLException("SQL Server JDBC Driver not found", e);
         }
     }
 
@@ -28,7 +26,7 @@ public class DBContext {
     public static void main(String[] args) {
         try (Connection conn = getConnection()) {
             if (conn != null) {
-                System.out.println("Ket noi MySQL thanh cong!");
+                System.out.println("Ket noi SQL Server thanh cong!");
                 System.out.println("Trang thai: " + (conn.isClosed() ? "Da dong" : "Dang mo"));
             }
         } catch (Exception e) {
