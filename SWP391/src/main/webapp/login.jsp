@@ -2,6 +2,8 @@
 <%
     String error = (String) request.getAttribute("error");
     String success = request.getParameter("success");
+    String logout = request.getParameter("logout");
+    String reset = request.getParameter("reset");
     String emailValue = (String) request.getAttribute("emailValue");
     if (emailValue == null) {
         emailValue = "";
@@ -203,6 +205,14 @@
             <div class="message">Đăng ký thành công. Vui lòng đăng nhập.</div>
             <% } %>
 
+            <% if ("1".equals(logout)) { %>
+            <div class="message">Bạn đã đăng xuất.</div>
+            <% } %>
+
+            <% if ("1".equals(reset)) { %>
+            <div class="message">Đặt lại mật khẩu thành công. Vui lòng đăng nhập.</div>
+            <% } %>
+
             <% if (error != null) { %>
             <div class="error"><%= error %></div>
             <% } %>
@@ -224,6 +234,10 @@
                 </div>
 
                 <button type="submit" class="btn-login">Đăng nhập</button>
+
+                <div class="register-now">
+                    <a href="<%=request.getContextPath()%>/forgot-password">Quên mật khẩu?</a>
+                </div>
 
                 <div class="register-now">
                     Bạn chưa có tài khoản?

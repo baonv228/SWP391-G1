@@ -1,6 +1,5 @@
 package controller;
 
-import dao.UserDao;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -10,12 +9,13 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.regex.Pattern;
 import model.User;
+import service.UserService;
 
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
     private static final Pattern GMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@gmail\\.com$");
-    private final UserDao userDao = new UserDao();
+    private final UserService userService = new UserService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -55,7 +55,7 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        User user = userDao.loginByEmailPassword(email, password);
+        User user = userService.authenticate(email, password);
         if (user == null) {
             setErrorAndForward("Gmail hoặc mật khẩu không đúng.", request, response);
             return;
