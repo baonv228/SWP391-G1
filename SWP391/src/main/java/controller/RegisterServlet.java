@@ -1,6 +1,5 @@
 package controller;
 
-import dao.UserDao;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,12 +7,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.regex.Pattern;
+import service.ServiceResult;
+import service.UserService;
 
 @WebServlet(name = "RegisterServlet", urlPatterns = {"/register"})
 public class RegisterServlet extends HttpServlet {
 
     private static final Pattern GMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@gmail\\.com$");
-    private final UserDao userDao = new UserDao();
+    private final UserService userService = new UserService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -30,7 +31,9 @@ public class RegisterServlet extends HttpServlet {
             return;
         }
 
+        String fullName = safeTrim(request.getParameter("fullName"));
         String email = safeTrim(request.getParameter("email")).toLowerCase();
+        String phone = safeTrim(request.getParameter("phone"));
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirm_password");
 
@@ -41,10 +44,12 @@ public class RegisterServlet extends HttpServlet {
             confirmPassword = "";
         }
 
+        request.setAttribute("fullNameValue", fullName);
         request.setAttribute("emailValue", email);
+        request.setAttribute("phoneValue", phone);
 
-        if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            setErrorAndForward("Vui lòng nhập đầy đủ Gmail và mật khẩu.", request, response);
+        if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            setErrorAndForward("Vui lòng nhập đầy đủ Họ tên, Gmail và mật khẩu.", request, response);
             return;
         }
 
@@ -63,14 +68,9 @@ public class RegisterServlet extends HttpServlet {
             return;
         }
 
-        if (userDao.existsEmail(email)) {
-            setErrorAndForward("Gmail đã tồn tại. Vui lòng dùng Gmail khác.", request, response);
-            return;
-        }
-
-        boolean ok = userDao.registerStudent(email, password);
-        if (!ok) {
-            setErrorAndForward("Đăng ký thất bại. Kiểm tra database đã có role Student chưa.", request, response);
+        ServiceResult result = userService.register(fullName, email, phone.isEmpty() ? null : phone, password);
+        if (!result.isSuccess()) {
+            setErrorAndForward(result.getMessage(), request, response);
             return;
         }
 

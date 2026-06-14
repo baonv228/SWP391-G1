@@ -2,8 +2,16 @@
 <%
     String error = (String) request.getAttribute("error");
     String emailValue = (String) request.getAttribute("emailValue");
+    String fullNameValue = (String) request.getAttribute("fullNameValue");
+    String phoneValue = (String) request.getAttribute("phoneValue");
     if (emailValue == null) {
         emailValue = "";
+    }
+    if (fullNameValue == null) {
+        fullNameValue = "";
+    }
+    if (phoneValue == null) {
+        phoneValue = "";
     }
 %>
 <!DOCTYPE html>
@@ -154,12 +162,13 @@
         </style>
         <script>
             function validateRegisterForm() {
+                const fullName = document.getElementById("fullName").value.trim();
                 const email = document.getElementById("email").value.trim();
                 const pass = document.getElementById("password").value;
                 const confirm = document.getElementById("confirm_password").value;
 
-                if (!email || !pass || !confirm) {
-                    alert("Vui lòng nhập đầy đủ Gmail và mật khẩu.");
+                if (!fullName || !email || !pass || !confirm) {
+                    alert("Vui lòng nhập đầy đủ Họ tên, Gmail và mật khẩu.");
                     return false;
                 }
 
@@ -205,8 +214,18 @@
                 <input type="hidden" name="action" value="register"/>
 
                 <div class="row">
+                    <label for="fullName">Họ và tên</label>
+                    <input id="fullName" type="text" name="fullName" value="<%= fullNameValue %>" placeholder="Nguyễn Văn A"/>
+                </div>
+
+                <div class="row">
                     <label for="email">Gmail</label>
                     <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@gmail.com"/>
+                </div>
+
+                <div class="row">
+                    <label for="phone">Số điện thoại (tùy chọn)</label>
+                    <input id="phone" type="text" name="phone" value="<%= phoneValue %>" placeholder="0123456789"/>
                 </div>
 
                 <div class="row">
