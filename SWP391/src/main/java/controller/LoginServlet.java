@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 import model.User;
 
-@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
+@WebServlet(name = "LoginServlet", urlPatterns = { "/login" })
 public class LoginServlet extends HttpServlet {
 
     private static final Pattern GMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@gmail\\.com$");
@@ -69,7 +69,7 @@ public class LoginServlet extends HttpServlet {
             session.setAttribute("roleName", user.getRole().getRoleName());
         }
         response.sendRedirect(request.getContextPath() + "/home");
- main
+
     }
 
     private String safeTrim(String value) {
