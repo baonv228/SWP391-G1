@@ -28,6 +28,11 @@ public class HomeServlet extends HttpServlet {
             request.getRequestDispatcher("/view/TrainingDepartment.jsp").forward(request, response);
             return;
         }
+        
+        if ("Syllabus Designer".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/SyllabusDesignerHome.jsp").forward(request, response);
+            return;
+        }
 
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Role nay chua duoc cap trang home.");
     }
