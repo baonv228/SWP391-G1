@@ -63,11 +63,13 @@ public class LoginServlet extends HttpServlet {
 
         HttpSession session = request.getSession(true);
         session.setAttribute("user", user);
+
         session.setAttribute("roleId", user.getRoleId());
         if (user.getRole() != null) {
             session.setAttribute("roleName", user.getRole().getRoleName());
         }
         response.sendRedirect(request.getContextPath() + "/home");
+ main
     }
 
     private String safeTrim(String value) {

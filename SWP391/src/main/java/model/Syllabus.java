@@ -17,7 +17,27 @@ public class Syllabus {
     private Timestamp createdAt;
     private Timestamp approvedAt;
 
+    // ===== V2 NEW FIELDS =====
+    private String syllabusName;
+    private String syllabusEnglish;
+    private String degreeLevel;
+    private String timeAllocation;
+    private String preRequisiteText;
+    private String studentTasks;
+    private String tools;
+    private Integer scoringScale;
+    private String decisionNo;
+    private String note;
+    private Double minAvgMarkToPass;
+    private boolean isActive;
+
+    // Transient — for display only
+    private String subjectCode;
+    private String subjectName;
+    private String createdByName;
+
     public Syllabus() {
+        this.isActive = true;
     }
 
     public Syllabus(int syllabusId, int subjectId, int createdBy, Integer approvedBy, String versionNo, String syllabusTitle, String description, String learningOutcome, String assessmentMethod, String status, boolean currentVersion, Timestamp createdAt, Timestamp approvedAt) {
@@ -34,117 +54,98 @@ public class Syllabus {
         this.currentVersion = currentVersion;
         this.createdAt = createdAt;
         this.approvedAt = approvedAt;
+        this.isActive = true;
     }
 
-    public int getSyllabusId() {
-        return syllabusId;
-    }
+    // ===== GETTERS & SETTERS (V1 fields) =====
 
-    public void setSyllabusId(int syllabusId) {
-        this.syllabusId = syllabusId;
-    }
+    public int getSyllabusId() { return syllabusId; }
+    public void setSyllabusId(int syllabusId) { this.syllabusId = syllabusId; }
 
-    public int getSubjectId() {
-        return subjectId;
-    }
+    public int getSubjectId() { return subjectId; }
+    public void setSubjectId(int subjectId) { this.subjectId = subjectId; }
 
-    public void setSubjectId(int subjectId) {
-        this.subjectId = subjectId;
-    }
+    public int getCreatedBy() { return createdBy; }
+    public void setCreatedBy(int createdBy) { this.createdBy = createdBy; }
 
-    public int getCreatedBy() {
-        return createdBy;
-    }
+    public Integer getApprovedBy() { return approvedBy; }
+    public void setApprovedBy(Integer approvedBy) { this.approvedBy = approvedBy; }
 
-    public void setCreatedBy(int createdBy) {
-        this.createdBy = createdBy;
-    }
+    public String getVersionNo() { return versionNo; }
+    public void setVersionNo(String versionNo) { this.versionNo = versionNo; }
 
-    public Integer getApprovedBy() {
-        return approvedBy;
-    }
+    public String getSyllabusTitle() { return syllabusTitle; }
+    public void setSyllabusTitle(String syllabusTitle) { this.syllabusTitle = syllabusTitle; }
 
-    public void setApprovedBy(Integer approvedBy) {
-        this.approvedBy = approvedBy;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getVersionNo() {
-        return versionNo;
-    }
+    public String getLearningOutcome() { return learningOutcome; }
+    public void setLearningOutcome(String learningOutcome) { this.learningOutcome = learningOutcome; }
 
-    public void setVersionNo(String versionNo) {
-        this.versionNo = versionNo;
-    }
+    public String getAssessmentMethod() { return assessmentMethod; }
+    public void setAssessmentMethod(String assessmentMethod) { this.assessmentMethod = assessmentMethod; }
 
-    public String getSyllabusTitle() {
-        return syllabusTitle;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public void setSyllabusTitle(String syllabusTitle) {
-        this.syllabusTitle = syllabusTitle;
-    }
+    public boolean isCurrentVersion() { return currentVersion; }
+    public boolean getIsCurrentVersion() { return currentVersion; }
+    public void setCurrentVersion(boolean currentVersion) { this.currentVersion = currentVersion; }
+    public void setIsCurrentVersion(boolean currentVersion) { this.currentVersion = currentVersion; }
 
-    public String getDescription() {
-        return description;
-    }
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public Timestamp getApprovedAt() { return approvedAt; }
+    public void setApprovedAt(Timestamp approvedAt) { this.approvedAt = approvedAt; }
 
-    public String getLearningOutcome() {
-        return learningOutcome;
-    }
+    // ===== GETTERS & SETTERS (V2 new fields) =====
 
-    public void setLearningOutcome(String learningOutcome) {
-        this.learningOutcome = learningOutcome;
-    }
+    public String getSyllabusName() { return syllabusName; }
+    public void setSyllabusName(String syllabusName) { this.syllabusName = syllabusName; }
 
-    public String getAssessmentMethod() {
-        return assessmentMethod;
-    }
+    public String getSyllabusEnglish() { return syllabusEnglish; }
+    public void setSyllabusEnglish(String syllabusEnglish) { this.syllabusEnglish = syllabusEnglish; }
 
-    public void setAssessmentMethod(String assessmentMethod) {
-        this.assessmentMethod = assessmentMethod;
-    }
+    public String getDegreeLevel() { return degreeLevel; }
+    public void setDegreeLevel(String degreeLevel) { this.degreeLevel = degreeLevel; }
 
-    public String getStatus() {
-        return status;
-    }
+    public String getTimeAllocation() { return timeAllocation; }
+    public void setTimeAllocation(String timeAllocation) { this.timeAllocation = timeAllocation; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public String getPreRequisiteText() { return preRequisiteText; }
+    public void setPreRequisiteText(String preRequisiteText) { this.preRequisiteText = preRequisiteText; }
 
-    public boolean isCurrentVersion() {
-        return currentVersion;
-    }
+    public String getStudentTasks() { return studentTasks; }
+    public void setStudentTasks(String studentTasks) { this.studentTasks = studentTasks; }
 
-    public boolean getIsCurrentVersion() {
-        return currentVersion;
-    }
+    public String getTools() { return tools; }
+    public void setTools(String tools) { this.tools = tools; }
 
-    public void setCurrentVersion(boolean currentVersion) {
-        this.currentVersion = currentVersion;
-    }
+    public Integer getScoringScale() { return scoringScale; }
+    public void setScoringScale(Integer scoringScale) { this.scoringScale = scoringScale; }
 
-    public void setIsCurrentVersion(boolean currentVersion) {
-        this.currentVersion = currentVersion;
-    }
+    public String getDecisionNo() { return decisionNo; }
+    public void setDecisionNo(String decisionNo) { this.decisionNo = decisionNo; }
 
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
+    public String getNote() { return note; }
+    public void setNote(String note) { this.note = note; }
 
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Double getMinAvgMarkToPass() { return minAvgMarkToPass; }
+    public void setMinAvgMarkToPass(Double minAvgMarkToPass) { this.minAvgMarkToPass = minAvgMarkToPass; }
 
-    public Timestamp getApprovedAt() {
-        return approvedAt;
-    }
+    public boolean getIsActive() { return isActive; }
+    public void setIsActive(boolean isActive) { this.isActive = isActive; }
 
-    public void setApprovedAt(Timestamp approvedAt) {
-        this.approvedAt = approvedAt;
-    }
+    // ===== Transient display fields =====
+
+    public String getSubjectCode() { return subjectCode; }
+    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
+
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
+
+    public String getCreatedByName() { return createdByName; }
+    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
 }
