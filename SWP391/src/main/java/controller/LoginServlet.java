@@ -20,7 +20,7 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("/login.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/login.jsp").forward(request, response);
     }
 
     @Override
@@ -63,28 +63,13 @@ public class LoginServlet extends HttpServlet {
 
         HttpSession session = request.getSession(true);
         session.setAttribute("user", user);
-        response.sendRedirect(request.getContextPath() + getRedirectByRole(user));
-    }
 
-    /**
-     * Determine the landing page based on user role.
-     */
-    private String getRedirectByRole(User user) {
-        if (user.getRole() == null) {
-            return "/index.jsp?loginSuccess=1";
+        session.setAttribute("roleId", user.getRoleId());
+        if (user.getRole() != null) {
+            session.setAttribute("roleName", user.getRole().getRoleName());
         }
-        String roleName = user.getRole().getRoleName();
-        if (roleName == null) {
-            return "/index.jsp?loginSuccess=1";
-        }
-        return switch (roleName) {
-            case "Syllabus Designer" -> "/syllabus?action=list";
-            case "Admin"             -> "/index.jsp?loginSuccess=1"; // TODO: thay bằng /admin khi có
-            case "Training Department" -> "/index.jsp?loginSuccess=1"; // TODO: thay khi có
-            case "Teacher"           -> "/index.jsp?loginSuccess=1"; // TODO: thay khi có
-            case "Student"           -> "/index.jsp?loginSuccess=1"; // TODO: thay khi có
-            default                  -> "/index.jsp?loginSuccess=1";
-        };
+        response.sendRedirect(request.getContextPath() + "/home");
+ main
     }
 
     private String safeTrim(String value) {
@@ -94,6 +79,6 @@ public class LoginServlet extends HttpServlet {
     private void setErrorAndForward(String message, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", message);
-        request.getRequestDispatcher("/login.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/login.jsp").forward(request, response);
     }
 }
