@@ -51,18 +51,19 @@ public class TrainingProgramServlet extends HttpServlet {
 
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String keyword = safeTrim(request.getParameter("programCode"));
+        String selectedProgramCode = safeTrim(request.getParameter("programCode")).toUpperCase();
         int page = parsePositiveInt(request.getParameter("page"), 1);
-        int totalItems = trainingProgramDAO.countTrainingPrograms(keyword);
+        int totalItems = trainingProgramDAO.countTrainingPrograms(selectedProgramCode);
         int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
 
         if (page > totalPages) {
             page = totalPages;
         }
 
-        List<TrainingProgram> programs = trainingProgramDAO.getTrainingPrograms(keyword, page, PAGE_SIZE);
+        List<TrainingProgram> programs = trainingProgramDAO.getTrainingPrograms(selectedProgramCode, page, PAGE_SIZE);
         request.setAttribute("programs", programs);
-        request.setAttribute("programCode", keyword);
+        request.setAttribute("programOptions", trainingProgramDAO.getTrainingProgramOptions());
+        request.setAttribute("selectedProgramCode", selectedProgramCode);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalItems", totalItems);
@@ -84,10 +85,12 @@ public class TrainingProgramServlet extends HttpServlet {
         }
         request.setAttribute("program", program);
         request.setAttribute("programs", trainingProgramDAO.getTrainingPrograms("", 1, PAGE_SIZE));
-        request.setAttribute("programCode", "");
+        request.setAttribute("programOptions", trainingProgramDAO.getTrainingProgramOptions());
+        request.setAttribute("selectedProgramCode", "");
         request.setAttribute("currentPage", 1);
-        request.setAttribute("totalItems", trainingProgramDAO.countTrainingPrograms(""));
-        request.setAttribute("totalPages", Math.max(1, (int) Math.ceil((double) trainingProgramDAO.countTrainingPrograms("") / PAGE_SIZE)));
+        int totalItems = trainingProgramDAO.countTrainingPrograms("");
+        request.setAttribute("totalItems", totalItems);
+        request.setAttribute("totalPages", Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE)));
         request.getRequestDispatcher("/view/ListTrainingProgram.jsp").forward(request, response);
     }
 

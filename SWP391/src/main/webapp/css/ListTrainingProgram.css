@@ -89,6 +89,7 @@ body {
 }
 
 input,
+select,
 button,
 .create-button {
     min-height: 44px;
@@ -96,7 +97,8 @@ button,
     font: inherit;
 }
 
-input {
+input,
+select {
     width: 100%;
     border: 1px solid var(--line);
     background: var(--white);
@@ -107,6 +109,11 @@ input {
 }
 
 input:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(245, 158, 61, 0.18);
+}
+
+select:focus {
     border-color: var(--orange);
     box-shadow: 0 0 0 3px rgba(245, 158, 61, 0.18);
 }

@@ -3,14 +3,15 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     List<TrainingProgram> programs = (List<TrainingProgram>) request.getAttribute("programs");
-    String programCode = (String) request.getAttribute("programCode");
+    List<TrainingProgram> programOptions = (List<TrainingProgram>) request.getAttribute("programOptions");
+    String selectedProgramCode = (String) request.getAttribute("selectedProgramCode");
     Integer currentPage = (Integer) request.getAttribute("currentPage");
     Integer totalPages = (Integer) request.getAttribute("totalPages");
     Integer totalItems = (Integer) request.getAttribute("totalItems");
     TrainingProgram selectedProgram = (TrainingProgram) request.getAttribute("program");
 
-    if (programCode == null) {
-        programCode = "";
+    if (selectedProgramCode == null) {
+        selectedProgramCode = "";
     }
     if (currentPage == null) {
         currentPage = 1;
@@ -40,14 +41,28 @@
             <section class="toolbar" aria-label="Training program filters">
                 <div>
                     <h2>Training Program</h2>
-                    <p>Search by program code such as SE, GD, KT.</p>
+                    <p>Search by program code from the dropdown list.</p>
                 </div>
 
                 <form class="search-form" method="get" action="<%=request.getContextPath()%>/training-program">
                     <input type="hidden" name="action" value="list" />
                     <label for="programCode">Mã ngành</label>
                     <div class="search-row">
-                        <input id="programCode" name="programCode" value="<%= programCode %>" placeholder="SE, GD, KT..." />
+                        <select id="programCode" name="programCode">
+                            <option value="">All Program Codes</option>
+                            <% if (programOptions != null) {
+                                for (TrainingProgram option : programOptions) {
+                                    String code = option.getProgramCode() != null ? option.getProgramCode() : "";
+                                    boolean selected = selectedProgramCode.equalsIgnoreCase(code);
+                                    String optionName = option.getMajorName() != null && !option.getMajorName().isBlank()
+                                            ? option.getMajorName()
+                                            : option.getProgramName();
+                                    String optionLabel = code + " - " + (optionName != null ? optionName : "");
+                            %>
+                            <option value="<%= code %>" <%= selected ? "selected" : "" %>><%= optionLabel %></option>
+                            <%  }
+                            } %>
+                        </select>
                         <button type="submit">Apply</button>
                     </div>
                 </form>
@@ -62,6 +77,8 @@
                     <h3><%= selectedProgram.getMajorName() != null && !selectedProgram.getMajorName().isBlank() ? selectedProgram.getMajorName() : selectedProgram.getProgramName() %></h3>
                 </div>
                 <dl>
+                    <dt>Program ID</dt>
+                    <dd><%= selectedProgram.getProgramId() %></dd>
                     <dt>Mã ngành</dt>
                     <dd><%= selectedProgram.getProgramCode() != null ? selectedProgram.getProgramCode() : "" %></dd>
                     <dt>Năm học</dt>
@@ -110,7 +127,7 @@
             <nav class="pagination" aria-label="Pagination">
                 <% for (int i = 1; i <= totalPages; i++) { %>
                 <a class="<%= i == currentPage ? "active" : "" %>"
-                   href="<%=request.getContextPath()%>/training-program?action=list&programCode=<%= java.net.URLEncoder.encode(programCode, "UTF-8") %>&page=<%= i %>"><%= i %></a>
+                   href="<%=request.getContextPath()%>/training-program?action=list&programCode=<%= java.net.URLEncoder.encode(selectedProgramCode, "UTF-8") %>&page=<%= i %>"><%= i %></a>
                 <% } %>
                 <span>/ <%= totalPages %></span>
             </nav>
