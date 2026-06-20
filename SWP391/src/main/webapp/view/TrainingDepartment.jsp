@@ -291,7 +291,7 @@
                         </span>
                         <span class="module-title">Course List</span>
                     </a>
-                    <a class="module-card" href="#">
+                    <a class="module-card" href="<%=request.getContextPath()%>/curriculum?action=list">
                         <span class="module-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -302,7 +302,7 @@
                         </span>
                         <span class="module-title">Curriculum</span>
                     </a>
-                    <a class="module-card" href="#">
+                    <a class="module-card" href="<%=request.getContextPath()%>/training-program?action=list">
                         <span class="module-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="m22 10-10-5-10 5 10 5z"></path>

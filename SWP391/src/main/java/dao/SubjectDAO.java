@@ -74,4 +74,36 @@ public class SubjectDAO extends DBContext {
         }
         return null;
     }
+
+    /**
+     * Get all subjects for curriculum selection.
+     */
+    public List<Subject> getAllSubjects() {
+        List<Subject> list = new ArrayList<>();
+        String sql = """
+                SELECT SubjectID, CreatedBy, SubjectCode, SubjectName, Credits, Description, Status
+                FROM dbo.[Subject]
+                ORDER BY SubjectCode
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Subject s = new Subject();
+                s.setSubjectId(rs.getInt("SubjectID"));
+                s.setCreatedBy(rs.getInt("CreatedBy"));
+                s.setSubjectCode(rs.getString("SubjectCode"));
+                s.setSubjectName(rs.getString("SubjectName"));
+                s.setCredits(rs.getInt("Credits"));
+                s.setDescription(rs.getString("Description"));
+                s.setStatus(rs.getString("Status"));
+                list.add(s);
+            }
+        } catch (Exception e) {
+            System.out.println("getAllSubjects error: " + e.getMessage());
+        }
+        return list;
+    }
 }

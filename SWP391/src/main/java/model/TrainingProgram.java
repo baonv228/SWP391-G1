@@ -10,6 +10,7 @@ public class TrainingProgram {
     private String pno;
     private String description;
     private String status;
+    private String createdByName;
 
     public TrainingProgram() {
     }
@@ -96,5 +97,13 @@ public class TrainingProgram {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public void setCreatedByName(String createdByName) {
+        this.createdByName = createdByName;
     }
 }
