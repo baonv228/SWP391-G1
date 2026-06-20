@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import model.User;
 import service.UserService;
 
-@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
+@WebServlet(name = "LoginServlet", urlPatterns = { "/login" })
 public class LoginServlet extends HttpServlet {
 
     private static final Pattern GMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@gmail\\.com$");
@@ -20,7 +20,7 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("/login.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/login.jsp").forward(request, response);
     }
 
     @Override
@@ -63,7 +63,13 @@ public class LoginServlet extends HttpServlet {
 
         HttpSession session = request.getSession(true);
         session.setAttribute("user", user);
-        response.sendRedirect(request.getContextPath() + "/index.jsp?loginSuccess=1");
+
+        session.setAttribute("roleId", user.getRoleId());
+        if (user.getRole() != null) {
+            session.setAttribute("roleName", user.getRole().getRoleName());
+        }
+        response.sendRedirect(request.getContextPath() + "/home");
+
     }
 
     private String safeTrim(String value) {
@@ -73,6 +79,6 @@ public class LoginServlet extends HttpServlet {
     private void setErrorAndForward(String message, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", message);
-        request.getRequestDispatcher("/login.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/login.jsp").forward(request, response);
     }
 }

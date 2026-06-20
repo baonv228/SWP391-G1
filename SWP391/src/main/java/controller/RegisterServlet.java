@@ -19,7 +19,7 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("/register.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/register.jsp").forward(request, response);
     }
 
     @Override
@@ -84,6 +84,6 @@ public class RegisterServlet extends HttpServlet {
     private void setErrorAndForward(String message, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", message);
-        request.getRequestDispatcher("/register.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/register.jsp").forward(request, response);
     }
 }
