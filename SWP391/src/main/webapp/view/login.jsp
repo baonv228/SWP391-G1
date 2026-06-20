@@ -161,6 +161,120 @@
                 text-decoration: none;
                 font-weight: 700;
             }
+
+            /* ===== Quick Login ===== */
+            .quick-login {
+                margin: 14px 0 4px;
+            }
+
+            .quick-login-label {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .quick-login-label::before,
+            .quick-login-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+            .quick-cards {
+                display: flex;
+                gap: 8px;
+            }
+
+            .quick-card {
+                flex: 1;
+                border: 1.5px solid var(--border);
+                border-radius: 10px;
+                padding: 9px 8px;
+                cursor: pointer;
+                background: #f9fafb;
+                transition: border-color 0.18s, background 0.18s, transform 0.15s, box-shadow 0.18s;
+                text-align: center;
+                user-select: none;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .quick-card::after {
+                content: 'Click để điền';
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: 700;
+                color: #fff;
+                background: rgba(40,167,69,0.82);
+                border-radius: 8px;
+                opacity: 0;
+                transition: opacity 0.18s;
+            }
+
+            .quick-card:hover::after {
+                opacity: 1;
+            }
+
+            .quick-card:hover {
+                border-color: var(--green);
+                background: #f0fff4;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 14px rgba(40,167,69,0.18);
+            }
+
+            .quick-card:active {
+                transform: scale(0.96);
+            }
+
+            .quick-card .qc-icon {
+                font-size: 20px;
+                margin-bottom: 4px;
+                display: block;
+            }
+
+            .quick-card .qc-role {
+                font-size: 11px;
+                font-weight: 800;
+                color: var(--text);
+                letter-spacing: 0.04em;
+            }
+
+            .quick-card .qc-email {
+                font-size: 9.5px;
+                color: var(--muted);
+                margin-top: 2px;
+                word-break: break-all;
+                line-height: 1.3;
+            }
+
+            .quick-card .qc-pass {
+                font-size: 9px;
+                color: #9ca3af;
+                margin-top: 1px;
+            }
+
+            .quick-card.filled {
+                border-color: var(--green);
+                background: #ecfff1;
+                animation: fillPulse 0.4s ease;
+            }
+
+            @keyframes fillPulse {
+                0%   { box-shadow: 0 0 0 0 rgba(40,167,69,0.45); }
+                60%  { box-shadow: 0 0 0 8px rgba(40,167,69,0); }
+                100% { box-shadow: 0 0 0 0 rgba(40,167,69,0); }
+            }
         </style>
         <script>
             function validateLoginForm() {
@@ -192,12 +306,63 @@
                 input.type = input.type === "password" ? "text" : "password";
                 btn.textContent = input.type === "password" ? "Hiện" : "Ẩn";
             }
+
+            function fillCredentials(email, password, cardEl) {
+                document.getElementById('email').value = email;
+                document.getElementById('password').value = password;
+                /* Highlight the selected card */
+                document.querySelectorAll('.quick-card').forEach(c => c.classList.remove('filled'));
+                cardEl.classList.add('filled');
+                /* Show password briefly */
+                const passInput = document.getElementById('password');
+                const toggleBtn = document.querySelector('.toggle-pass');
+                passInput.type = 'text';
+                toggleBtn.textContent = 'Ẩn';
+                setTimeout(() => {
+                    passInput.type = 'password';
+                    toggleBtn.textContent = 'Hiện';
+                }, 1200);
+            }
         </script>
     </head>
     <body>
         <div class="card">
             <h2>Đăng nhập</h2>
             <div class="subtitle">Nhập Gmail và mật khẩu để tiếp tục.</div>
+
+            <!-- ===== Quick Login Panel ===== -->
+            <div class="quick-login">
+                <div class="quick-login-label">Đăng nhập nhanh theo vai trò</div>
+                <div class="quick-cards">
+                    <!-- Admin -->
+                    <div class="quick-card" id="qc-admin"
+                         onclick="fillCredentials('admin.tpms@gmail.com','123456',this)"
+                         title="Admin — admin.tpms@gmail.com / 123456">
+                        <span class="qc-icon">🛡️</span>
+                        <div class="qc-role">Admin</div>
+                        <div class="qc-email">admin.tpms<br>@gmail.com</div>
+                        <div class="qc-pass">123456</div>
+                    </div>
+                    <!-- Teacher -->
+                    <div class="quick-card" id="qc-teacher"
+                         onclick="fillCredentials('teacher.tpms@gmail.com','123456',this)"
+                         title="Teacher — teacher.tpms@gmail.com / 123456">
+                        <span class="qc-icon">👨‍🏫</span>
+                        <div class="qc-role">Teacher</div>
+                        <div class="qc-email">teacher.tpms<br>@gmail.com</div>
+                        <div class="qc-pass">123456</div>
+                    </div>
+                    <!-- Student -->
+                    <div class="quick-card" id="qc-student"
+                         onclick="fillCredentials('student.tpms@gmail.com','123456',this)"
+                         title="Student — student.tpms@gmail.com / 123456">
+                        <span class="qc-icon">🎓</span>
+                        <div class="qc-role">Student</div>
+                        <div class="qc-email">student.tpms<br>@gmail.com</div>
+                        <div class="qc-pass">123456</div>
+                    </div>
+                </div>
+            </div>
 
             <% if ("1".equals(success)) { %>
             <div class="message">Đăng ký thành công. Vui lòng đăng nhập.</div>

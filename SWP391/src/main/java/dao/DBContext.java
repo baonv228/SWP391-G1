@@ -7,8 +7,8 @@ import java.sql.SQLException;
 public class DBContext {
 
     private static final String url = "jdbc:sqlserver://localhost:1433;databaseName=TPMS_DB;encrypt=false";
-    private static final String user = "sa"; // Thay bằng username SQL Server của bạn
-    private static final String password = "123"; // Thay bằng mật khẩu
+    private static final String user = "duy"; // Thay bằng username SQL Server của bạn
+    private static final String password = "12345"; // Thay bằng mật khẩu
 
     // Kết nối cơ sở dữ liệu
     public static Connection getConnection() throws SQLException {

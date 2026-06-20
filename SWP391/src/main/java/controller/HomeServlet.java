@@ -24,12 +24,21 @@ public class HomeServlet extends HttpServlet {
         }
 
         String roleName = resolveRoleName(session);
-        if (TRAINING_DEPARTMENT_ROLE.equalsIgnoreCase(roleName)) {
+        User user = (User) session.getAttribute("user");
+        int roleId = (user != null) ? user.getRoleId() : -1;
+
+        if ("Admin".equalsIgnoreCase(roleName) || "Training Department".equalsIgnoreCase(roleName) || roleId == 1 || roleId == 4) {
             request.getRequestDispatcher("/view/TrainingDepartment.jsp").forward(request, response);
+            return;
+        } else if ("Teacher".equalsIgnoreCase(roleName) || roleId == 3) {
+            response.sendRedirect(request.getContextPath() + "/teacher/dashboard");
+            return;
+        } else if ("Student".equalsIgnoreCase(roleName) || roleId == 2) {
+            request.getRequestDispatcher("/views/home.jsp").forward(request, response);
             return;
         }
 
-        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Role nay chua duoc cap trang home.");
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Vai trò này chưa được cấp trang Home.");
     }
 
     @Override
