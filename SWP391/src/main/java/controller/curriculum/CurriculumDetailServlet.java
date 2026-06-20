@@ -23,7 +23,6 @@ public class CurriculumDetailServlet extends HttpServlet {
 
         if (!ValidationUtil.isValidId(idParam)) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid or missing curriculum ID.");
-            System.out.println("idParam"+idParam);
             return;
         }
 

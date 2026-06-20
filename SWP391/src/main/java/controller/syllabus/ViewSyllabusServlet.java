@@ -61,7 +61,6 @@ public class ViewSyllabusServlet extends HttpServlet {
             request.setAttribute("keyword", displayKeyword);
             request.setAttribute("totalRecords", totalRecords);
             request.setAttribute("searched", !displayKeyword.isEmpty());
-
             request.getRequestDispatcher("/views/syllabus/syllabusManagement.jsp").forward(request, response);
 
         } catch (SQLException e) {
