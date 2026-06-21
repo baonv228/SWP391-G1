@@ -47,7 +47,9 @@ public class DownloadMaterialServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+            
+            getServletContext().log("DownloadMaterialServlet invoked by user: " + request.getRemoteAddr());
+        
         // ── 1. Authentication check ────────────────────────────────────────
         HttpSession session = request.getSession(false);
         User loggedInUser = (session != null) ? (User) session.getAttribute("user") : null;
