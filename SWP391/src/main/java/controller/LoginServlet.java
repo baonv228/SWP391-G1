@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import model.User;
 import service.UserService;
 
-@WebServlet(name = "LoginServlet", urlPatterns = { "/login" })
+@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
     private static final Pattern GMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@gmail\\.com$");
@@ -50,11 +50,6 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        if (password.length() < 6) {
-            setErrorAndForward("Mật khẩu phải từ 6 ký tự trở lên.", request, response);
-            return;
-        }
-
         User user = userService.authenticate(email, password);
         if (user == null) {
             setErrorAndForward("Gmail hoặc mật khẩu không đúng.", request, response);
@@ -63,13 +58,11 @@ public class LoginServlet extends HttpServlet {
 
         HttpSession session = request.getSession(true);
         session.setAttribute("user", user);
-
         session.setAttribute("roleId", user.getRoleId());
         if (user.getRole() != null) {
             session.setAttribute("roleName", user.getRole().getRoleName());
         }
         response.sendRedirect(request.getContextPath() + "/home");
-
     }
 
     private String safeTrim(String value) {

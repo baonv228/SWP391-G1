@@ -24,7 +24,7 @@ public class ResetPasswordServlet extends HttpServlet {
         } else {
             request.setAttribute("token", token);
         }
-        request.getRequestDispatcher("/resetpassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
     }
 
     @Override
@@ -41,17 +41,17 @@ public class ResetPasswordServlet extends HttpServlet {
         if (token.isEmpty()) {
             request.setAttribute("invalidToken", true);
             request.setAttribute("error", "Liên kết đặt lại mật khẩu không hợp lệ.");
-            request.getRequestDispatcher("/resetpassword.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
             return;
         }
         if (newPassword.length() < 6) {
             request.setAttribute("error", "Mật khẩu mới phải từ 6 ký tự trở lên.");
-            request.getRequestDispatcher("/resetpassword.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
             return;
         }
         if (!newPassword.equals(confirmPassword)) {
             request.setAttribute("error", "Xác nhận mật khẩu không khớp.");
-            request.getRequestDispatcher("/resetpassword.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
             return;
         }
 
@@ -62,7 +62,7 @@ public class ResetPasswordServlet extends HttpServlet {
         }
         request.setAttribute("invalidToken", true);
         request.setAttribute("error", result.getMessage());
-        request.getRequestDispatcher("/resetpassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
     }
 
     private String safeTrim(String value) {

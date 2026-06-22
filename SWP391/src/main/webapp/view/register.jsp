@@ -1,10 +1,12 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String error = (String) request.getAttribute("error");
+    String fullNameValue = (String) request.getAttribute("fullNameValue");
     String emailValue = (String) request.getAttribute("emailValue");
-    if (emailValue == null) {
-        emailValue = "";
-    }
+    String phoneValue = (String) request.getAttribute("phoneValue");
+    if (fullNameValue == null) fullNameValue = "";
+    if (emailValue == null) emailValue = "";
+    if (phoneValue == null) phoneValue = "";
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -22,9 +24,7 @@
                 --danger: #dc3545;
             }
 
-            * {
-                box-sizing: border-box;
-            }
+            * { box-sizing: border-box; }
 
             body {
                 font-family: Arial, sans-serif;
@@ -39,7 +39,7 @@
 
             .card {
                 width: 100%;
-                max-width: 420px;
+                max-width: 460px;
                 background: #fff;
                 border: 1px solid var(--border);
                 border-radius: 14px;
@@ -73,14 +73,8 @@
                 text-align: center;
             }
 
-            form {
-                margin-top: 14px;
-            }
-
-            .row {
-                margin-bottom: 12px;
-            }
-
+            form { margin-top: 14px; }
+            .row { margin-bottom: 12px; }
             label {
                 display: block;
                 font-size: 13px;
@@ -89,9 +83,7 @@
                 margin-bottom: 6px;
             }
 
-            .input-wrap {
-                position: relative;
-            }
+            .input-wrap { position: relative; }
 
             input {
                 width: 100%;
@@ -135,9 +127,7 @@
                 margin-top: 6px;
             }
 
-            .btn-primary:hover {
-                background: var(--green-dark);
-            }
+            .btn-primary:hover { background: var(--green-dark); }
 
             .hint {
                 text-align: center;
@@ -154,12 +144,13 @@
         </style>
         <script>
             function validateRegisterForm() {
+                const fullName = document.getElementById("fullName").value.trim();
                 const email = document.getElementById("email").value.trim();
                 const pass = document.getElementById("password").value;
                 const confirm = document.getElementById("confirm_password").value;
 
-                if (!email || !pass || !confirm) {
-                    alert("Vui lòng nhập đầy đủ Gmail và mật khẩu.");
+                if (!fullName || !email || !pass || !confirm) {
+                    alert("Vui lòng nhập đầy đủ họ tên, Gmail và mật khẩu.");
                     return false;
                 }
 
@@ -184,9 +175,6 @@
 
             function togglePass(id, btn) {
                 const input = document.getElementById(id);
-                if (!input) {
-                    return;
-                }
                 input.type = input.type === "password" ? "text" : "password";
                 btn.textContent = input.type === "password" ? "Hiện" : "Ẩn";
             }
@@ -195,24 +183,34 @@
     <body>
         <div class="card">
             <h2>Đăng ký tài khoản</h2>
-            <div class="subtitle">Nhập Gmail và mật khẩu để tạo tài khoản.</div>
+            <div class="subtitle">Tạo tài khoản bằng Gmail để sử dụng hệ thống.</div>
 
             <% if (error != null) { %>
             <div class="error"><%= error %></div>
             <% } %>
 
             <form method="post" action="<%=request.getContextPath()%>/register" onsubmit="return validateRegisterForm();">
-                <input type="hidden" name="action" value="register"/>
+                <input type="hidden" name="action" value="register" />
+
+                <div class="row">
+                    <label for="fullName">Họ tên</label>
+                    <input id="fullName" type="text" name="fullName" value="<%= fullNameValue %>" placeholder="Nhập họ tên" />
+                </div>
 
                 <div class="row">
                     <label for="email">Gmail</label>
-                    <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@gmail.com"/>
+                    <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@gmail.com" />
+                </div>
+
+                <div class="row">
+                    <label for="phone">Số điện thoại</label>
+                    <input id="phone" type="text" name="phone" value="<%= phoneValue %>" placeholder="Nhập số điện thoại" />
                 </div>
 
                 <div class="row">
                     <label for="password">Mật khẩu</label>
                     <div class="input-wrap">
-                        <input id="password" type="password" name="password" placeholder="Tối thiểu 6 ký tự"/>
+                        <input id="password" type="password" name="password" placeholder="Tối thiểu 6 ký tự" />
                         <button type="button" class="toggle-pass" onclick="togglePass('password', this)">Hiện</button>
                     </div>
                 </div>
@@ -220,7 +218,7 @@
                 <div class="row">
                     <label for="confirm_password">Xác nhận mật khẩu</label>
                     <div class="input-wrap">
-                        <input id="confirm_password" type="password" name="confirm_password" placeholder="Nhập lại mật khẩu"/>
+                        <input id="confirm_password" type="password" name="confirm_password" placeholder="Nhập lại mật khẩu" />
                         <button type="button" class="toggle-pass" onclick="togglePass('confirm_password', this)">Hiện</button>
                     </div>
                 </div>

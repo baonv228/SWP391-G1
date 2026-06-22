@@ -24,12 +24,11 @@ public class ProfileServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        // Tai lai du lieu moi nhat tu CSDL
         User fresh = userService.getById(current.getUserId());
         if (fresh != null) {
             request.getSession().setAttribute("user", fresh);
         }
-        request.getRequestDispatcher("/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/profile.jsp").forward(request, response);
     }
 
     @Override
@@ -46,7 +45,7 @@ public class ProfileServlet extends HttpServlet {
 
         if (fullName.isEmpty()) {
             request.setAttribute("error", "Họ tên không được để trống.");
-            request.getRequestDispatcher("/profile.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/profile.jsp").forward(request, response);
             return;
         }
 
@@ -58,7 +57,7 @@ public class ProfileServlet extends HttpServlet {
         } else {
             request.setAttribute("error", result.getMessage());
         }
-        request.getRequestDispatcher("/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/profile.jsp").forward(request, response);
     }
 
     private User getLoggedInUser(HttpServletRequest request) {

@@ -2,6 +2,7 @@
 <%
     String error = (String) request.getAttribute("error");
     String success = request.getParameter("success");
+    String reset = request.getParameter("reset");
     String emailValue = (String) request.getAttribute("emailValue");
     if (emailValue == null) {
         emailValue = "";
@@ -178,11 +179,6 @@
                     return false;
                 }
 
-                if (pass.length < 6) {
-                    alert("Mật khẩu phải từ 6 ký tự trở lên.");
-                    return false;
-                }
-
                 return true;
             }
 
@@ -203,22 +199,26 @@
             <div class="message">Đăng ký thành công. Vui lòng đăng nhập.</div>
             <% } %>
 
+            <% if ("1".equals(reset)) { %>
+            <div class="message">Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.</div>
+            <% } %>
+
             <% if (error != null) { %>
             <div class="error"><%= error %></div>
             <% } %>
 
             <form method="post" action="<%=request.getContextPath()%>/login" onsubmit="return validateLoginForm();">
-                <input type="hidden" name="action" value="login"/>
+                <input type="hidden" name="action" value="login" />
 
                 <div class="row">
                     <label for="email">Gmail</label>
-                    <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@gmail.com"/>
+                    <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@gmail.com" />
                 </div>
 
                 <div class="row">
                     <label for="password">Mật khẩu</label>
                     <div class="input-wrap">
-                        <input id="password" type="password" name="password" placeholder="Nhập mật khẩu"/>
+                        <input id="password" type="password" name="password" placeholder="Nhập mật khẩu" />
                         <button class="toggle-pass" type="button" onclick="togglePassword()">Hiện</button>
                     </div>
                 </div>

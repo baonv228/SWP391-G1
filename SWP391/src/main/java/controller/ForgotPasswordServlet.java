@@ -18,7 +18,7 @@ public class ForgotPasswordServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("/forgotpassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/forgotpassword.jsp").forward(request, response);
     }
 
     @Override
@@ -29,22 +29,20 @@ public class ForgotPasswordServlet extends HttpServlet {
 
         if (email.isEmpty() || !GMAIL_PATTERN.matcher(email).matches()) {
             request.setAttribute("error", "Vui lòng nhập địa chỉ Gmail hợp lệ.");
-            request.getRequestDispatcher("/forgotpassword.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/forgotpassword.jsp").forward(request, response);
             return;
         }
 
         String token = userService.createResetToken(email);
-        // Khong tiet lo email co ton tai hay khong: luon hien thong bao chung.
         request.setAttribute("message",
                 "Nếu Gmail tồn tại trong hệ thống, liên kết đặt lại mật khẩu sẽ được tạo.");
         if (token != null) {
-            // Che do dev: hien link dat lai truc tiep (chua tich hop Email Service)
             String resetLink = request.getScheme() + "://" + request.getServerName()
                     + ":" + request.getServerPort() + request.getContextPath()
                     + "/reset-password?token=" + token;
             request.setAttribute("resetLink", resetLink);
         }
-        request.getRequestDispatcher("/forgotpassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/forgotpassword.jsp").forward(request, response);
     }
 
     private String safeTrim(String value) {

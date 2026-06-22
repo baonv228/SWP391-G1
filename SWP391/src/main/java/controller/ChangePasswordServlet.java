@@ -23,7 +23,7 @@ public class ChangePasswordServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        request.getRequestDispatcher("/changepassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/changepassword.jsp").forward(request, response);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ChangePasswordServlet extends HttpServlet {
         } else {
             request.setAttribute("error", result.getMessage());
         }
-        request.getRequestDispatcher("/changepassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/changepassword.jsp").forward(request, response);
     }
 
     private User getLoggedInUser(HttpServletRequest request) {
@@ -76,6 +76,6 @@ public class ChangePasswordServlet extends HttpServlet {
     private void forwardError(String message, HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", message);
-        request.getRequestDispatcher("/changepassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/changepassword.jsp").forward(request, response);
     }
 }
