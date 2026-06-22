@@ -41,7 +41,7 @@
             <section class="toolbar" aria-label="Training program filters">
                 <div>
                     <h2>Training Program</h2>
-                    <p>Search by program code from the dropdown list.</p>
+
                 </div>
 
                 <form class="search-form" method="get" action="<%=request.getContextPath()%>/training-program">
