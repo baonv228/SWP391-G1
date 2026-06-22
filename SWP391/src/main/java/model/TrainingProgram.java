@@ -7,21 +7,19 @@ public class TrainingProgram {
     private String programName;
     private String academicYear;
     private String majorName;
-    private String pno;
     private String description;
     private String status;
 
     public TrainingProgram() {
     }
 
-    public TrainingProgram(int programId, int createdBy, String programCode, String programName, String academicYear, String majorName, String pno, String description, String status) {
+    public TrainingProgram(int programId, int createdBy, String programCode, String programName, String academicYear, String majorName, String description, String status) {
         this.programId = programId;
         this.createdBy = createdBy;
         this.programCode = programCode;
         this.programName = programName;
         this.academicYear = academicYear;
         this.majorName = majorName;
-        this.pno = pno;
         this.description = description;
         this.status = status;
     }
@@ -72,14 +70,6 @@ public class TrainingProgram {
 
     public void setMajorName(String majorName) {
         this.majorName = majorName;
-    }
-
-    public String getPno() {
-        return pno;
-    }
-
-    public void setPno(String pno) {
-        this.pno = pno;
     }
 
     public String getDescription() {

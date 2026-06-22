@@ -7,17 +7,18 @@ BEGIN
 END
 GO
 
-CREATE TABLE PNO (
-    pno_id INT IDENTITY(1,1) PRIMARY KEY,
+CREATE TABLE PLO (
+    PloID INT IDENTITY(1,1) PRIMARY KEY,
     ProgramID INT NOT NULL,
-    pno_code NVARCHAR(50) NOT NULL,
-    pno_description NVARCHAR(MAX),
+    PloCode NVARCHAR(50) NOT NULL,
+    PloDescription NVARCHAR(MAX),
 
-    CONSTRAINT FK_PNO_TrainingProgram
-        FOREIGN KEY (ProgramID) REFERENCES Training_Program(ProgramID),
+    CONSTRAINT FK_PLO_TrainingProgram
+        FOREIGN KEY (ProgramID)
+        REFERENCES Training_Program(ProgramID),
 
-    CONSTRAINT UQ_PNO_Program_Code
-        UNIQUE (ProgramID, pno_code)
+    CONSTRAINT UQ_PLO_Program_Code
+        UNIQUE (ProgramID, PloCode)
 );
 GO
 
