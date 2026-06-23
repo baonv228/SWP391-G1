@@ -21,6 +21,9 @@ public class LearningPathServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String subjectCode = request.getParameter("subjectCode");
+        
+        // check value subjectCode -
+            System.out.println("Subject Code = " + subjectCode);
 
         // Always show the search page — results only if code provided
         String validationError = ValidationUtil.validateSearchInput(subjectCode);

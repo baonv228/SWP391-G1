@@ -20,7 +20,10 @@ public class PrerequisiteDetailServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String subjectCode = request.getParameter("subjectCode");
-
+        
+        // check value subjectCode -
+            System.out.println("Subject Code = " + subjectCode);
+            
         // Show page even without search
         String displayCode = (subjectCode != null) ? subjectCode.trim() : "";
         request.setAttribute("subjectCode", displayCode);
