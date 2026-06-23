@@ -104,7 +104,7 @@ public class GoogleLoginServlet extends HttpServlet {
 
             User user = userService.loginWithGoogle(email.toLowerCase(), fullName);
             if (user == null) {
-                redirectLoginError(request, response, "Tài khoản bị khóa hoặc không thể đăng nhập.");
+                redirectLoginError(request, response, "Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Admin để được hỗ trợ.");
                 return;
             }
 

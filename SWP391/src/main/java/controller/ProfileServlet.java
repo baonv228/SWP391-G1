@@ -41,7 +41,6 @@ public class ProfileServlet extends HttpServlet {
         }
 
         String fullName = safeTrim(request.getParameter("fullName"));
-        String phone = safeTrim(request.getParameter("phone"));
 
         if (fullName.isEmpty()) {
             request.setAttribute("error", "Họ tên không được để trống.");
@@ -49,7 +48,7 @@ public class ProfileServlet extends HttpServlet {
             return;
         }
 
-        ServiceResult result = userService.updateProfile(current.getUserId(), fullName, phone.isEmpty() ? null : phone);
+        ServiceResult result = userService.updateProfile(current.getUserId(), fullName);
         if (result.isSuccess()) {
             User fresh = userService.getById(current.getUserId());
             request.getSession().setAttribute("user", fresh);

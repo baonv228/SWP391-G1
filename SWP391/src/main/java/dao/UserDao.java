@@ -13,7 +13,7 @@ import org.mindrot.jbcrypt.BCrypt;
 public class UserDao extends DBContext {
 
     private static final String BASE_SELECT = """
-            SELECT u.UserID, u.RoleID, u.Email, u.Phone, u.PasswordHash, u.FullName,
+            SELECT u.UserID, u.RoleID, u.Email, u.PasswordHash, u.FullName,
                    u.Status, u.CreatedAt, r.RoleName, r.Description
             FROM dbo.[User] u
             JOIN dbo.[Role] r ON u.RoleID = r.RoleID
@@ -30,7 +30,6 @@ public class UserDao extends DBContext {
         user.setUserId(rs.getInt("UserID"));
         user.setRole(role);
         user.setEmail(rs.getString("Email"));
-        user.setPhone(rs.getString("Phone"));
         user.setPasswordHash(rs.getString("PasswordHash"));
         user.setFullName(rs.getString("FullName"));
         user.setStatus(rs.getString("Status"));
@@ -97,11 +96,11 @@ public class UserDao extends DBContext {
     // Dang ky tai khoan Student (giu cho luong dang ky mac dinh)
     public boolean registerStudent(String email, String rawPassword) {
         String fullName = email.substring(0, email.indexOf("@"));
-        return register(fullName, email, null, rawPassword, "Student");
+        return register(fullName, email, rawPassword, "Student");
     }
 
     // Dang ky tai khoan tong quat theo ten role
-    public boolean register(String fullName, String email, String phone, String rawPassword, String roleName) {
+    public boolean register(String fullName, String email, String rawPassword, String roleName) {
         Integer roleId = getRoleIdByName(roleName);
         if (roleId == null) {
             System.out.println("register error: khong tim thay role " + roleName);
@@ -109,15 +108,14 @@ public class UserDao extends DBContext {
         }
         String passwordHash = hashPassword(rawPassword);
         String sql = """
-                INSERT INTO dbo.[User](RoleID, Email, Phone, PasswordHash, FullName, Status, CreatedAt)
-                VALUES (?, ?, ?, ?, ?, 'Active', GETDATE())
+                INSERT INTO dbo.[User](RoleID, Email, PasswordHash, FullName, Status, CreatedAt)
+                VALUES (?, ?, ?, ?, 'Active', GETDATE())
                 """;
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, roleId);
             ps.setString(2, email);
-            ps.setString(3, phone);
-            ps.setString(4, passwordHash);
-            ps.setString(5, fullName);
+            ps.setString(3, passwordHash);
+            ps.setString(4, fullName);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("register error: " + e.getMessage());
@@ -126,12 +124,11 @@ public class UserDao extends DBContext {
     }
 
     // Cap nhat thong tin ho so (User Profile)
-    public boolean updateProfile(int userId, String fullName, String phone) {
-        String sql = "UPDATE dbo.[User] SET FullName = ?, Phone = ? WHERE UserID = ?";
+    public boolean updateProfile(int userId, String fullName) {
+        String sql = "UPDATE dbo.[User] SET FullName = ? WHERE UserID = ?";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, fullName);
-            ps.setString(2, phone);
-            ps.setInt(3, userId);
+            ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("updateProfile error: " + e.getMessage());
@@ -195,5 +192,38 @@ public class UserDao extends DBContext {
             }
         }
         return list;
+    }
+
+    public boolean updateUser(int userId, int roleId, String fullName, String status) {
+        String sql = "UPDATE dbo.[User] SET RoleID = ?, FullName = ?, Status = ? WHERE UserID = ?";
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, roleId);
+            ps.setString(2, fullName);
+            ps.setString(3, status);
+            ps.setInt(4, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            System.out.println("updateUser error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean addUser(String fullName, String email, String rawPassword, int roleId, String status) {
+        String passwordHash = hashPassword(rawPassword);
+        String sql = """
+                INSERT INTO dbo.[User](RoleID, Email, PasswordHash, FullName, Status, CreatedAt)
+                VALUES (?, ?, ?, ?, ?, GETDATE())
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, roleId);
+            ps.setString(2, email);
+            ps.setString(3, passwordHash);
+            ps.setString(4, fullName);
+            ps.setString(5, status);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            System.out.println("addUser error: " + e.getMessage());
+            return false;
+        }
     }
 }

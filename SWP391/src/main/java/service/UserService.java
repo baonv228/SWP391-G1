@@ -2,6 +2,9 @@ package service;
 
 import dao.PasswordResetTokenDao;
 import dao.UserDao;
+import dao.RoleDao;
+import model.Role;
+import java.util.List;
 import java.sql.Timestamp;
 import java.util.UUID;
 import model.PasswordResetToken;
@@ -25,6 +28,16 @@ public class UserService {
         return userDao.loginByEmailPassword(email, rawPassword);
     }
 
+    // Kiem tra tai khoan co ton tai va bi vo hieu hoa (Deactive) hay khong
+    public boolean isAccountDeactivated(String email) {
+        User user = userDao.findByEmail(email);
+        System.out.println("[DEBUG UserService] isAccountDeactivated for email: " + email + ", user found: " + (user != null) + ", status: " + (user != null ? user.getStatus() : "null"));
+        if (user == null) {
+            return false;
+        }
+        return user.getStatus() != null && user.getStatus().equalsIgnoreCase("Deactive");
+    }
+
     // ----- Login with Google -----
     // Tim user theo email Google tra ve. Neu chua co thi tu tao tai khoan Student.
     public User loginWithGoogle(String email, String fullName) {
@@ -39,16 +52,16 @@ public class UserService {
         String randomPassword = UUID.randomUUID().toString();
         String safeName = (fullName == null || fullName.isBlank())
                 ? email.substring(0, email.indexOf("@")) : fullName;
-        boolean ok = userDao.register(safeName, email, null, randomPassword, "Student");
+        boolean ok = userDao.register(safeName, email, randomPassword, "Student");
         return ok ? userDao.findByEmail(email) : null;
     }
 
     // ----- Register -----
-    public ServiceResult register(String fullName, String email, String phone, String rawPassword) {
+    public ServiceResult register(String fullName, String email, String rawPassword) {
         if (userDao.existsEmail(email)) {
-            return ServiceResult.fail("Gmail da ton tai. Vui long dung Gmail khac.");
+            return ServiceResult.fail("Email da ton tai. Vui long dung Email khac.");
         }
-        boolean ok = userDao.register(fullName, email, phone, rawPassword, "Student");
+        boolean ok = userDao.register(fullName, email, rawPassword, "Student");
         if (!ok) {
             return ServiceResult.fail("Dang ky that bai. Kiem tra database da co role Student chua.");
         }
@@ -60,8 +73,8 @@ public class UserService {
         return userDao.findById(userId);
     }
 
-    public ServiceResult updateProfile(int userId, String fullName, String phone) {
-        boolean ok = userDao.updateProfile(userId, fullName, phone);
+    public ServiceResult updateProfile(int userId, String fullName) {
+        boolean ok = userDao.updateProfile(userId, fullName);
         return ok ? ServiceResult.ok("Cap nhat ho so thanh cong.")
                   : ServiceResult.fail("Cap nhat ho so that bai.");
     }
@@ -111,5 +124,52 @@ public class UserService {
         }
         tokenDao.markUsed(prt.getTokenId());
         return ServiceResult.ok("Dat lai mat khau thanh cong. Vui long dang nhap.");
+    }
+
+    public User getUserByEmail(String email) {
+        return userDao.findByEmail(email);
+    }
+
+    public boolean resetPasswordByEmail(String email, String newPassword) {
+        User user = userDao.findByEmail(email);
+        if (user == null) {
+            return false;
+        }
+        return userDao.updatePassword(user.getUserId(), newPassword);
+    }
+
+    private final RoleDao roleDao = new RoleDao();
+
+    public List<User> getAllUsers() {
+        try {
+            return userDao.getAllUsers();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    public List<Role> getAllRoles() {
+        try {
+            return roleDao.getAllRole();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    public boolean updateUser(int userId, int roleId, String fullName, String status) {
+        return userDao.updateUser(userId, roleId, fullName, status);
+    }
+
+    public boolean addUser(String fullName, String email, String rawPassword, int roleId, String status) {
+        if (userDao.existsEmail(email)) {
+            return false;
+        }
+        return userDao.addUser(fullName, email, rawPassword, roleId, status);
+    }
+
+    public boolean resetPasswordAdmin(int userId, String newPassword) {
+        return userDao.updatePassword(userId, newPassword);
     }
 }

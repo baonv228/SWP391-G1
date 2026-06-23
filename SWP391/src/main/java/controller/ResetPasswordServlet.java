@@ -17,12 +17,22 @@ public class ResetPasswordServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String token = safeTrim(request.getParameter("token"));
-        if (token.isEmpty() || !userService.isResetTokenValid(token)) {
+        jakarta.servlet.http.HttpSession session = request.getSession();
+        String resetOtp = (String) session.getAttribute("resetOtp");
+        String resetEmail = (String) session.getAttribute("resetEmail");
+        Long resetOtpExpiry = (Long) session.getAttribute("resetOtpExpiry");
+        String resetMessage = (String) session.getAttribute("resetMessage");
+
+        if (resetMessage != null) {
+            request.setAttribute("message", resetMessage);
+            session.removeAttribute("resetMessage");
+        }
+
+        if (resetOtp == null || resetEmail == null || resetOtpExpiry == null || System.currentTimeMillis() > resetOtpExpiry) {
             request.setAttribute("invalidToken", true);
-            request.setAttribute("error", "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
+            request.setAttribute("error", "Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn (hiệu lực trong 5 phút). Vui lòng yêu cầu mã mới.");
         } else {
-            request.setAttribute("token", token);
+            request.setAttribute("email", resetEmail);
         }
         request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
     }
@@ -30,17 +40,33 @@ public class ResetPasswordServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String token = safeTrim(request.getParameter("token"));
+        String otp = safeTrim(request.getParameter("otp"));
         String newPassword = request.getParameter("newPassword");
         String confirmPassword = request.getParameter("confirmPassword");
         if (newPassword == null) newPassword = "";
         if (confirmPassword == null) confirmPassword = "";
 
-        request.setAttribute("token", token);
+        jakarta.servlet.http.HttpSession session = request.getSession();
+        String resetOtp = (String) session.getAttribute("resetOtp");
+        String resetEmail = (String) session.getAttribute("resetEmail");
+        Long resetOtpExpiry = (Long) session.getAttribute("resetOtpExpiry");
 
-        if (token.isEmpty()) {
+        if (resetOtp == null || resetEmail == null || resetOtpExpiry == null || System.currentTimeMillis() > resetOtpExpiry) {
             request.setAttribute("invalidToken", true);
-            request.setAttribute("error", "Liên kết đặt lại mật khẩu không hợp lệ.");
+            request.setAttribute("error", "Phiên đặt lại mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu mã mới.");
+            request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
+            return;
+        }
+
+        request.setAttribute("email", resetEmail);
+
+        if (otp.isEmpty()) {
+            request.setAttribute("error", "Vui lòng nhập mã OTP.");
+            request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
+            return;
+        }
+        if (!otp.equals(resetOtp)) {
+            request.setAttribute("error", "Mã OTP không chính xác.");
             request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
             return;
         }
@@ -55,13 +81,15 @@ public class ResetPasswordServlet extends HttpServlet {
             return;
         }
 
-        ServiceResult result = userService.resetPassword(token, newPassword);
-        if (result.isSuccess()) {
+        boolean success = userService.resetPasswordByEmail(resetEmail, newPassword);
+        if (success) {
+            session.removeAttribute("resetOtp");
+            session.removeAttribute("resetEmail");
+            session.removeAttribute("resetOtpExpiry");
             response.sendRedirect(request.getContextPath() + "/login?reset=1");
             return;
         }
-        request.setAttribute("invalidToken", true);
-        request.setAttribute("error", result.getMessage());
+        request.setAttribute("error", "Đặt lại mật khẩu thất bại. Vui lòng thử lại.");
         request.getRequestDispatcher("/view/resetpassword.jsp").forward(request, response);
     }
 
