@@ -26,3 +26,4 @@ Thumbs.db
 # Local dev notes
 database/local_applied_migrations.txt
 /SWP391/target/
+/out/
