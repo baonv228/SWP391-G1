@@ -20,7 +20,7 @@
         </a>
     </div>
     <div class="header-center">
-        <h1 class="header-title">FPT University Learning Materials</h1>
+        <h1 class="header-title">Training Program Management System</h1>
     </div>
     <div class="header-right">
         <select class="form-select lang-select" id="lang-select" aria-label="Language selection" onchange="changeLanguage(this.value)">
