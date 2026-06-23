@@ -92,7 +92,7 @@
                         </span>
                         <span class="module-title">Training Program</span>
                     </a>
-                    <a class="module-card" href="#">
+                    <a class="module-card" href="<%=request.getContextPath()%>/report">
                         <span class="module-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M4 20h16"></path>

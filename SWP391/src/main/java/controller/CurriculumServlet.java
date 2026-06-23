@@ -80,7 +80,7 @@ public class CurriculumServlet extends HttpServlet {
 
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<TrainingProgram> programs = trainingProgramDAO.getTrainingPrograms();
+        List<TrainingProgram> programs = trainingProgramDAO.getTrainingPrograms("", 1, 1000);
         List<Subject> subjects = subjectDAO.getAllSubjects();
         request.setAttribute("programs", programs);
         request.setAttribute("subjects", subjects);
