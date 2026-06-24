@@ -1,28 +1,40 @@
 package controller;
 
+import com.google.gson.Gson;
+import dao.PLODAO;
 import dao.SubjectDAO;
 import dao.SyllabusDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import model.*;
 
 @WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus"})
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2, // 2MB
+    maxFileSize = 1024 * 1024 * 100,      // 100MB
+    maxRequestSize = 1024 * 1024 * 105    // 105MB
+)
 public class SyllabusServlet extends HttpServlet {
 
     private final SyllabusDAO syllabusDAO = new SyllabusDAO();
     private final SubjectDAO subjectDAO = new SubjectDAO();
+    private final PLODAO ploDAO = new PLODAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         User user = getLoggedInDesigner(request, response);
         if (user == null) return;
 
@@ -31,6 +43,15 @@ public class SyllabusServlet extends HttpServlet {
         switch (action) {
             case "create":
                 showCreateForm(request, response);
+                break;
+            case "edit":
+                showEditForm(request, response);
+                break;
+            case "ajax_init":
+                handleAjaxInit(request, response);
+                break;
+            case "ajax_plos":
+                handleAjaxPlos(request, response);
                 break;
             case "list":
             default:
@@ -42,17 +63,22 @@ public class SyllabusServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         request.setCharacterEncoding("UTF-8");
         User user = getLoggedInDesigner(request, response);
         if (user == null) return;
 
         String action = safeTrim(request.getParameter("action"));
 
-        if ("create".equals(action)) {
-            processCreate(request, response, user);
-        } else {
-            response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+        switch (action) {
+            case "create":
+                processCreate(request, response, user);
+                break;
+            case "edit":
+                processEdit(request, response, user);
+                break;
+            default:
+                response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+                break;
         }
     }
 
@@ -67,6 +93,39 @@ public class SyllabusServlet extends HttpServlet {
         request.getRequestDispatcher("/syllabus/create.jsp").forward(request, response);
     }
 
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        int syllabusId = parseInt(request.getParameter("id"), 0);
+        Syllabus syllabus = syllabusDAO.getSyllabusById(syllabusId);
+        if (syllabus == null) {
+            response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+            return;
+        }
+
+        // Load all children
+        List<SyllabusMaterial> materials = syllabusDAO.getMaterials(syllabusId);
+        List<CLO> clos = syllabusDAO.getCLOs(syllabusId);
+        List<SyllabusSession> sessions = syllabusDAO.getSessions(syllabusId);
+        List<SyllabusAssessment> assessments = syllabusDAO.getAssessments(syllabusId);
+
+        String latestFile = syllabusDAO.getLatestMaterialFilePath(syllabusId);
+        if (latestFile != null) {
+            syllabus.setMaterialFilePath(latestFile);
+        }
+
+        request.setAttribute("syllabus", syllabus);
+        request.setAttribute("materials", materials);
+        request.setAttribute("clos", clos);
+        request.setAttribute("sessions", sessions);
+        request.setAttribute("assessments", assessments);
+
+        // Also pass Training Programs for the subject
+        List<TrainingProgram> programs = ploDAO.getTrainingProgramsForSubject(syllabus.getSubjectId());
+        request.setAttribute("programs", programs);
+
+        request.getRequestDispatcher("/syllabus/edit.jsp").forward(request, response);
+    }
+
     private void showList(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
         List<Syllabus> syllabuses = syllabusDAO.getSyllabusesByCreator(user.getUserId());
@@ -75,64 +134,86 @@ public class SyllabusServlet extends HttpServlet {
     }
 
     // =========================================================================
-    // POST handler — Create Syllabus
+    // AJAX handlers
+    // =========================================================================
+    private void handleAjaxInit(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int subjectId = parseInt(request.getParameter("subjectId"), 0);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        Map<String, String> data = new HashMap<>();
+
+        if (subjectId > 0) {
+            Subject sub = subjectDAO.getSubjectById(subjectId);
+            if (sub != null) {
+                data.put("syllabusTitle", sub.getSubjectName());
+                data.put("syllabusName", sub.getSubjectName());
+            }
+            data.put("versionNo", syllabusDAO.getNextVersionNo(subjectId));
+            data.put("preRequisiteText", subjectDAO.getPreRequisiteText(subjectId));
+        }
+
+        response.getWriter().write(new Gson().toJson(data));
+    }
+
+    private void handleAjaxPlos(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int programId = parseInt(request.getParameter("programId"), 0);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        List<PLO> plos = new ArrayList<>();
+        if (programId > 0) {
+            plos = ploDAO.getPLOsByProgramId(programId);
+        }
+        response.getWriter().write(new Gson().toJson(plos));
+    }
+
+    // =========================================================================
+    // POST handlers
     // =========================================================================
 
     private void processCreate(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
-
         try {
-            // --- 1) Parse Syllabus Details ---
-            Syllabus syllabus = new Syllabus();
-            syllabus.setSubjectId(parseInt(request.getParameter("subjectId"), 0));
-            syllabus.setCreatedBy(user.getUserId());
-            syllabus.setVersionNo(safeTrim(request.getParameter("versionNo")));
-            syllabus.setSyllabusTitle(safeTrim(request.getParameter("syllabusTitle")));
-            syllabus.setSyllabusName(safeTrim(request.getParameter("syllabusName")));
-            syllabus.setSyllabusEnglish(safeTrim(request.getParameter("syllabusEnglish")));
-            syllabus.setDescription(safeTrim(request.getParameter("description")));
-            syllabus.setDegreeLevel(safeTrim(request.getParameter("degreeLevel")));
-            syllabus.setTimeAllocation(safeTrim(request.getParameter("timeAllocation")));
-            syllabus.setPreRequisiteText(safeTrim(request.getParameter("preRequisiteText")));
-            syllabus.setStudentTasks(safeTrim(request.getParameter("studentTasks")));
-            syllabus.setTools(safeTrim(request.getParameter("tools")));
-            syllabus.setScoringScale(parseIntOrNull(request.getParameter("scoringScale")));
-            syllabus.setDecisionNo(safeTrim(request.getParameter("decisionNo")));
-            syllabus.setNote(safeTrim(request.getParameter("note")));
-            syllabus.setMinAvgMarkToPass(parseDoubleOrNull(request.getParameter("minAvgMarkToPass")));
-            syllabus.setStatus("Draft");
-            syllabus.setCurrentVersion(false);
-            syllabus.setIsActive(true);
+            Syllabus syllabus = parseSyllabusDetails(request, user.getUserId());
+            String saveType = request.getParameter("saveType"); // "draft" or "submit"
 
-            // Validate required fields
-            if (syllabus.getSubjectId() <= 0 || syllabus.getSyllabusTitle().isEmpty()
-                    || syllabus.getVersionNo().isEmpty()) {
-                request.setAttribute("error", "Subject, Syllabus Title, và Version là bắt buộc.");
+            if (syllabus.getSubjectId() <= 0) {
+                request.setAttribute("error", "Vui lòng chọn Subject.");
                 showCreateForm(request, response);
                 return;
             }
 
-            // --- 2) Parse Materials ---
+            if (syllabusDAO.hasDraftForSubject(syllabus.getSubjectId(), 0)) {
+                request.setAttribute("error", "Đã tồn tại một bản Draft cho Subject này.");
+                showCreateForm(request, response);
+                return;
+            }
+
+            // Save parent first to get ID
+            int syllabusId = syllabusDAO.createDraftSyllabus(syllabus);
+            if (syllabusId <= 0) {
+                request.setAttribute("error", "Lỗi tạo Draft.");
+                showCreateForm(request, response);
+                return;
+            }
+
+            syllabus.setSyllabusId(syllabusId);
+
+            // Parse children
             List<SyllabusMaterial> materials = parseMaterials(request);
-
-            // --- 3) Parse CLOs ---
             List<CLO> clos = parseCLOs(request);
-
-            // --- 4) Parse Sessions ---
             List<SyllabusSession> sessions = parseSessions(request);
-
-            // --- 5) Parse Assessments ---
             List<SyllabusAssessment> assessments = parseAssessments(request);
 
-            // --- 6) Save to DB ---
-            int syllabusId = syllabusDAO.createFullSyllabus(syllabus, materials, clos, sessions, assessments);
+            // Handle file upload
+            handleFileUpload(request, syllabusId, user.getUserId());
 
-            if (syllabusId > 0) {
-                response.sendRedirect(request.getContextPath()
-                        + "/syllabus?action=list&success=1");
+            syllabusDAO.saveAllChildren(syllabusId, materials, clos, sessions, assessments);
+
+            if ("submit".equals(saveType)) {
+                syllabusDAO.updateStatus(syllabusId, "Pending Approval");
+                response.sendRedirect(request.getContextPath() + "/syllabus?action=list&success=submit");
             } else {
-                request.setAttribute("error", "Lỗi khi lưu Syllabus. Vui lòng thử lại.");
-                showCreateForm(request, response);
+                response.sendRedirect(request.getContextPath() + "/syllabus?action=edit&id=" + syllabusId + "&success=draft");
             }
 
         } catch (Exception e) {
@@ -143,9 +224,88 @@ public class SyllabusServlet extends HttpServlet {
         }
     }
 
+    private void processEdit(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        try {
+            int syllabusId = parseInt(request.getParameter("syllabusId"), 0);
+            if (syllabusId <= 0) {
+                response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+                return;
+            }
+
+            Syllabus syllabus = parseSyllabusDetails(request, user.getUserId());
+            syllabus.setSyllabusId(syllabusId);
+            String saveType = request.getParameter("saveType"); // "draft" or "submit"
+
+            syllabusDAO.updateSyllabusDetails(syllabus);
+
+            List<SyllabusMaterial> materials = parseMaterials(request);
+            List<CLO> clos = parseCLOs(request);
+            List<SyllabusSession> sessions = parseSessions(request);
+            List<SyllabusAssessment> assessments = parseAssessments(request);
+
+            // Handle file upload
+            handleFileUpload(request, syllabusId, user.getUserId());
+
+            syllabusDAO.saveAllChildren(syllabusId, materials, clos, sessions, assessments);
+
+            if ("submit".equals(saveType)) {
+                syllabusDAO.updateStatus(syllabusId, "Pending Approval");
+                response.sendRedirect(request.getContextPath() + "/syllabus?action=list&success=submit");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/syllabus?action=edit&id=" + syllabusId + "&success=update");
+            }
+
+        } catch (Exception e) {
+            System.out.println("processEdit error: " + e.getMessage());
+            e.printStackTrace();
+            request.setAttribute("error", "Lỗi hệ thống: " + e.getMessage());
+            showEditForm(request, response); // This will reload edit form with db values unfortunately, so inline error might be lost. Needs refactor if full state retention is desired, but good enough for now.
+        }
+    }
+
+    private void handleFileUpload(HttpServletRequest request, int syllabusId, int userId) throws IOException, ServletException {
+        Part filePart = request.getPart("student_material_file");
+        if (filePart != null && filePart.getSize() > 0) {
+            String appPath = request.getServletContext().getRealPath("");
+            String uploadDir = "uploads/syllabus/" + syllabusId;
+            File dir = new File(appPath + File.separator + uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String fileName = "material.zip";
+            String filePath = dir.getAbsolutePath() + File.separator + fileName;
+            filePart.write(filePath);
+
+            String dbPath = "/" + uploadDir + "/" + fileName;
+            syllabusDAO.saveMaterialFile(syllabusId, userId, dbPath);
+        }
+    }
+
     // =========================================================================
-    // Parsers — extract arrays from form parameters
+    // Parsers
     // =========================================================================
+
+    private Syllabus parseSyllabusDetails(HttpServletRequest request, int userId) {
+        Syllabus syllabus = new Syllabus();
+        syllabus.setSubjectId(parseInt(request.getParameter("subjectId"), 0));
+        syllabus.setCreatedBy(userId);
+        syllabus.setVersionNo(safeTrim(request.getParameter("versionNo")));
+        syllabus.setSyllabusTitle(safeTrim(request.getParameter("syllabusTitle")));
+        syllabus.setSyllabusName(safeTrim(request.getParameter("syllabusName")));
+        syllabus.setSyllabusEnglish(safeTrim(request.getParameter("syllabusEnglish")));
+        syllabus.setDescription(safeTrim(request.getParameter("description")));
+        syllabus.setDegreeLevel(safeTrim(request.getParameter("degreeLevel")));
+        syllabus.setTimeAllocation(safeTrim(request.getParameter("timeAllocation")));
+        syllabus.setPreRequisiteText(safeTrim(request.getParameter("preRequisiteText")));
+        syllabus.setStudentTasks(safeTrim(request.getParameter("studentTasks")));
+        syllabus.setTools(safeTrim(request.getParameter("tools")));
+        syllabus.setScoringScale(parseIntOrNull(request.getParameter("scoringScale")));
+        syllabus.setDecisionNo(safeTrim(request.getParameter("decisionNo")));
+        syllabus.setNote(safeTrim(request.getParameter("note")));
+        syllabus.setMinAvgMarkToPass(parseDoubleOrNull(request.getParameter("minAvgMarkToPass")));
+        syllabus.setIsActive(true);
+        return syllabus;
+    }
 
     private List<SyllabusMaterial> parseMaterials(HttpServletRequest request) {
         List<SyllabusMaterial> list = new ArrayList<>();
@@ -197,6 +357,18 @@ public class SyllabusServlet extends HttpServlet {
             c.setCloDetails(safeGet(details, i));
             c.setLoDetails(safeGet(loDetails, i));
             c.setDisplayOrder(i + 1);
+
+            // Parse mapped PLO IDs
+            List<Integer> ploIds = new ArrayList<>();
+            String[] ploParams = request.getParameterValues("clo_plo_" + i);
+            if (ploParams != null) {
+                for (String ploIdStr : ploParams) {
+                    int ploId = parseInt(ploIdStr, 0);
+                    if (ploId > 0) ploIds.add(ploId);
+                }
+            }
+            c.setPloIds(ploIds);
+
             list.add(c);
         }
         return list;
@@ -229,14 +401,15 @@ public class SyllabusServlet extends HttpServlet {
             s.setUrls(safeGet(urls, i));
             s.setDisplayOrder(i + 1);
 
-            // Parse CLO checkboxes: ses_clo_0_1, ses_clo_0_2, ...
-            List<Integer> cloIds = new ArrayList<>();
-            for (int c = 1; c <= 20; c++) {
-                if ("on".equals(request.getParameter("ses_clo_" + i + "_" + c))) {
-                    cloIds.add(c);
+            List<Integer> cloOrders = new ArrayList<>();
+            String[] cloParams = request.getParameterValues("ses_clo_" + i);
+            if (cloParams != null) {
+                for (String cloStr : cloParams) {
+                    int cloOrder = parseInt(cloStr, 0);
+                    if (cloOrder > 0) cloOrders.add(cloOrder);
                 }
             }
-            s.setCloIds(cloIds);
+            s.setCloIds(cloOrders);
             list.add(s);
         }
         return list;
@@ -273,14 +446,15 @@ public class SyllabusServlet extends HttpServlet {
             a.setNote(safeGet(notes, i));
             a.setDisplayOrder(i + 1);
 
-            // Parse CLO checkboxes: asm_clo_0_1, asm_clo_0_2, ...
-            List<Integer> cloIds = new ArrayList<>();
-            for (int c = 1; c <= 20; c++) {
-                if ("on".equals(request.getParameter("asm_clo_" + i + "_" + c))) {
-                    cloIds.add(c);
+            List<Integer> cloOrders = new ArrayList<>();
+            String[] cloParams = request.getParameterValues("asm_clo_" + i);
+            if (cloParams != null) {
+                for (String cloStr : cloParams) {
+                    int cloOrder = parseInt(cloStr, 0);
+                    if (cloOrder > 0) cloOrders.add(cloOrder);
                 }
             }
-            a.setCloIds(cloIds);
+            a.setCloIds(cloOrders);
             list.add(a);
         }
         return list;
