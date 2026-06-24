@@ -31,16 +31,11 @@
             <header class="topbar">
                 <div class="brand">Training Program Management System</div>
                 <div class="top-actions" aria-label="Tài khoản">
-                    <button class="icon-button" type="button" aria-label="Thông báo">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                        </svg>
-                    </button>
-                    <div class="profile" title="<%= displayName %>">
+                    <a class="profile" href="<%=request.getContextPath()%>/profile" title="<%= displayName %>">
                         <span class="avatar">TD</span>
                         <span>Training Department</span>
-                    </div>
+                    </a>
+                    <a class="logout-button" href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
                 </div>
             </header>
 
