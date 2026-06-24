@@ -70,6 +70,28 @@ public class LoginServlet extends HttpServlet {
         }
         response.sendRedirect(request.getContextPath() + "/home");
 
+        response.sendRedirect(request.getContextPath() + getRedirectByRole(user));
+    }
+
+    /**
+     * Determine the landing page based on user role.
+     */
+    private String getRedirectByRole(User user) {
+        if (user.getRole() == null) {
+            return "/home";
+        }
+        String roleName = user.getRole().getRoleName();
+        if (roleName == null) {
+            return "/home";
+        }
+        return switch (roleName) {
+            case "Syllabus Designer" -> "/syllabus?action=list";
+            case "Admin"             -> "/home"; // TODO: thay bằng /admin khi có
+            case "Training Department" -> "/home"; // TODO: thay khi có
+            case "Teacher"           -> "/home"; // TODO: thay khi có
+            case "Student"           -> "/home"; // TODO: thay khi có
+            default                  -> "/home";
+        };
     }
 
     private String safeTrim(String value) {
