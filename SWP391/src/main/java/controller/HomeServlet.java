@@ -34,6 +34,21 @@ public class HomeServlet extends HttpServlet {
             return;
         }
 
+        if ("Admin".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/AdminHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Student".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/StudentHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Teacher".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/TeacherHome.jsp").forward(request, response);
+            return;
+        }
+
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Role nay chua duoc cap trang home.");
     }
 

@@ -16,7 +16,6 @@ public class User {
     private int roleId;
     private String fullName;
     private String email;
-    private String phone;
     private String passwordHash;
     private String status;
     private Timestamp createdAt;
@@ -35,13 +34,12 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    public User(int userId, int roleId, String fullName, String email, String phone, String passwordHash, String status, java.sql.Date createdAt) {
+    public User(int userId, int roleId, String fullName, String email, String passwordHash, String status, java.sql.Date createdAt) {
         this(userId, roleId, email, passwordHash, fullName, status, createdAt == null ? null : new Timestamp(createdAt.getTime()));
-        this.phone = phone;
     }
 
-    public User(int userId, int roleId, String fullName, String email, String phone, String passwordHash, String status, java.sql.Date createdAt, Role role) {
-        this(userId, roleId, fullName, email, phone, passwordHash, status, createdAt);
+    public User(int userId, int roleId, String fullName, String email, String passwordHash, String status, java.sql.Date createdAt, Role role) {
+        this(userId, roleId, fullName, email, passwordHash, status, createdAt);
         this.role = role;
     }
 
@@ -105,14 +103,6 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public String getPasswordHash() {

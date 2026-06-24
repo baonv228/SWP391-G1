@@ -1,0 +1,148 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import model.Curriculum;
+
+public class CurriculumDAO extends DBContext {
+
+    /**
+     * Get all curriculums with program and creator information.
+     */
+    public List<Curriculum> getCurriculums() {
+        List<Curriculum> list = new ArrayList<>();
+        String sql = """
+                SELECT c.CurriculumID, c.ProgramID, c.CreatedBy, c.CurriculumName,
+                       c.Description, c.Status,
+                       tp.ProgramCode, tp.ProgramName,
+                       u.FullName AS CreatedByName,
+                       COUNT(cs.CurriculumSubjectID) AS SubjectCount
+                FROM dbo.[Curriculum] c
+                LEFT JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                LEFT JOIN dbo.[User] u ON c.CreatedBy = u.UserID
+                LEFT JOIN dbo.[Curriculum_Subject] cs ON c.CurriculumID = cs.CurriculumID
+                GROUP BY c.CurriculumID, c.ProgramID, c.CreatedBy, c.CurriculumName,
+                         c.Description, c.Status, tp.ProgramCode, tp.ProgramName, u.FullName
+                ORDER BY c.CurriculumID DESC
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Curriculum c = new Curriculum();
+                c.setCurriculumId(rs.getInt("CurriculumID"));
+                c.setProgramId(rs.getInt("ProgramID"));
+                c.setCreatedBy(rs.getInt("CreatedBy"));
+                c.setCurriculumName(rs.getString("CurriculumName"));
+                c.setDescription(rs.getString("Description"));
+                c.setStatus(rs.getString("Status"));
+                c.setProgramCode(rs.getString("ProgramCode"));
+                c.setProgramName(rs.getString("ProgramName"));
+                c.setCreatedByName(rs.getString("CreatedByName"));
+                c.setSubjectCount(rs.getInt("SubjectCount"));
+                list.add(c);
+            }
+        } catch (Exception e) {
+            System.out.println("getCurriculums error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    /**
+     * Create curriculum and optional subject mappings in one transaction.
+     */
+    public int createCurriculum(Curriculum curriculum, List<Integer> subjectIds) {
+        Connection con = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+
+            int curriculumId = insertCurriculum(con, curriculum);
+            if (curriculumId < 0) {
+                con.rollback();
+                return -1;
+            }
+
+            if (subjectIds != null && !subjectIds.isEmpty()) {
+                insertCurriculumSubjects(con, curriculumId, subjectIds);
+            }
+
+            con.commit();
+            return curriculumId;
+        } catch (Exception e) {
+            System.out.println("createCurriculum error: " + e.getMessage());
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (Exception ex) {
+                    System.out.println("createCurriculum rollback error: " + ex.getMessage());
+                }
+            }
+        } finally {
+            if (con != null) {
+                try {
+                    con.setAutoCommit(true);
+                    con.close();
+                } catch (Exception e) {
+                    System.out.println("createCurriculum close error: " + e.getMessage());
+                }
+            }
+        }
+        return -1;
+    }
+
+    private int insertCurriculum(Connection con, Curriculum curriculum) throws Exception {
+        String sql = """
+                INSERT INTO dbo.[Curriculum]
+                (ProgramID, CreatedBy, CurriculumName, Description, Status)
+                VALUES (?,?,?,?,?)
+                """;
+
+        try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, curriculum.getProgramId());
+            ps.setInt(2, curriculum.getCreatedBy());
+            ps.setString(3, curriculum.getCurriculumName());
+            ps.setString(4, curriculum.getDescription());
+            ps.setString(5, curriculum.getStatus());
+            ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return keys.getInt(1);
+                }
+            }
+        }
+        return -1;
+    }
+
+    private void insertCurriculumSubjects(Connection con, int curriculumId, List<Integer> subjectIds) throws Exception {
+        String sql = """
+                INSERT INTO dbo.[Curriculum_Subject]
+                (CurriculumID, SubjectID, SemesterNo, SubjectGroup, IsRequired, DisplayOrder)
+                VALUES (?,?,?,?,?,?)
+                """;
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            int displayOrder = 1;
+            for (Integer subjectId : subjectIds) {
+                if (subjectId == null || subjectId <= 0) {
+                    continue;
+                }
+                ps.setInt(1, curriculumId);
+                ps.setInt(2, subjectId);
+                ps.setNull(3, java.sql.Types.INTEGER);
+                ps.setNull(4, java.sql.Types.NVARCHAR);
+                ps.setBoolean(5, true);
+                ps.setInt(6, displayOrder++);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+}

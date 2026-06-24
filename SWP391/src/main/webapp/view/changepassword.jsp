@@ -1,17 +1,14 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String error = (String) request.getAttribute("error");
-    String fullNameValue = (String) request.getAttribute("fullNameValue");
-    String emailValue = (String) request.getAttribute("emailValue");
-    if (fullNameValue == null) fullNameValue = "";
-    if (emailValue == null) emailValue = "";
+    String message = (String) request.getAttribute("message");
 %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đăng ký</title>
+    <title>Đổi mật khẩu</title>
     <style>
         :root {
             --orange: #f37021;
@@ -36,7 +33,7 @@
         }
         .card {
             width: 100%;
-            max-width: 460px;
+            max-width: 420px;
             background: #fff;
             border: 1px solid var(--border);
             border-radius: 14px;
@@ -56,16 +53,23 @@
             color: var(--muted);
             font-size: 13px;
         }
-        .error {
+        .message, .error {
             margin: 14px 0 10px;
             padding: 10px 12px;
             border-radius: 10px;
-            border: 1px solid rgba(220, 53, 69, 0.35);
-            background: rgba(220, 53, 69, 0.08);
-            color: var(--danger);
             font-size: 13px;
             text-align: center;
             line-height: 1.5;
+        }
+        .message {
+            border: 1px solid rgba(243, 112, 33, 0.22);
+            background: #fff7f0;
+            color: var(--orange-dark);
+        }
+        .error {
+            border: 1px solid rgba(220, 53, 69, 0.35);
+            background: rgba(220, 53, 69, 0.08);
+            color: var(--danger);
         }
         form { margin-top: 14px; }
         .row { margin-bottom: 12px; }
@@ -129,89 +133,80 @@
         }
     </style>
     <script>
-        function validateRegisterForm() {
-            const fullName = document.getElementById("fullName").value.trim();
-            const email = document.getElementById("email").value.trim();
-            const pass = document.getElementById("password").value;
-            const confirm = document.getElementById("confirm_password").value;
+        function validateChangePassword() {
+            const oldPass = document.getElementById("oldPassword").value;
+            const newPass = document.getElementById("newPassword").value;
+            const confirmPass = document.getElementById("confirmPassword").value;
 
-            if (!fullName || !email || !pass || !confirm) {
-                alert("Vui lòng nhập đầy đủ họ tên, Email và mật khẩu.");
+            if (!oldPass || !newPass || !confirmPass) {
+                alert("Vui lòng nhập đầy đủ thông tin.");
                 return false;
             }
 
-            const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-            if (!emailRegex.test(email)) {
-                alert("Email đăng ký phải là địa chỉ email hợp lệ.");
+            if (newPass.length < 6) {
+                alert("Mật khẩu mới phải từ 6 ký tự trở lên.");
                 return false;
             }
 
-            if (pass.length < 6) {
-                alert("Mật khẩu phải từ 6 ký tự trở lên.");
-                return false;
-            }
-
-            if (pass !== confirm) {
-                alert("Xác nhận mật khẩu không khớp.");
+            if (newPass !== confirmPass) {
+                alert("Xác nhận mật khẩu mới không khớp.");
                 return false;
             }
 
             return true;
         }
 
-        function togglePass(id, btn) {
+        function togglePassword(id, button) {
             const input = document.getElementById(id);
             input.type = input.type === "password" ? "text" : "password";
-            btn.textContent = input.type === "password" ? "Hiện" : "Ẩn";
+            button.textContent = input.type === "password" ? "Hiện" : "Ẩn";
         }
     </script>
 </head>
 <body>
 <div class="card">
-    <h2>Đăng ký tài khoản</h2>
-    <div class="subtitle">Tạo tài khoản bằng Email để sử dụng hệ thống.</div>
+    <h2>Đổi mật khẩu</h2>
+    <div class="subtitle">Cập nhật mật khẩu để tăng bảo mật cho tài khoản.</div>
+
+    <% if (message != null) { %>
+    <div class="message"><%= message %></div>
+    <% } %>
 
     <% if (error != null) { %>
     <div class="error"><%= error %></div>
     <% } %>
 
-    <form method="post" action="<%=request.getContextPath()%>/register" onsubmit="return validateRegisterForm();">
-        <input type="hidden" name="action" value="register" />
-
+    <form method="post" action="<%=request.getContextPath()%>/change-password" onsubmit="return validateChangePassword();">
         <div class="row">
-            <label for="fullName">Họ tên</label>
-            <input id="fullName" type="text" name="fullName" value="<%= fullNameValue %>" placeholder="Nhập họ tên" />
-        </div>
-
-        <div class="row">
-            <label for="email">Email</label>
-            <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@email.com" />
-        </div>
-
-
-        <div class="row">
-            <label for="password">Mật khẩu</label>
+            <label for="oldPassword">Mật khẩu hiện tại</label>
             <div class="input-wrap">
-                <input id="password" type="password" name="password" placeholder="Tối thiểu 6 ký tự" />
-                <button type="button" class="toggle-pass" onclick="togglePass('password', this)">Hiện</button>
+                <input id="oldPassword" type="password" name="oldPassword" placeholder="Nhập mật khẩu hiện tại" />
+                <button class="toggle-pass" type="button" onclick="togglePassword('oldPassword', this)">Hiện</button>
             </div>
         </div>
 
         <div class="row">
-            <label for="confirm_password">Xác nhận mật khẩu</label>
+            <label for="newPassword">Mật khẩu mới</label>
             <div class="input-wrap">
-                <input id="confirm_password" type="password" name="confirm_password" placeholder="Nhập lại mật khẩu" />
-                <button type="button" class="toggle-pass" onclick="togglePass('confirm_password', this)">Hiện</button>
+                <input id="newPassword" type="password" name="newPassword" placeholder="Tối thiểu 6 ký tự" />
+                <button class="toggle-pass" type="button" onclick="togglePassword('newPassword', this)">Hiện</button>
             </div>
         </div>
 
-        <button class="btn-primary" type="submit">Tạo tài khoản</button>
+        <div class="row">
+            <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+            <div class="input-wrap">
+                <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Nhập lại mật khẩu mới" />
+                <button class="toggle-pass" type="button" onclick="togglePassword('confirmPassword', this)">Hiện</button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary">Đổi mật khẩu</button>
+
+        <div class="hint">
+            <a href="<%=request.getContextPath()%>/profile">Quay lại hồ sơ</a>
+        </div>
     </form>
-
-    <div class="hint">
-        Bạn đã có tài khoản?
-        <a href="<%=request.getContextPath()%>/login">Đăng nhập ngay</a>
-    </div>
 </div>
 </body>
 </html>

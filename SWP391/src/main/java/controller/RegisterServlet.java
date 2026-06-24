@@ -1,6 +1,5 @@
 package controller;
 
-import dao.UserDao;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,12 +7,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.regex.Pattern;
+import service.ServiceResult;
+import service.UserService;
 
 @WebServlet(name = "RegisterServlet", urlPatterns = {"/register"})
 public class RegisterServlet extends HttpServlet {
 
-    private static final Pattern GMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@gmail\\.com$");
-    private final UserDao userDao = new UserDao();
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private final UserService userService = new UserService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -26,10 +27,11 @@ public class RegisterServlet extends HttpServlet {
             throws ServletException, IOException {
         String action = safeTrim(request.getParameter("action"));
         if (!"register".equalsIgnoreCase(action)) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Yeu cau khong hop le.");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Yêu cầu không hợp lệ.");
             return;
         }
 
+        String fullName = safeTrim(request.getParameter("fullName"));
         String email = safeTrim(request.getParameter("email")).toLowerCase();
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirm_password");
@@ -41,15 +43,16 @@ public class RegisterServlet extends HttpServlet {
             confirmPassword = "";
         }
 
+        request.setAttribute("fullNameValue", fullName);
         request.setAttribute("emailValue", email);
 
-        if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            setErrorAndForward("Vui lòng nhập đầy đủ Gmail và mật khẩu.", request, response);
+        if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            setErrorAndForward("Vui lòng nhập đầy đủ Họ tên, Email và mật khẩu.", request, response);
             return;
         }
 
-        if (!GMAIL_PATTERN.matcher(email).matches()) {
-            setErrorAndForward("Email đăng ký phải là địa chỉ Gmail hợp lệ.", request, response);
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            setErrorAndForward("Email đăng ký không hợp lệ.", request, response);
             return;
         }
 
@@ -63,16 +66,34 @@ public class RegisterServlet extends HttpServlet {
             return;
         }
 
-        if (userDao.existsEmail(email)) {
-            setErrorAndForward("Gmail đã tồn tại. Vui lòng dùng Gmail khác.", request, response);
+        ServiceResult result = userService.register(fullName, email, password);
+        if (!result.isSuccess()) {
+            setErrorAndForward(result.getMessage(), request, response);
             return;
         }
 
-        boolean ok = userDao.registerStudent(email, password);
-        if (!ok) {
-            setErrorAndForward("Đăng ký thất bại. Kiểm tra database đã có role Student chưa.", request, response);
-            return;
-        }
+        // Gửi email chào mừng khi đăng ký thành công
+        String loginLink = request.getScheme() + "://" + request.getServerName()
+                + ":" + request.getServerPort() + request.getContextPath()
+                + "/login";
+        
+        String subject = "[TPMS] Đăng ký tài khoản thành công";
+        String content = """
+                <h3>Chào mừng bạn đến với TPMS!</h3>
+                <p>Xin chào <strong>%s</strong>,</p>
+                <p>Bạn đã đăng ký tài khoản thành công tại hệ thống Quản lý Chương trình Đào tạo (TPMS).</p>
+                <p><strong>Thông tin tài khoản đăng nhập của bạn:</strong></p>
+                <ul>
+                    <li>Email: %s</li>
+                    <li>Vai trò: Student</li>
+                </ul>
+                <p>Bây giờ bạn có thể đăng nhập vào hệ thống để bắt đầu trải nghiệm.</p>
+                <p><a href="%s" style="padding: 10px 20px; background: #f37021; color: white; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Đăng nhập ngay</a></p>
+                <br/>
+                <p>Trân trọng,<br/>Đội ngũ phát triển TPMS.</p>
+                """.formatted(fullName, email, loginLink);
+
+        util.EmailUtility.sendEmail(email, subject, content);
 
         response.sendRedirect(request.getContextPath() + "/login?success=1");
     }

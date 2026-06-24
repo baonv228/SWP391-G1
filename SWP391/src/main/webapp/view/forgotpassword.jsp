@@ -1,8 +1,7 @@
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String error = (String) request.getAttribute("error");
-    String success = request.getParameter("success");
-    String reset = request.getParameter("reset");
+    String message = (String) request.getAttribute("message");
     String emailValue = (String) request.getAttribute("emailValue");
     if (emailValue == null) {
         emailValue = "";
@@ -13,7 +12,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đăng nhập</title>
+    <title>Quên mật khẩu</title>
     <style>
         :root {
             --orange: #f37021;
@@ -24,9 +23,7 @@
             --danger: #dc3545;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             font-family: "Segoe UI", Arial, sans-serif;
@@ -43,7 +40,7 @@
 
         .card {
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             background: #fff;
             border: 1px solid var(--border);
             border-radius: 14px;
@@ -66,13 +63,13 @@
             font-size: 13px;
         }
 
-        .message,
-        .error {
+        .message, .error, .link-box {
             margin: 14px 0 10px;
             padding: 10px 12px;
             border-radius: 10px;
             font-size: 13px;
-            text-align: center;
+            line-height: 1.5;
+            word-break: break-word;
         }
 
         .message {
@@ -87,13 +84,15 @@
             color: var(--danger);
         }
 
-        form {
-            margin-top: 14px;
+        .link-box {
+            border: 1px dashed rgba(243, 112, 33, 0.3);
+            background: #fffaf6;
+            color: var(--orange-dark);
         }
 
-        .row {
-            margin-bottom: 12px;
-        }
+        form { margin-top: 14px; }
+
+        .row { margin-bottom: 12px; }
 
         label {
             display: block;
@@ -101,10 +100,6 @@
             font-weight: 600;
             color: #374151;
             margin-bottom: 6px;
-        }
-
-        .input-wrap {
-            position: relative;
         }
 
         input {
@@ -123,20 +118,7 @@
             box-shadow: 0 0 0 0.2rem rgba(243, 112, 33, 0.16);
         }
 
-        .toggle-pass {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            color: #6b7280;
-            padding: 4px 6px;
-            font-size: 13px;
-        }
-
-        .btn-login {
+        .btn-primary {
             width: 100%;
             border: none;
             cursor: pointer;
@@ -146,13 +128,12 @@
             color: #fff;
             font-size: 15px;
             font-weight: 700;
+            margin-top: 6px;
         }
 
-        .btn-login:hover {
-            background: var(--orange-dark);
-        }
+        .btn-primary:hover { background: var(--orange-dark); }
 
-        .actions {
+        .hint {
             display: flex;
             justify-content: space-between;
             gap: 12px;
@@ -162,92 +143,40 @@
             flex-wrap: wrap;
         }
 
-        .actions a {
-            color: var(--orange-dark);
-            text-decoration: none;
-            font-weight: 700;
-        }
-
-        .register-now {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .register-now a {
+        .hint a {
             color: var(--orange-dark);
             text-decoration: none;
             font-weight: 700;
         }
     </style>
-    <script>
-        function validateLoginForm() {
-            const email = document.getElementById("email").value.trim();
-            const pass = document.getElementById("password").value;
-
-            if (!email || !pass) {
-                alert("Vui lòng nhập đầy đủ Email và mật khẩu.");
-                return false;
-            }
-
-            const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-            if (!emailRegex.test(email)) {
-                alert("Email đăng nhập phải là địa chỉ email hợp lệ.");
-                return false;
-            }
-
-            return true;
-        }
-
-        function togglePassword() {
-            const input = document.getElementById("password");
-            const btn = document.querySelector(".toggle-pass");
-            input.type = input.type === "password" ? "text" : "password";
-            btn.textContent = input.type === "password" ? "Hiện" : "Ẩn";
-        }
-    </script>
 </head>
 <body>
 <div class="card">
-    <h2>Đăng nhập</h2>
-    <div class="subtitle">Nhập Email và mật khẩu để tiếp tục.</div>
+    <h2>Quên mật khẩu</h2>
+    <div class="subtitle">Nhập Email để nhận mã xác thực đặt lại mật khẩu.</div>
 
-    <% if ("1".equals(success)) { %>
-    <div class="message">Đăng ký thành công. Vui lòng đăng nhập.</div>
-    <% } %>
-
-    <% if ("1".equals(reset)) { %>
-    <div class="message">Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.</div>
+    <% if (message != null) { %>
+    <div class="message"><%= message %></div>
     <% } %>
 
     <% if (error != null) { %>
     <div class="error"><%= error %></div>
     <% } %>
 
-    <form method="post" action="<%=request.getContextPath()%>/login" onsubmit="return validateLoginForm();">
-        <input type="hidden" name="action" value="login" />
 
+
+    <form method="post" action="<%=request.getContextPath()%>/forgot-password">
         <div class="row">
             <label for="email">Email</label>
             <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@email.com" />
         </div>
-
-        <div class="row">
-            <label for="password">Mật khẩu</label>
-            <div class="input-wrap">
-                <input id="password" type="password" name="password" placeholder="Nhập mật khẩu" />
-                <button class="toggle-pass" type="button" onclick="togglePassword()">Hiện</button>
-            </div>
-        </div>
-
-        <button type="submit" class="btn-login">Đăng nhập</button>
-
-        <div class="actions">
-            <a href="<%=request.getContextPath()%>/forgot-password">Quên mật khẩu?</a>
-            <span>Chưa có tài khoản? <a href="<%=request.getContextPath()%>/register">Đăng ký ngay</a></span>
-        </div>
+        <button class="btn-primary" type="submit">Gửi mã xác thực</button>
     </form>
+
+    <div class="hint">
+        <a href="<%=request.getContextPath()%>/login">Quay lại đăng nhập</a>
+        <a href="<%=request.getContextPath()%>/register">Tạo tài khoản mới</a>
+    </div>
 </div>
 </body>
 </html>
