@@ -8,7 +8,8 @@
         session.setAttribute("roleName", roleName);
     }
 
-    if (currentUser == null || roleName == null || !"Training Department".equalsIgnoreCase(roleName.trim())) {
+    if (currentUser == null || roleName == null || 
+        (!"Training Department".equalsIgnoreCase(roleName.trim()) && !"Admin".equalsIgnoreCase(roleName.trim()))) {
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
@@ -39,8 +40,11 @@
                     </button>
                     <div class="profile" title="<%= displayName %>">
                         <span class="avatar">TD</span>
-                        <span>Training Department</span>
+                        <span>Xin chào, <%= displayName %></span>
                     </div>
+                    <a href="<%=request.getContextPath()%>/logout" class="icon-button" style="text-decoration: none; border-radius: 999px; width: auto; padding: 0 16px; font-size: 13px; font-weight: 700; color: #dc3545; border-color: rgba(220, 53, 69, 0.35); display: inline-flex; align-items: center; justify-content: center;" title="Đăng xuất">
+                        Đăng xuất
+                    </a>
                 </div>
             </header>
 
