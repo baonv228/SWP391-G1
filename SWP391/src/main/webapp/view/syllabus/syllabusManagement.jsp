@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Syllabus Management - FPT University" scope="request"/>
 <c:set var="pageDescription" value="Search and browse syllabi by code, name, or subject code." scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <h2 class="page-title">Syllabus Management</h2>
@@ -142,4 +142,4 @@
     </c:if>
 </main>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

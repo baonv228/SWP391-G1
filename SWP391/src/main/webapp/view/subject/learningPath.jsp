@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Show Learning Path - FPT University" scope="request"/>
 <c:set var="pageDescription" value="View the full learning path and prerequisite chain for a subject." scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <h2 class="page-title">Show Learning Path of a Subject</h2>
@@ -108,4 +108,4 @@
     </c:if>
 </main>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

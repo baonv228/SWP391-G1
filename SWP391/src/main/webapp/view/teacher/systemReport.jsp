@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="System Reports - Teacher" scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 <main class="container-fluid main-content">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center gap-3">
@@ -99,4 +99,4 @@
         </div>
     </div>
 </main>
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

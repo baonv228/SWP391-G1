@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Curriculum Listing - FPT University" scope="request"/>
 <c:set var="pageDescription" value="Browse and search FPT University curricula by code or name." scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <h2 class="page-title">Curriculum Listing</h2>
@@ -124,4 +124,4 @@
     </c:if>
 </main>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

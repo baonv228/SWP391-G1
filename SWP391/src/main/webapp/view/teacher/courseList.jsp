@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Course List - Teacher" scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 <main class="container-fluid main-content">
     <div class="d-flex align-items-center gap-3 mb-3">
         <a href="${pageContext.request.contextPath}/teacher/dashboard" class="btn btn-back"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
@@ -105,4 +105,4 @@
         </div>
     </c:if>
 </main>
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Subject Prerequisite Detail - FPT University" scope="request"/>
 <c:set var="pageDescription" value="View subjects that are prerequisites and subsequent subjects for a given subject." scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <h2 class="page-title">A Subject is the Pre-Requisite Of</h2>
@@ -183,4 +183,4 @@
     </c:if>
 </main>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

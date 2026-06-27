@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" isErrorPage="true" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="500 - Internal Server Error" scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 <main class="container-fluid main-content">
     <div class="error-page text-center" id="error-500-page">
         <div class="error-icon">500</div>
@@ -12,4 +12,4 @@
         </a>
     </div>
 </main>
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

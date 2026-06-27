@@ -3,7 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Syllabus Details - ${syllabus.syllabusTitle}" scope="request"/>
 <c:set var="pageDescription" value="Full syllabus detail for ${syllabus.subjectCode} - ${syllabus.syllabusTitle}" scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <h2 class="page-title">Syllabus Details</h2>
@@ -288,4 +288,4 @@ function downloadAllMaterials() {
 }
 </script>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

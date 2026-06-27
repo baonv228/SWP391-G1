@@ -1,8 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="pageTitle" value="FPT University Learning Materials" scope="request"/>
-<c:set var="pageDescription" value="FPT University Learning Materials - Student portal for Curriculum, Syllabus and Subject management." scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<c:set var="pageTitle" value="TPMS Learning Materials" scope="request"/>
+<c:set var="pageDescription" value="TPMS Learning Materials - Student portal for Curriculum, Syllabus and Subject management." scope="request"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <div class="row justify-content-center">
@@ -32,4 +32,4 @@
     </div>
 </main>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

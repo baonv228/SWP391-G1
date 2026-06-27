@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="Curriculum Detail - ${curriculum.curriculumName}" scope="request"/>
 <c:set var="pageDescription" value="Detailed view of curriculum ${curriculum.programCode} - ${curriculum.curriculumName}" scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
     <h2 class="page-title">Curriculum Detail</h2>
@@ -135,4 +135,4 @@
     </c:choose>
 </main>
 
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>

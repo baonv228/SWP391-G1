@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="pageTitle" value="Database Error - FPT University" scope="request"/>
-<jsp:include page="/views/layout/header.jsp"/>
+<jsp:include page="/view/layout/header.jsp"/>
 <main class="container-fluid main-content">
     <div class="error-page text-center" id="db-error-page">
         <div class="error-icon" style="font-size:3rem;color:#dc3545;">
@@ -23,4 +23,4 @@
         </a>
     </div>
 </main>
-<jsp:include page="/views/layout/footer.jsp"/>
+<jsp:include page="/view/layout/footer.jsp"/>
