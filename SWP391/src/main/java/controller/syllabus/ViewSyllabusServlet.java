@@ -39,7 +39,7 @@ public class ViewSyllabusServlet extends HttpServlet {
             request.setAttribute("errorMessage", validationError);
             request.setAttribute("searchType", searchType);
             request.setAttribute("keyword", "");
-            request.getRequestDispatcher("/views/syllabus/syllabusManagement.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/syllabus/syllabusManagement.jsp").forward(request, response);
             return;
         }
 
@@ -62,12 +62,12 @@ public class ViewSyllabusServlet extends HttpServlet {
             request.setAttribute("totalRecords", totalRecords);
             request.setAttribute("searched", !displayKeyword.isEmpty());
             System.out.println("debug");
-            request.getRequestDispatcher("/views/syllabus/syllabusManagement.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/syllabus/syllabusManagement.jsp").forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("Database error in ViewSyllabusServlet", e);
             request.setAttribute("errorMessage", "Database connection error. Please try again later.");
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

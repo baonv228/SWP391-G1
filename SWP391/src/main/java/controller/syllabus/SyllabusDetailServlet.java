@@ -39,13 +39,13 @@ public class SyllabusDetailServlet extends HttpServlet {
             }
 
             request.setAttribute("syllabus", syllabus);
-            request.getRequestDispatcher("/views/syllabus/syllabusDetail.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/syllabus/syllabusDetail.jsp").forward(request, response);
 
         } catch (SQLException e) {
             System.out.println("exepton");
             getServletContext().log("Database error in SyllabusDetailServlet", e);
             request.setAttribute("errorMessage", "Database connection error. Please try again later.");
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

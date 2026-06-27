@@ -29,7 +29,7 @@ public class LearningPathServlet extends HttpServlet {
         String validationError = ValidationUtil.validateSearchInput(subjectCode);
         if (validationError != null) {
             request.setAttribute("errorMessage", validationError);
-            request.getRequestDispatcher("/views/subject/learningPath.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/subject/learningPath.jsp").forward(request, response);
             return;
         }
 
@@ -45,12 +45,12 @@ public class LearningPathServlet extends HttpServlet {
                 request.setAttribute("searched", true);
             } catch (SQLException e) {
                 getServletContext().log("Database error in LearningPathServlet", e);
-                request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+                request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
                 return;
             }
         }
 
-        request.getRequestDispatcher("/views/subject/learningPath.jsp").forward(request, response);
+        request.getRequestDispatcher("/view/subject/learningPath.jsp").forward(request, response);
     }
 
     @Override

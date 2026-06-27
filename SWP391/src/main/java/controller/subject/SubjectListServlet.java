@@ -30,7 +30,7 @@ public class SubjectListServlet extends HttpServlet {
         String validationError = ValidationUtil.validateSearchInput(keyword);
         if (validationError != null) {
             request.setAttribute("errorMessage", validationError);
-            request.getRequestDispatcher("/views/subject/subjectList.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/subject/subjectList.jsp").forward(request, response);
             return;
         }
 
@@ -49,11 +49,11 @@ public class SubjectListServlet extends HttpServlet {
             request.setAttribute("keyword", displayKeyword);
             request.setAttribute("totalRecords", totalRecords);
 
-            request.getRequestDispatcher("/views/subject/subjectList.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/subject/subjectList.jsp").forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("Database error in SubjectListServlet", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

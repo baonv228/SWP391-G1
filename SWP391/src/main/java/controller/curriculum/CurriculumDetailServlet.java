@@ -39,11 +39,11 @@ public class CurriculumDetailServlet extends HttpServlet {
             }
 
             request.setAttribute("curriculum", curriculum);
-            request.getRequestDispatcher("/views/curriculum/curriculumDetail.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/curriculum/curriculumDetail.jsp").forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("Database error in CurriculumDetailServlet", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

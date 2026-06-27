@@ -37,7 +37,7 @@ public class CurriculumListServlet extends HttpServlet {
             request.setAttribute("errorMessage", validationError);
             request.setAttribute("searchType", searchType);
             request.setAttribute("keyword", "");
-            request.getRequestDispatcher("/views/curriculum/curriculumList.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/curriculum/curriculumList.jsp").forward(request, response);
             return;
         }
 
@@ -58,11 +58,11 @@ public class CurriculumListServlet extends HttpServlet {
             request.setAttribute("totalRecords", totalRecords);
             request.setAttribute("searched", !displayKeyword.isEmpty());
 
-            request.getRequestDispatcher("/views/curriculum/curriculumList.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/curriculum/curriculumList.jsp").forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("Database error in CurriculumListServlet", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 
