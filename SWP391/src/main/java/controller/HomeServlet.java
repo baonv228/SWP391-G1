@@ -34,7 +34,7 @@ public class HomeServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/teacher/dashboard");
             return;
         } else if ("Student".equalsIgnoreCase(roleName) || roleId == 2) {
-            request.getRequestDispatcher("/views/home.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/home.jsp").forward(request, response);
             return;
         }
 
