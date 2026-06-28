@@ -1,6 +1,7 @@
 package controller;
 
 import dao.TrainingProgramDAO;
+import dao.CurriculumDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import model.Curriculum;
 import model.PLO;
 import model.PO;
 import model.TrainingProgram;
@@ -21,6 +23,7 @@ public class TrainingProgramServlet extends HttpServlet {
     private static final String TRAINING_DEPARTMENT_ROLE = "Training Department";
     private static final int PAGE_SIZE = 10;
     private final TrainingProgramDAO trainingProgramDAO = new TrainingProgramDAO();
+    private final CurriculumDAO curriculumDAO = new CurriculumDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -132,14 +135,9 @@ public class TrainingProgramServlet extends HttpServlet {
             return;
         }
         request.setAttribute("program", program);
-        request.setAttribute("programs", trainingProgramDAO.getTrainingPrograms("", 1, PAGE_SIZE));
-        request.setAttribute("programOptions", trainingProgramDAO.getTrainingProgramOptions());
-        request.setAttribute("selectedProgramCode", "");
-        request.setAttribute("currentPage", 1);
-        int totalItems = trainingProgramDAO.countTrainingPrograms("");
-        request.setAttribute("totalItems", totalItems);
-        request.setAttribute("totalPages", Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE)));
-        request.getRequestDispatcher("/view/ListTrainingProgram.jsp").forward(request, response);
+        List<Curriculum> curriculums = curriculumDAO.getCurriculumsByProgramId(programId);
+        request.setAttribute("curriculums", curriculums);
+        request.getRequestDispatcher("/view/TrainingProgramDetail.jsp").forward(request, response);
     }
 
     private User getLoggedInTrainingDepartment(HttpServletRequest request, HttpServletResponse response)

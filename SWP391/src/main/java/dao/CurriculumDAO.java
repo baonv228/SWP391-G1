@@ -20,11 +20,13 @@ public class CurriculumDAO extends DBContext {
                        c.Description, c.Status,
                        tp.ProgramCode, tp.ProgramName,
                        u.FullName AS CreatedByName,
-                       COUNT(cs.CurriculumSubjectID) AS SubjectCount
+                       COUNT(cs.CurriculumSubjectID) AS SubjectCount,
+                       COALESCE(SUM(s.Credits), 0) AS TotalCredits
                 FROM dbo.[Curriculum] c
                 LEFT JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
                 LEFT JOIN dbo.[User] u ON c.CreatedBy = u.UserID
                 LEFT JOIN dbo.[Curriculum_Subject] cs ON c.CurriculumID = cs.CurriculumID
+                LEFT JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
                 GROUP BY c.CurriculumID, c.ProgramID, c.CreatedBy, c.CurriculumName,
                          c.Description, c.Status, tp.ProgramCode, tp.ProgramName, u.FullName
                 ORDER BY c.CurriculumID DESC
@@ -46,10 +48,58 @@ public class CurriculumDAO extends DBContext {
                 c.setProgramName(rs.getString("ProgramName"));
                 c.setCreatedByName(rs.getString("CreatedByName"));
                 c.setSubjectCount(rs.getInt("SubjectCount"));
+                c.setTotalCredits(rs.getInt("TotalCredits"));
                 list.add(c);
             }
         } catch (Exception e) {
             System.out.println("getCurriculums error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    public List<Curriculum> getCurriculumsByProgramId(int programId) {
+        List<Curriculum> list = new ArrayList<>();
+        String sql = """
+                SELECT c.CurriculumID, c.ProgramID, c.CreatedBy, c.CurriculumName,
+                       c.Description, c.Status,
+                       tp.ProgramCode, tp.ProgramName,
+                       u.FullName AS CreatedByName,
+                       COUNT(cs.CurriculumSubjectID) AS SubjectCount,
+                       COALESCE(SUM(s.Credits), 0) AS TotalCredits
+                FROM dbo.[Curriculum] c
+                LEFT JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                LEFT JOIN dbo.[User] u ON c.CreatedBy = u.UserID
+                LEFT JOIN dbo.[Curriculum_Subject] cs ON c.CurriculumID = cs.CurriculumID
+                LEFT JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
+                WHERE c.ProgramID = ?
+                GROUP BY c.CurriculumID, c.ProgramID, c.CreatedBy, c.CurriculumName,
+                         c.Description, c.Status, tp.ProgramCode, tp.ProgramName, u.FullName
+                ORDER BY c.CurriculumID DESC
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, programId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Curriculum c = new Curriculum();
+                    c.setCurriculumId(rs.getInt("CurriculumID"));
+                    c.setProgramId(rs.getInt("ProgramID"));
+                    c.setCreatedBy(rs.getInt("CreatedBy"));
+                    c.setCurriculumName(rs.getString("CurriculumName"));
+                    c.setDescription(rs.getString("Description"));
+                    c.setStatus(rs.getString("Status"));
+                    c.setProgramCode(rs.getString("ProgramCode"));
+                    c.setProgramName(rs.getString("ProgramName"));
+                    c.setCreatedByName(rs.getString("CreatedByName"));
+                    c.setSubjectCount(rs.getInt("SubjectCount"));
+                    c.setTotalCredits(rs.getInt("TotalCredits"));
+                    list.add(c);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getCurriculumsByProgramId error: " + e.getMessage());
         }
         return list;
     }
