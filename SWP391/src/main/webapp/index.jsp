@@ -1,13 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="model.User" %>
 <%
     String loginSuccess = request.getParameter("loginSuccess");
-    User currentUser = (User) session.getAttribute("user");
-    String displayName = "";
-    if (currentUser != null) {
-        displayName = currentUser.getFullName() != null && !currentUser.getFullName().isBlank()
-                ? currentUser.getFullName() : currentUser.getEmail();
-    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -226,13 +219,8 @@
     <header class="topbar">
         <div class="brand"><span class="brand-mark"></span>TPMS</div>
         <nav class="nav-actions" aria-label="Tài khoản">
-            <% if (currentUser != null) { %>
-            <a class="btn btn-outline" href="<%=request.getContextPath()%>/profile">Xin chào, <%= displayName %></a>
-            <a class="btn btn-primary" href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
-            <% } else { %>
             <a class="btn btn-outline" href="<%=request.getContextPath()%>/login">Đăng nhập</a>
             <a class="btn btn-primary" href="<%=request.getContextPath()%>/register">Đăng ký</a>
-            <% } %>
         </nav>
     </header>
 
@@ -244,13 +232,8 @@
                 TPMS hỗ trợ quản lý môn học, đề cương, chương trình đào tạo và tài liệu học tập trên một hệ thống thống nhất.
             </p>
             <div class="cta-row">
-                <% if (currentUser != null) { %>
-                <a class="btn btn-primary" href="<%=request.getContextPath()%>/profile">Hồ sơ của tôi</a>
-                <a class="btn btn-outline" href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
-                <% } else { %>
                 <a class="btn btn-primary" href="<%=request.getContextPath()%>/register">Đăng ký</a>
                 <a class="btn btn-outline" href="<%=request.getContextPath()%>/login">Đăng nhập</a>
-                <% } %>
             </div>
         </div>
 
