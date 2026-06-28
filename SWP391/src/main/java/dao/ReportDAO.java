@@ -1,85 +1,243 @@
 package dao;
 
-import java.sql.*;
+import model.CourseReportItem;
+import model.TrainingReportStats;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-/**
- * ReportDAO — aggregation queries for the System Report feature.
- * Returns Map<label, count> for easy rendering in JSP.
- */
-public class ReportDAO {
+public class ReportDAO extends DBContext {
 
-    /** Count syllabi grouped by Status. */
+    // =========================================================
+    // TRAINING REPORT STATS
+    // =========================================================
+    public TrainingReportStats getReportStats() {
+        TrainingReportStats stats = new TrainingReportStats();
+
+        String sql = """
+                SELECT 
+                    (SELECT COUNT(*) FROM Training_Program) AS TotalPrograms,
+                    (SELECT COUNT(*) FROM Curriculum) AS TotalCurriculums,
+                    (SELECT COUNT(*) FROM Subject) AS TotalSubjects,
+                    (SELECT COUNT(*) FROM Syllabus) AS TotalSyllabuses
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                stats.setTotalPrograms(rs.getInt("TotalPrograms"));
+                stats.setTotalCurriculums(rs.getInt("TotalCurriculums"));
+                stats.setTotalSubjects(rs.getInt("TotalSubjects"));
+                stats.setTotalSyllabuses(rs.getInt("TotalSyllabuses"));
+            }
+
+        } catch (Exception e) {
+            System.out.println("getReportStats error: " + e.getMessage());
+        }
+
+        return stats;
+    }
+
+    // =========================================================
+    // COURSE REPORT
+    // =========================================================
+    public List<CourseReportItem> getCourseReport(String programFilter, String searchKeyword) {
+        List<CourseReportItem> list = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT 
+                    s.SubjectID,
+                    s.SubjectCode,
+                    s.SubjectName,
+                    s.Credits,
+                    ISNULL(sy.Status, 'No Syllabus') AS SyllabusStatus,
+                    (
+                        SELECT STRING_AGG(c.CurriculumName, ', ')
+                        FROM Curriculum_Subject cs
+                        JOIN Curriculum c ON cs.CurriculumID = c.CurriculumID
+                        WHERE cs.SubjectID = s.SubjectID
+                    ) AS AssociatedCurriculums,
+                    (
+                        SELECT STRING_AGG(tp.ProgramName, ', ')
+                        FROM Curriculum_Subject cs
+                        JOIN Curriculum c ON cs.CurriculumID = c.CurriculumID
+                        JOIN Training_Program tp ON c.ProgramID = tp.ProgramID
+                        WHERE cs.SubjectID = s.SubjectID
+                    ) AS AssociatedPrograms
+                FROM Subject s
+                LEFT JOIN Syllabus sy ON s.SubjectID = sy.SubjectID
+                WHERE 1 = 1
+                """);
+
+        if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+            sql.append(" AND (s.SubjectCode LIKE ? OR s.SubjectName LIKE ?) ");
+        }
+
+        if (programFilter != null && !programFilter.trim().isEmpty()) {
+            sql.append("""
+                    AND EXISTS (
+                        SELECT 1
+                        FROM Curriculum_Subject cs2
+                        JOIN Curriculum c2 ON cs2.CurriculumID = c2.CurriculumID
+                        WHERE cs2.SubjectID = s.SubjectID
+                          AND c2.ProgramID = ?
+                    )
+                    """);
+        }
+
+        sql.append(" ORDER BY s.SubjectCode ");
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            int paramIndex = 1;
+
+            if (searchKeyword != null && !searchKeyword.trim().isEmpty()) {
+                String searchPattern = "%" + searchKeyword.trim() + "%";
+                ps.setString(paramIndex++, searchPattern);
+                ps.setString(paramIndex++, searchPattern);
+            }
+
+            if (programFilter != null && !programFilter.trim().isEmpty()) {
+                ps.setInt(paramIndex, Integer.parseInt(programFilter.trim()));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    CourseReportItem item = new CourseReportItem();
+
+                    item.setSubjectId(rs.getInt("SubjectID"));
+                    item.setSubjectCode(rs.getString("SubjectCode"));
+                    item.setSubjectName(rs.getString("SubjectName"));
+                    item.setCredits(rs.getInt("Credits"));
+                    item.setSyllabusStatus(rs.getString("SyllabusStatus"));
+                    item.setAssociatedCurriculums(rs.getString("AssociatedCurriculums"));
+                    item.setAssociatedPrograms(rs.getString("AssociatedPrograms"));
+
+                    list.add(item);
+                }
+            }
+
+        } catch (Exception e) {
+            System.out.println("getCourseReport error: " + e.getMessage());
+        }
+
+        return list;
+    }
+
+    // =========================================================
+    // SYSTEM REPORT - GROUP BY STATUS / TYPE
+    // =========================================================
     public Map<String, Integer> countSyllabiByStatus() throws SQLException {
-        return queryGroupBy(
-                "SELECT Status, COUNT(*) AS cnt FROM Syllabus GROUP BY Status ORDER BY Status");
+        return queryGroupBy("""
+                SELECT Status, COUNT(*) AS cnt
+                FROM Syllabus
+                GROUP BY Status
+                ORDER BY Status
+                """);
     }
 
-    /** Count subjects grouped by Status. */
     public Map<String, Integer> countSubjectsByStatus() throws SQLException {
-        return queryGroupBy(
-                "SELECT Status, COUNT(*) AS cnt FROM Subject GROUP BY Status ORDER BY Status");
+        return queryGroupBy("""
+                SELECT Status, COUNT(*) AS cnt
+                FROM Subject
+                GROUP BY Status
+                ORDER BY Status
+                """);
     }
 
-    /** Count Learning_Material grouped by MaterialType. */
     public Map<String, Integer> countMaterialsByType() throws SQLException {
-        return queryGroupBy(
-                "SELECT ISNULL(MaterialType,'Unknown') AS Status, COUNT(*) AS cnt " +
-                "FROM Learning_Material WHERE Status='Active' " +
-                "GROUP BY MaterialType ORDER BY MaterialType");
+        return queryGroupBy("""
+                SELECT ISNULL(MaterialType, 'Unknown') AS Status, COUNT(*) AS cnt
+                FROM Learning_Material
+                WHERE Status = 'Active'
+                GROUP BY MaterialType
+                ORDER BY MaterialType
+                """);
     }
 
-    /** Count Syllabus_Approval_Request grouped by Status. */
     public Map<String, Integer> countRequestsByStatus() throws SQLException {
-        return queryGroupBy(
-                "SELECT Status, COUNT(*) AS cnt FROM Syllabus_Approval_Request " +
-                "GROUP BY Status ORDER BY Status");
+        return queryGroupBy("""
+                SELECT Status, COUNT(*) AS cnt
+                FROM Syllabus_Approval_Request
+                GROUP BY Status
+                ORDER BY Status
+                """);
     }
 
-    /** Count Curriculum grouped by Status. */
     public Map<String, Integer> countCurriculaByStatus() throws SQLException {
-        return queryGroupBy(
-                "SELECT Status, COUNT(*) AS cnt FROM Curriculum GROUP BY Status ORDER BY Status");
+        return queryGroupBy("""
+                SELECT Status, COUNT(*) AS cnt
+                FROM Curriculum
+                GROUP BY Status
+                ORDER BY Status
+                """);
     }
 
-    /** Total counts across the whole system. */
     public Map<String, Integer> getTotalSummary() throws SQLException {
         Map<String, Integer> summary = new LinkedHashMap<>();
-        try (Connection conn = DBContext.getConnection();
-             Statement st = conn.createStatement()) {
 
-            addCount(st, summary, "Total Syllabi",   "SELECT COUNT(*) FROM Syllabus");
-            addCount(st, summary, "Total Subjects",  "SELECT COUNT(*) FROM Subject");
-            addCount(st, summary, "Total Materials", "SELECT COUNT(*) FROM Learning_Material WHERE Status='Active'");
-            addCount(st, summary, "Total Curricula", "SELECT COUNT(*) FROM Curriculum");
-            addCount(st, summary, "Total Requests",  "SELECT COUNT(*) FROM Syllabus_Approval_Request");
-            addCount(st, summary, "Pending Requests","SELECT COUNT(*) FROM Syllabus_Approval_Request WHERE Status='Pending'");
-            addCount(st, summary, "Total Users",     "SELECT COUNT(*) FROM [User] WHERE Status='Active'");
+        try (Connection con = getConnection();
+             Statement st = con.createStatement()) {
+
+            addCount(st, summary, "Total Syllabi",
+                    "SELECT COUNT(*) FROM Syllabus");
+
+            addCount(st, summary, "Total Subjects",
+                    "SELECT COUNT(*) FROM Subject");
+
+            addCount(st, summary, "Total Materials",
+                    "SELECT COUNT(*) FROM Learning_Material WHERE Status = 'Active'");
+
+            addCount(st, summary, "Total Curricula",
+                    "SELECT COUNT(*) FROM Curriculum");
+
+            addCount(st, summary, "Total Requests",
+                    "SELECT COUNT(*) FROM Syllabus_Approval_Request");
+
+            addCount(st, summary, "Pending Requests",
+                    "SELECT COUNT(*) FROM Syllabus_Approval_Request WHERE Status = 'Pending'");
+
+            addCount(st, summary, "Total Users",
+                    "SELECT COUNT(*) FROM [User] WHERE Status = 'Active'");
         }
+
         return summary;
     }
 
-    // ----------------------------------------------------------------
-    //  Helpers
-    // ----------------------------------------------------------------
-
+    // =========================================================
+    // HELPERS
+    // =========================================================
     private Map<String, Integer> queryGroupBy(String sql) throws SQLException {
         Map<String, Integer> map = new LinkedHashMap<>();
-        try (Connection conn = DBContext.getConnection();
-             Statement st = conn.createStatement();
+
+        try (Connection con = getConnection();
+             Statement st = con.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
+
             while (rs.next()) {
                 map.put(rs.getString(1), rs.getInt(2));
             }
         }
+
         return map;
     }
 
     private void addCount(Statement st, Map<String, Integer> map,
                           String label, String sql) throws SQLException {
         try (ResultSet rs = st.executeQuery(sql)) {
-            if (rs.next()) map.put(label, rs.getInt(1));
+            if (rs.next()) {
+                map.put(label, rs.getInt(1));
+            }
         }
     }
 }

@@ -37,6 +37,26 @@ public class HomeServlet extends HttpServlet {
             request.getRequestDispatcher("/view/home.jsp").forward(request, response);
             return;
         }
+        
+        if ("Syllabus Designer".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/SyllabusDesignerHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Admin".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/AdminHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Student".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/StudentHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Teacher".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/TeacherHome.jsp").forward(request, response);
+            return;
+        }
 
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Vai trò này chưa được cấp trang Home.");
     }
