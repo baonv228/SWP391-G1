@@ -57,7 +57,7 @@
                         </span>
                         <span class="module-title">Request List</span>
                     </a>
-                    <a class="module-card" href="#">
+                    <a class="module-card" href="<%=request.getContextPath()%>/course?action=list">
                         <span class="module-icon">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
