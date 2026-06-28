@@ -243,7 +243,7 @@
 
             <%-- Back --%>
             <div class="mt-4">
-                <a href="${pageContext.request.contextPath}/syllabus" class="btn btn-back" id="btn-back-syllabus">
+                <a href="${pageContext.request.contextPath}/syllabus-management" class="btn btn-back" id="btn-back-syllabus">
                     <i class="bi bi-arrow-left me-1"></i>Back to Syllabus List
                 </a>
             </div>

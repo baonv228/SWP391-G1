@@ -127,7 +127,7 @@
             </div>
 
             <div class="mt-4">
-                <a href="${pageContext.request.contextPath}/curriculum" class="btn btn-back" id="btn-back-curriculum">
+                <a href="${pageContext.request.contextPath}/curriculum-management" class="btn btn-back" id="btn-back-curriculum">
                     <i class="bi bi-arrow-left me-1"></i>Back to Curriculum List
                 </a>
             </div>

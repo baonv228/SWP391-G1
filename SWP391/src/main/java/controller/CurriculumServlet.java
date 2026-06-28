@@ -17,7 +17,7 @@ import model.Subject;
 import model.TrainingProgram;
 import model.User;
 
-@WebServlet(name = "CurriculumServlet", urlPatterns = {"/curriculum"})
+@WebServlet(name = "CurriculumServlet", urlPatterns = {"/curriculum-management"})
 public class CurriculumServlet extends HttpServlet {
 
     private final CurriculumDAO curriculumDAO = new CurriculumDAO();

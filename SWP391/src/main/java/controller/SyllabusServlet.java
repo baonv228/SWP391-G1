@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import model.*;
 
-@WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus"})
+@WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus-management"})
 public class SyllabusServlet extends HttpServlet {
 
     private final SyllabusDAO syllabusDAO = new SyllabusDAO();
