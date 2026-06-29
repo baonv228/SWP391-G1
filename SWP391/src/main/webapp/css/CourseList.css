@@ -243,6 +243,7 @@ tbody tr:nth-child(even) {
 }
 
 .code-pill,
+.prerequisite-pill,
 .status {
     display: inline-flex;
     align-items: center;
@@ -252,6 +253,17 @@ tbody tr:nth-child(even) {
     background: var(--orange-soft);
     color: var(--orange-dark);
     font-weight: 900;
+}
+
+.prerequisite-pill {
+    margin: 2px 4px 2px 0;
+    background: #fff7ed;
+    border: 1px solid rgba(189, 93, 16, 0.24);
+}
+
+.no-prerequisite {
+    color: var(--muted);
+    font-size: 13px;
 }
 
 .detail-link {
