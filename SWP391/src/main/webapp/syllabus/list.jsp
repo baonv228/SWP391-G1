@@ -50,7 +50,7 @@
         <% if (syllabuses == null || syllabuses.isEmpty()) { %>
         <div class="empty-state">
             <p>Bạn chưa tạo Syllabus nào.</p>
-            <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus?action=create">
+            <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=create">
                 Tạo Syllabus đầu tiên
             </a>
         </div>

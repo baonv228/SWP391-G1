@@ -7,6 +7,11 @@ public class Curriculum {
     private String curriculumName;
     private String description;
     private String status;
+    private String programCode;
+    private String programName;
+    private String createdByName;
+    private int subjectCount;
+    private int totalCredits;
 
     public Curriculum() {
     }
@@ -66,5 +71,45 @@ public class Curriculum {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getProgramCode() {
+        return programCode;
+    }
+
+    public void setProgramCode(String programCode) {
+        this.programCode = programCode;
+    }
+
+    public String getProgramName() {
+        return programName;
+    }
+
+    public void setProgramName(String programName) {
+        this.programName = programName;
+    }
+
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public void setCreatedByName(String createdByName) {
+        this.createdByName = createdByName;
+    }
+
+    public int getSubjectCount() {
+        return subjectCount;
+    }
+
+    public void setSubjectCount(int subjectCount) {
+        this.subjectCount = subjectCount;
+    }
+
+    public int getTotalCredits() {
+        return totalCredits;
+    }
+
+    public void setTotalCredits(int totalCredits) {
+        this.totalCredits = totalCredits;
     }
 }

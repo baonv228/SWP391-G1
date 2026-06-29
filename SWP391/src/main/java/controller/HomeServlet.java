@@ -24,8 +24,17 @@ public class HomeServlet extends HttpServlet {
         }
 
         String roleName = resolveRoleName(session);
-        if (TRAINING_DEPARTMENT_ROLE.equalsIgnoreCase(roleName)) {
+        User user = (User) session.getAttribute("user");
+        int roleId = (user != null) ? user.getRoleId() : -1;
+
+        if ("Training Department".equalsIgnoreCase(roleName) || roleId == 4) {
             request.getRequestDispatcher("/view/TrainingDepartment.jsp").forward(request, response);
+            return;
+        } else if ("Teacher".equalsIgnoreCase(roleName) || roleId == 3) {
+            response.sendRedirect(request.getContextPath() + "/teacher/dashboard");
+            return;
+        } else if ("Student".equalsIgnoreCase(roleName) || roleId == 2) {
+            request.getRequestDispatcher("/view/home.jsp").forward(request, response);
             return;
         }
         
@@ -34,7 +43,22 @@ public class HomeServlet extends HttpServlet {
             return;
         }
 
-        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Role nay chua duoc cap trang home.");
+        if ("Admin".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/AdminHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Student".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/StudentHome.jsp").forward(request, response);
+            return;
+        }
+
+        if ("Teacher".equalsIgnoreCase(roleName)) {
+            request.getRequestDispatcher("/view/TeacherHome.jsp").forward(request, response);
+            return;
+        }
+
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Vai trò này chưa được cấp trang Home.");
     }
 
     @Override
