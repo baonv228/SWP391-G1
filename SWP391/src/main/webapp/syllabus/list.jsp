@@ -23,7 +23,7 @@
             <span style="margin-right:12px; color:var(--muted); font-size:14px;">
                 Xin chào, <strong><%= user != null ? user.getFullName() : "" %></strong>
             </span>
-            <a class="btn-syl btn-primary-syl" href="<%=request.getContextPath()%>/syllabus?action=create">
+            <a class="btn-syl btn-primary-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=create">
                 + Tạo Syllabus mới
             </a>
         </div>
@@ -41,7 +41,7 @@
         <% if (syllabuses == null || syllabuses.isEmpty()) { %>
         <div class="empty-state">
             <p>Bạn chưa tạo Syllabus nào.</p>
-            <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus?action=create">
+            <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=create">
                 Tạo Syllabus đầu tiên
             </a>
         </div>

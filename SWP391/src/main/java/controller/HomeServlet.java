@@ -27,7 +27,7 @@ public class HomeServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         int roleId = (user != null) ? user.getRoleId() : -1;
 
-        if ("Admin".equalsIgnoreCase(roleName) || "Training Department".equalsIgnoreCase(roleName) || roleId == 1 || roleId == 4) {
+        if ("Training Department".equalsIgnoreCase(roleName) || roleId == 4) {
             request.getRequestDispatcher("/view/TrainingDepartment.jsp").forward(request, response);
             return;
         } else if ("Teacher".equalsIgnoreCase(roleName) || roleId == 3) {

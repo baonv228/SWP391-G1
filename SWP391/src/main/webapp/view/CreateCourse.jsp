@@ -1,16 +1,19 @@
+<%@page import="java.util.List"%>
 <%@page import="model.Subject"%>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String error = (String) request.getAttribute("error");
     String creatorName = (String) request.getAttribute("creatorName");
     Subject course = (Subject) request.getAttribute("course");
+    List<Subject> courseOptions = (List<Subject>) request.getAttribute("courseOptions");
+    List<Integer> selectedPrerequisiteIds = (List<Integer>) request.getAttribute("selectedPrerequisiteIds");
 
     if (creatorName == null) {
         creatorName = "";
     }
     if (course == null) {
         course = new Subject();
-        course.setStatus("pending design");
+        course.setStatus("WaitingForSyllabus");
     }
     String creditsValue = course.getCredits() > 0 ? String.valueOf(course.getCredits()) : "";
 %>
@@ -71,9 +74,47 @@
                                 <textarea name="description" rows="5" placeholder="Nhập mô tả môn học" required><%= course.getDescription() != null ? course.getDescription() : "" %></textarea>
                             </label>
 
+                            <div class="span-2 prerequisite-builder">
+                                <span class="field-label">Môn điều kiện</span>
+                                <div class="prerequisite-search-row">
+                                    <input id="prerequisiteSearch" list="prerequisiteOptions" placeholder="Tìm theo mã hoặc tên môn, VD: SWP391 hoặc Software Project" autocomplete="off" />
+                                    <button class="add-prerequisite-button" type="button" onclick="addPrerequisite()">Add</button>
+                                </div>
+                                <datalist id="prerequisiteOptions">
+                                    <% if (courseOptions != null) {
+                                        for (Subject option : courseOptions) {
+                                            String code = option.getSubjectCode() != null ? option.getSubjectCode() : "";
+                                            String name = option.getSubjectName() != null ? option.getSubjectName() : "";
+                                            String label = code + " - " + name;
+                                    %>
+                                    <option value="<%= label %>" data-id="<%= option.getSubjectId() %>"></option>
+                                    <%  }
+                                    } %>
+                                </datalist>
+                                <div id="selectedPrerequisiteList" class="selected-prerequisites">
+                                    <% if (courseOptions != null && selectedPrerequisiteIds != null) {
+                                        for (Subject option : courseOptions) {
+                                            if (!selectedPrerequisiteIds.contains(option.getSubjectId())) {
+                                                continue;
+                                            }
+                                            String code = option.getSubjectCode() != null ? option.getSubjectCode() : "";
+                                            String name = option.getSubjectName() != null ? option.getSubjectName() : "";
+                                            String label = code + " - " + name;
+                                    %>
+                                    <span class="selected-prerequisite" data-id="<%= option.getSubjectId() %>">
+                                        <input type="hidden" name="prerequisiteSubjectId" value="<%= option.getSubjectId() %>" />
+                                        <span><%= label %></span>
+                                        <button type="button" onclick="removePrerequisite(this)">Remove</button>
+                                    </span>
+                                    <%  }
+                                    } %>
+                                </div>
+                                <small>Có thể tìm theo mã hoặc tên môn. Có thể thêm 1 hoặc nhiều môn điều kiện, hoặc bỏ trống nếu không có.</small>
+                            </div>
+
                             <label>
                                 <span>Status</span>
-                                <input value="pending design" readonly />
+                                <input value="WaitingForSyllabus" readonly />
                             </label>
                         </div>
                     </fieldset>
@@ -87,13 +128,72 @@
         </main>
 
         <script>
+            const selectedPrerequisiteIds = new Set(
+                Array.from(document.querySelectorAll('#selectedPrerequisiteList input[name="prerequisiteSubjectId"]'))
+                    .map(function (input) { return input.value; })
+            );
+
+            function getPrerequisiteOptions() {
+                return Array.from(document.querySelectorAll('#prerequisiteOptions option')).map(function (option) {
+                    return {
+                        id: option.dataset.id,
+                        label: option.value
+                    };
+                });
+            }
+
+            function addPrerequisite() {
+                const input = document.getElementById('prerequisiteSearch');
+                const keyword = input.value.trim().toLowerCase();
+                if (!keyword) {
+                    alert('Vui lòng nhập mã hoặc tên môn điều kiện.');
+                    return;
+                }
+
+                const options = getPrerequisiteOptions();
+                const matched = options.find(function (option) {
+                    return option.label.toLowerCase() === keyword;
+                }) || options.find(function (option) {
+                    return option.label.toLowerCase().includes(keyword);
+                });
+
+                if (!matched) {
+                    alert('Không tìm thấy môn học phù hợp.');
+                    return;
+                }
+
+                if (selectedPrerequisiteIds.has(matched.id)) {
+                    alert('Môn điều kiện này đã được thêm.');
+                    input.value = '';
+                    return;
+                }
+
+                selectedPrerequisiteIds.add(matched.id);
+                const item = document.createElement('span');
+                item.className = 'selected-prerequisite';
+                item.dataset.id = matched.id;
+                item.innerHTML =
+                    '<input type="hidden" name="prerequisiteSubjectId" value="' + matched.id + '" />' +
+                    '<span></span>' +
+                    '<button type="button" onclick="removePrerequisite(this)">Remove</button>';
+                item.querySelector('span').textContent = matched.label;
+                document.getElementById('selectedPrerequisiteList').appendChild(item);
+                input.value = '';
+            }
+
+            function removePrerequisite(button) {
+                const item = button.closest('.selected-prerequisite');
+                selectedPrerequisiteIds.delete(item.dataset.id);
+                item.remove();
+            }
+
             function confirmCreateCourse() {
-                const form = document.getElementById("createCourseForm");
+                const form = document.getElementById('createCourseForm');
                 if (!form.checkValidity()) {
                     form.reportValidity();
                     return false;
                 }
-                return confirm("Bạn có chắc chắn muốn tạo course này không?");
+                return confirm('Bạn có chắc chắn muốn tạo course này không?');
             }
         </script>
     </body>

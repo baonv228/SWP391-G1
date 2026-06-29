@@ -106,13 +106,13 @@
 
     <!-- Actions Grid -->
     <div class="home-grid">
-        <a href="<%=request.getContextPath()%>/syllabus?action=create" class="action-card">
+        <a href="<%=request.getContextPath()%>/syllabus-manage?action=create" class="action-card">
             <div class="action-icon">📝</div>
             <div class="action-title">Tạo Syllabus mới</div>
             <div class="action-desc">Xây dựng đề cương môn học mới dựa trên các môn học đang chờ xử lý.</div>
         </a>
 
-        <a href="<%=request.getContextPath()%>/syllabus?action=list" class="action-card">
+        <a href="<%=request.getContextPath()%>/syllabus-manage?action=list" class="action-card">
             <div class="action-icon">🗂️</div>
             <div class="action-title">Danh sách Syllabus</div>
             <div class="action-desc">Quản lý, xem lại và theo dõi trạng thái các đề cương mà bạn đã tạo.</div>

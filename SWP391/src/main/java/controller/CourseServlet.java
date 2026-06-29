@@ -8,7 +8,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import model.Subject;
 import model.User;
 
@@ -68,7 +72,9 @@ public class CourseServlet extends HttpServlet {
         }
 
         List<Subject> courses = courseDao.getCourses(subjectCode, page, PAGE_SIZE);
+        Map<Integer, List<String>> prerequisiteMap = courseDao.getPrerequisiteCodesBySubjectIds(courses);
         request.setAttribute("courses", courses);
+        request.setAttribute("prerequisiteMap", prerequisiteMap);
         request.setAttribute("subjectCode", subjectCode);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
@@ -80,6 +86,7 @@ public class CourseServlet extends HttpServlet {
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
         request.setAttribute("creatorName", resolveDisplayName(user));
+        request.setAttribute("courseOptions", courseDao.getCourseOptions());
         request.getRequestDispatcher("/view/CreateCourse.jsp").forward(request, response);
     }
 
@@ -91,21 +98,22 @@ public class CourseServlet extends HttpServlet {
         course.setSubjectName(safeTrim(request.getParameter("subjectName")));
         course.setCredits(parsePositiveInt(request.getParameter("credits"), 0));
         course.setDescription(safeTrim(request.getParameter("description")));
-        course.setStatus("pending design");
+        course.setStatus("WaitingForSyllabus");
+        List<Integer> prerequisiteSubjectIds = parsePrerequisiteSubjectIds(request);
 
         String validationError = validateCreate(course);
         if (validationError != null) {
-            forwardCreateError(validationError, course, user, request, response);
+            forwardCreateError(validationError, course, prerequisiteSubjectIds, user, request, response);
             return;
         }
 
         if (courseDao.existsSubjectCode(course.getSubjectCode())) {
-            forwardCreateError("Subject Code da ton tai. Vui long nhap ma mon khac.", course, user, request, response);
+            forwardCreateError("Subject Code da ton tai. Vui long nhap ma mon khac.", course, prerequisiteSubjectIds, user, request, response);
             return;
         }
 
-        if (!courseDao.createCourse(course)) {
-            forwardCreateError("Tao course that bai. Vui long kiem tra database.", course, user, request, response);
+        if (!courseDao.createCourse(course, prerequisiteSubjectIds)) {
+            forwardCreateError("Tao course that bai. Vui long kiem tra database.", course, prerequisiteSubjectIds, user, request, response);
             return;
         }
 
@@ -193,11 +201,28 @@ public class CourseServlet extends HttpServlet {
         return null;
     }
 
-    private void forwardCreateError(String error, Subject course, User user,
+    private List<Integer> parsePrerequisiteSubjectIds(HttpServletRequest request) {
+        String[] values = request.getParameterValues("prerequisiteSubjectId");
+        Set<Integer> uniqueIds = new LinkedHashSet<>();
+        if (values == null) {
+            return new ArrayList<>();
+        }
+
+        for (String value : values) {
+            int id = parsePositiveInt(value, 0);
+            if (id > 0) {
+                uniqueIds.add(id);
+            }
+        }
+        return new ArrayList<>(uniqueIds);
+    }
+
+    private void forwardCreateError(String error, Subject course, List<Integer> prerequisiteSubjectIds, User user,
                                     HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", error);
         request.setAttribute("course", course);
+        request.setAttribute("selectedPrerequisiteIds", prerequisiteSubjectIds);
         showCreateForm(request, response, user);
     }
 

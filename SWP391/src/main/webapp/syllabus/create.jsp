@@ -19,7 +19,7 @@
     <!-- Header -->
     <div class="syl-header">
         <h1>Tạo Syllabus mới</h1>
-        <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus?action=list">
+        <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=list">
             ← Quay lại danh sách
         </a>
     </div>
@@ -39,7 +39,7 @@
     </nav>
 
     <form id="syllabusForm" method="post"
-          action="<%=request.getContextPath()%>/syllabus?action=create" accept-charset="UTF-8">
+          action="<%=request.getContextPath()%>/syllabus-manage?action=create" accept-charset="UTF-8">
 
         <!-- ================================================================ -->
         <!-- SECTION 1: Syllabus Details                                      -->
