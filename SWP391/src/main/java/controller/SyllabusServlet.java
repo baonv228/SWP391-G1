@@ -53,6 +53,9 @@ public class SyllabusServlet extends HttpServlet {
             case "ajax_plos":
                 handleAjaxPlos(request, response);
                 break;
+            case "delete":
+                handleDelete(request, response, user);
+                break;
             case "list":
             default:
                 showList(request, response, user);
@@ -163,11 +166,17 @@ public class SyllabusServlet extends HttpServlet {
 
     private void handleAjaxPlos(HttpServletRequest request, HttpServletResponse response) throws IOException {
         int programId = parseInt(request.getParameter("programId"), 0);
+        int subjectId = parseInt(request.getParameter("subjectId"), 0);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         List<PLO> plos = new ArrayList<>();
         if (programId > 0) {
             plos = ploDAO.getPLOsByProgramId(programId);
+        } else if (subjectId > 0) {
+            List<Integer> pIds = ploDAO.getProgramIdsForSubject(subjectId);
+            if (!pIds.isEmpty()) {
+                plos = ploDAO.getPLOsByProgramId(pIds.get(0));
+            }
         }
         response.getWriter().write(new Gson().toJson(plos));
     }
@@ -536,5 +545,14 @@ public class SyllabusServlet extends HttpServlet {
     private double parseDouble(String value, double defaultValue) {
         try { return Double.parseDouble(value.trim()); }
         catch (Exception e) { return defaultValue; }
+    }
+
+    private void handleDelete(jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response, model.User user)
+            throws jakarta.servlet.ServletException, IOException {
+        int id = parseInt(request.getParameter("id"), 0);
+        if (id > 0) {
+            syllabusDAO.deleteSyllabus(id);
+        }
+        response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
     }
 }

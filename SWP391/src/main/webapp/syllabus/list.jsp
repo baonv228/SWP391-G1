@@ -90,6 +90,9 @@
                         <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=edit&id=<%= s.getSyllabusId() %>">
                             ✏️ Sửa
                         </a>
+                        <a class="btn-syl btn-danger-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=delete&id=<%= s.getSyllabusId() %>" onclick="return confirm('Bạn có chắc chắn muốn xóa Syllabus này không? Thao tác này không thể hoàn tác!');" style="margin-left: 5px;">
+                            🗑️ Xóa
+                        </a>
                         <% } else { %>
                         <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=view&id=<%= s.getSyllabusId() %>" style="border-color:#1565c0; color:#1565c0;">
                             👁️ Xem
