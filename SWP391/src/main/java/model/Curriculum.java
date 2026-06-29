@@ -11,6 +11,7 @@ public class Curriculum {
     private String programName;
     private String createdByName;
     private int subjectCount;
+    private int totalCredits;
 
     public Curriculum() {
     }
@@ -102,5 +103,13 @@ public class Curriculum {
 
     public void setSubjectCount(int subjectCount) {
         this.subjectCount = subjectCount;
+    }
+
+    public int getTotalCredits() {
+        return totalCredits;
+    }
+
+    public void setTotalCredits(int totalCredits) {
+        this.totalCredits = totalCredits;
     }
 }
