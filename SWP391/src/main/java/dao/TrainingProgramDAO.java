@@ -125,6 +125,34 @@ public class TrainingProgramDAO extends DBContext {
         }
     }
 
+    public List<PO> getPOsByProgramId(int programId) {
+        List<PO> list = new ArrayList<>();
+        String sql = """
+                SELECT po_id, ProgramID, po_code, po_description
+                FROM dbo.[PO]
+                WHERE ProgramID = ?
+                ORDER BY po_code
+                """;
+
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, programId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PO po = new PO();
+                    po.setPoId(rs.getInt("po_id"));
+                    po.setProgramId(rs.getInt("ProgramID"));
+                    po.setPoCode(rs.getString("po_code"));
+                    po.setPoDescription(rs.getString("po_description"));
+                    list.add(po);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getPOsByProgramId error: " + e.getMessage());
+        }
+        return list;
+    }
+
     public int createTrainingProgram(TrainingProgram program, List<PLO> plos, List<PO> pos) {
         Connection con = null;
         try {

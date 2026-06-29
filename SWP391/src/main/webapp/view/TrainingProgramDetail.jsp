@@ -1,10 +1,12 @@
 <%@page import="java.util.List"%>
 <%@page import="model.Curriculum"%>
+<%@page import="model.PO"%>
 <%@page import="model.TrainingProgram"%>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     TrainingProgram program = (TrainingProgram) request.getAttribute("program");
     List<Curriculum> curriculums = (List<Curriculum>) request.getAttribute("curriculums");
+    List<PO> pos = (List<PO>) request.getAttribute("pos");
 
     String majorName = "";
     String programCode = "";
@@ -33,7 +35,7 @@
     <body>
         <main class="detail-page">
             <header class="page-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=list">← Back</a>
+                <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=list">Back</a>
                 <h1>Training Program Management System</h1>
             </header>
 
@@ -71,8 +73,25 @@
                         <dd><span class="status-pill"><%= status %></span></dd>
                     </div>
                     <div class="wide">
-                        <dt>Mục tiêu / Mục đích</dt>
+                        <dt>Mục đích</dt>
                         <dd><%= description %></dd>
+                    </div>
+                    <div class="wide">
+                        <dt>PO</dt>
+                        <dd>
+                            <% if (pos == null || pos.isEmpty()) { %>
+                            <span class="empty-inline">Chưa có PO.</span>
+                            <% } else { %>
+                            <ul class="po-list">
+                                <% for (PO po : pos) {
+                                    String poCode = po.getPoCode() != null ? po.getPoCode() : "";
+                                    String poDescription = po.getPoDescription() != null ? po.getPoDescription() : "";
+                                %>
+                                <li><strong><%= poCode %></strong><span><%= poDescription %></span></li>
+                                <% } %>
+                            </ul>
+                            <% } %>
+                        </dd>
                     </div>
                 </dl>
             </section>

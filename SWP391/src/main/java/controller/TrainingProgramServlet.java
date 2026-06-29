@@ -136,7 +136,9 @@ public class TrainingProgramServlet extends HttpServlet {
         }
         request.setAttribute("program", program);
         List<Curriculum> curriculums = curriculumDAO.getCurriculumsByProgramId(programId);
+        List<PO> pos = trainingProgramDAO.getPOsByProgramId(programId);
         request.setAttribute("curriculums", curriculums);
+        request.setAttribute("pos", pos);
         request.getRequestDispatcher("/view/TrainingProgramDetail.jsp").forward(request, response);
     }
 
