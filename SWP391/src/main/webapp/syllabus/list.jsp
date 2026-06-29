@@ -18,20 +18,29 @@
 
     <!-- Header -->
     <div class="syl-header">
-        <h1>Quản lý Syllabus</h1>
         <div>
-            <span style="margin-right:12px; color:var(--muted); font-size:14px;">
+            <h1>Quản lý Syllabus</h1>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span style="color:var(--muted); font-size:14px;">
                 Xin chào, <strong><%= user != null ? user.getFullName() : "" %></strong>
             </span>
-            <a class="btn-syl btn-primary-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=create">
+            <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/home">
+                ← Trang chủ
+            </a>
+            <a class="btn-syl btn-primary-syl" href="<%=request.getContextPath()%>/syllabus?action=create">
                 + Tạo Syllabus mới
             </a>
         </div>
     </div>
 
-    <!-- Success message -->
-    <% if ("1".equals(success)) { %>
-    <div class="alert alert-success">Tạo Syllabus thành công!</div>
+    <!-- Success messages -->
+    <% if ("1".equals(success) || "draft".equals(success)) { %>
+    <div class="alert alert-success">Lưu Draft thành công!</div>
+    <% } else if ("submit".equals(success)) { %>
+    <div class="alert alert-success">Đã gửi Syllabus để phê duyệt thành công!</div>
+    <% } else if ("update".equals(success)) { %>
+    <div class="alert alert-success">Cập nhật Syllabus thành công!</div>
     <% } %>
 
     <!-- Table -->
@@ -57,13 +66,14 @@
                     <th>Version</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
+                    <th>Hành động</th>
                 </tr>
                 </thead>
                 <tbody>
                 <% int idx = 1;
                     for (Syllabus s : syllabuses) {
                         String badgeClass = "badge-draft";
-                        if ("PendingApproval".equals(s.getStatus())) badgeClass = "badge-pending";
+                        if ("Pending Approval".equals(s.getStatus())) badgeClass = "badge-pending";
                         else if ("Approved".equals(s.getStatus())) badgeClass = "badge-approved";
                         else if ("Rejected".equals(s.getStatus())) badgeClass = "badge-rejected";
                 %>
@@ -75,6 +85,17 @@
                     <td><%= s.getVersionNo() != null ? s.getVersionNo() : "" %></td>
                     <td><span class="badge <%= badgeClass %>"><%= s.getStatus() %></span></td>
                     <td><%= s.getCreatedAt() != null ? s.getCreatedAt().toString().substring(0, 16) : "" %></td>
+                    <td>
+                        <% if ("Draft".equals(s.getStatus())) { %>
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus?action=edit&id=<%= s.getSyllabusId() %>">
+                            ✏️ Sửa
+                        </a>
+                        <% } else { %>
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus?action=view&id=<%= s.getSyllabusId() %>" style="border-color:#1565c0; color:#1565c0;">
+                            👁️ Xem
+                        </a>
+                        <% } %>
+                    </td>
                 </tr>
                 <% } %>
                 </tbody>

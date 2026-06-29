@@ -313,3 +313,35 @@ public class SubjectDAO extends DBContext {
         return dto;
     }
 }
+    /**
+     * Get prerequisite text for a subject (e.g., "PRJ301, SWE201c")
+     */
+    public String getPreRequisiteText(int subjectId) {
+        StringBuilder sb = new StringBuilder();
+        String sql = """
+                SELECT rs.SubjectCode
+                FROM dbo.[Subject_Prerequisite] sp
+                JOIN dbo.[Subject] rs ON sp.RequiredSubjectID = rs.SubjectID
+                WHERE sp.SubjectID = ?
+                ORDER BY rs.SubjectCode
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) {
+                        sb.append(", ");
+                    }
+                    sb.append(rs.getString("SubjectCode"));
+                    first = false;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getPreRequisiteText error: " + e.getMessage());
+        }
+        return sb.toString();
+    }
+}

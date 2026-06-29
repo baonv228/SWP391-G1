@@ -1,5 +1,9 @@
 package model;
 
+/**
+ * Program Learning Outcome — belongs to a Training_Program.
+ * Table managed by Curriculum team.
+ */
 public class PLO {
     private int ploId;
     private int programId;
