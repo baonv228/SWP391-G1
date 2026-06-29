@@ -27,7 +27,7 @@
     <!-- Header -->
     <div class="syl-header">
         <h1>Chỉnh sửa Syllabus: <%= syllabus.getSubjectCode() %> (v<%= syllabus.getVersionNo() %>)</h1>
-        <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus?action=list">
+        <a class="btn-syl btn-outline-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=list">
             ← Quay lại danh sách
         </a>
     </div>
@@ -57,7 +57,7 @@
     </nav>
 
     <form id="syllabusForm" method="post" enctype="multipart/form-data"
-          action="<%=request.getContextPath()%>/syllabus?action=edit" accept-charset="UTF-8">
+          action="<%=request.getContextPath()%>/syllabus-manage?action=edit" accept-charset="UTF-8">
         
         <input type="hidden" name="syllabusId" value="<%= syllabus.getSyllabusId() %>">
         <input type="hidden" name="subjectId" value="<%= syllabus.getSubjectId() %>">

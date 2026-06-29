@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import model.*;
 
-@WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus"})
+@WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus-manage"})
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024 * 2, // 2MB
     maxFileSize = 1024 * 1024 * 100,      // 100MB
@@ -77,7 +77,7 @@ public class SyllabusServlet extends HttpServlet {
                 processEdit(request, response, user);
                 break;
             default:
-                response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
                 break;
         }
     }
@@ -98,7 +98,7 @@ public class SyllabusServlet extends HttpServlet {
         int syllabusId = parseInt(request.getParameter("id"), 0);
         Syllabus syllabus = syllabusDAO.getSyllabusById(syllabusId);
         if (syllabus == null) {
-            response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
             return;
         }
 
@@ -217,9 +217,9 @@ public class SyllabusServlet extends HttpServlet {
 
             if ("submit".equals(saveType)) {
                 syllabusDAO.updateStatus(syllabusId, "Pending Approval");
-                response.sendRedirect(request.getContextPath() + "/syllabus?action=list&success=submit");
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list&success=submit");
             } else {
-                response.sendRedirect(request.getContextPath() + "/syllabus?action=edit&id=" + syllabusId + "&success=draft");
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=edit&id=" + syllabusId + "&success=draft");
             }
 
         } catch (Exception e) {
@@ -235,7 +235,7 @@ public class SyllabusServlet extends HttpServlet {
         try {
             int syllabusId = parseInt(request.getParameter("syllabusId"), 0);
             if (syllabusId <= 0) {
-                response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
                 return;
             }
 
@@ -257,9 +257,9 @@ public class SyllabusServlet extends HttpServlet {
 
             if ("submit".equals(saveType)) {
                 syllabusDAO.updateStatus(syllabusId, "Pending Approval");
-                response.sendRedirect(request.getContextPath() + "/syllabus?action=list&success=submit");
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list&success=submit");
             } else {
-                response.sendRedirect(request.getContextPath() + "/syllabus?action=edit&id=" + syllabusId + "&success=update");
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=edit&id=" + syllabusId + "&success=update");
             }
 
         } catch (Exception e) {
