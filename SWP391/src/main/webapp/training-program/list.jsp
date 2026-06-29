@@ -84,7 +84,7 @@
                     <% if (canManage) { %>
                     <td>
                         <a class="btn-train btn-outline-train btn-sm" href="<%=request.getContextPath()%>/training-program?action=edit&id=<%= p.getProgramId() %>">Edit</a>
-                        <a class="btn-train btn-outline-train btn-sm" href="<%=request.getContextPath()%>/curriculum?action=create&programId=<%= p.getProgramId() %>">Create Curriculum</a>
+                    <a class="btn-train btn-outline-train btn-sm" href="<%=request.getContextPath()%>/curriculum-manage?action=create&programId=<%= p.getProgramId() %>">Create Curriculum</a>
                     </td>
                     <% } %>
                 </tr>

@@ -1,18 +1,21 @@
 package dao;
 
+import dto.CurriculumDTO;
+import dto.SubjectDTO;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import model.Curriculum;
 
 public class CurriculumDAO extends DBContext {
 
-    /**
-     * Get all curriculums with program and creator information.
-     */
     public List<Curriculum> getCurriculums() {
         List<Curriculum> list = new ArrayList<>();
         String sql = """
@@ -35,21 +38,8 @@ public class CurriculumDAO extends DBContext {
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-
             while (rs.next()) {
-                Curriculum c = new Curriculum();
-                c.setCurriculumId(rs.getInt("CurriculumID"));
-                c.setProgramId(rs.getInt("ProgramID"));
-                c.setCreatedBy(rs.getInt("CreatedBy"));
-                c.setCurriculumName(rs.getString("CurriculumName"));
-                c.setDescription(rs.getString("Description"));
-                c.setStatus(rs.getString("Status"));
-                c.setProgramCode(rs.getString("ProgramCode"));
-                c.setProgramName(rs.getString("ProgramName"));
-                c.setCreatedByName(rs.getString("CreatedByName"));
-                c.setSubjectCount(rs.getInt("SubjectCount"));
-                c.setTotalCredits(rs.getInt("TotalCredits"));
-                list.add(c);
+                list.add(mapCurriculum(rs));
             }
         } catch (Exception e) {
             System.out.println("getCurriculums error: " + e.getMessage());
@@ -80,22 +70,9 @@ public class CurriculumDAO extends DBContext {
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, programId);
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Curriculum c = new Curriculum();
-                    c.setCurriculumId(rs.getInt("CurriculumID"));
-                    c.setProgramId(rs.getInt("ProgramID"));
-                    c.setCreatedBy(rs.getInt("CreatedBy"));
-                    c.setCurriculumName(rs.getString("CurriculumName"));
-                    c.setDescription(rs.getString("Description"));
-                    c.setStatus(rs.getString("Status"));
-                    c.setProgramCode(rs.getString("ProgramCode"));
-                    c.setProgramName(rs.getString("ProgramName"));
-                    c.setCreatedByName(rs.getString("CreatedByName"));
-                    c.setSubjectCount(rs.getInt("SubjectCount"));
-                    c.setTotalCredits(rs.getInt("TotalCredits"));
-                    list.add(c);
+                    list.add(mapCurriculum(rs));
                 }
             }
         } catch (Exception e) {
@@ -104,9 +81,6 @@ public class CurriculumDAO extends DBContext {
         return list;
     }
 
-    /**
-     * Create curriculum and optional subject mappings in one transaction.
-     */
     public int createCurriculum(Curriculum curriculum, List<Integer> subjectIds) {
         Connection con = null;
         try {
@@ -145,6 +119,90 @@ public class CurriculumDAO extends DBContext {
             }
         }
         return -1;
+    }
+
+    public List<CurriculumDTO> searchCurricula(String searchType, String keyword,
+                                               int page, int pageSize) throws SQLException {
+        List<CurriculumDTO> list = new ArrayList<>();
+        int offset = (page - 1) * pageSize;
+        String whereClause = buildWhereClause(searchType, keyword);
+
+        String sql = """
+                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
+                       tp.ProgramCode, tp.ProgramName, tp.MajorName, tp.AcademicYear
+                FROM dbo.[Curriculum] c
+                JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                """ + whereClause + """
+                ORDER BY c.CurriculumID
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int idx = setSearchParams(ps, searchType, keyword, 1);
+            ps.setInt(idx++, offset);
+            ps.setInt(idx, pageSize);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRowBasic(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public int countCurricula(String searchType, String keyword) throws SQLException {
+        String whereClause = buildWhereClause(searchType, keyword);
+        String sql = """
+                SELECT COUNT(*)
+                FROM dbo.[Curriculum] c
+                JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                """ + whereClause;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            setSearchParams(ps, searchType, keyword, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
+    public CurriculumDTO getCurriculumById(int curriculumId) throws SQLException {
+        String sql = """
+                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
+                       tp.ProgramCode, tp.ProgramName, tp.MajorName, tp.AcademicYear
+                FROM dbo.[Curriculum] c
+                JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                WHERE c.CurriculumID = ?
+                """;
+
+        CurriculumDTO dto = null;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, curriculumId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    dto = mapRowBasic(rs);
+                }
+            }
+        }
+
+        if (dto != null) {
+            Map<Integer, List<SubjectDTO>> semesterSubjects = loadSemesterSubjects(curriculumId);
+            dto.setSemesterSubjects(semesterSubjects);
+            int totalCredits = semesterSubjects.values()
+                    .stream()
+                    .flatMap(List::stream)
+                    .mapToInt(SubjectDTO::getCredits)
+                    .sum();
+            dto.setTotalCredits(totalCredits);
+        }
+        return dto;
     }
 
     private int insertCurriculum(Connection con, Curriculum curriculum) throws Exception {
@@ -186,13 +244,94 @@ public class CurriculumDAO extends DBContext {
                 }
                 ps.setInt(1, curriculumId);
                 ps.setInt(2, subjectId);
-                ps.setNull(3, java.sql.Types.INTEGER);
-                ps.setNull(4, java.sql.Types.NVARCHAR);
+                ps.setNull(3, Types.INTEGER);
+                ps.setNull(4, Types.NVARCHAR);
                 ps.setBoolean(5, true);
                 ps.setInt(6, displayOrder++);
                 ps.addBatch();
             }
             ps.executeBatch();
         }
+    }
+
+    private Map<Integer, List<SubjectDTO>> loadSemesterSubjects(int curriculumId) throws SQLException {
+        Map<Integer, List<SubjectDTO>> map = new TreeMap<>();
+        String sql = """
+                SELECT cs.SemesterNo,
+                       s.SubjectID, s.SubjectCode, s.SubjectName, s.Credits, s.Status,
+                       cs.IsRequired
+                FROM dbo.[Curriculum_Subject] cs
+                JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
+                WHERE cs.CurriculumID = ?
+                ORDER BY cs.SemesterNo, s.SubjectCode
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, curriculumId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int semester = rs.getInt("SemesterNo");
+                    SubjectDTO subject = new SubjectDTO();
+                    subject.setSubjectId(rs.getInt("SubjectID"));
+                    subject.setSubjectCode(rs.getString("SubjectCode"));
+                    subject.setSubjectName(rs.getString("SubjectName"));
+                    subject.setCredits(rs.getInt("Credits"));
+                    subject.setSemester(semester);
+                    subject.setStatus(rs.getString("Status"));
+                    subject.setRequired(rs.getBoolean("IsRequired"));
+                    map.computeIfAbsent(semester, ignored -> new ArrayList<>()).add(subject);
+                }
+            }
+        }
+        return map;
+    }
+
+    private Curriculum mapCurriculum(ResultSet rs) throws SQLException {
+        Curriculum c = new Curriculum();
+        c.setCurriculumId(rs.getInt("CurriculumID"));
+        c.setProgramId(rs.getInt("ProgramID"));
+        c.setCreatedBy(rs.getInt("CreatedBy"));
+        c.setCurriculumName(rs.getString("CurriculumName"));
+        c.setDescription(rs.getString("Description"));
+        c.setStatus(rs.getString("Status"));
+        c.setProgramCode(rs.getString("ProgramCode"));
+        c.setProgramName(rs.getString("ProgramName"));
+        c.setCreatedByName(rs.getString("CreatedByName"));
+        c.setSubjectCount(rs.getInt("SubjectCount"));
+        c.setTotalCredits(rs.getInt("TotalCredits"));
+        return c;
+    }
+
+    private CurriculumDTO mapRowBasic(ResultSet rs) throws SQLException {
+        CurriculumDTO dto = new CurriculumDTO();
+        dto.setCurriculumId(rs.getInt("CurriculumID"));
+        dto.setCurriculumName(rs.getString("CurriculumName"));
+        dto.setDescription(rs.getString("Description"));
+        dto.setStatus(rs.getString("Status"));
+        dto.setProgramCode(rs.getString("ProgramCode"));
+        dto.setProgramName(rs.getString("ProgramName"));
+        dto.setMajorName(rs.getString("MajorName"));
+        dto.setAcademicYear(rs.getString("AcademicYear"));
+        return dto;
+    }
+
+    private String buildWhereClause(String searchType, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return "";
+        }
+        if ("name".equalsIgnoreCase(searchType)) {
+            return " WHERE c.CurriculumName LIKE ? ";
+        }
+        return " WHERE tp.ProgramCode LIKE ? ";
+    }
+
+    private int setSearchParams(PreparedStatement ps, String searchType, String keyword, int startIndex)
+            throws SQLException {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return startIndex;
+        }
+        ps.setString(startIndex++, "%" + keyword.trim() + "%");
+        return startIndex;
     }
 }

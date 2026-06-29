@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import model.*;
 
-@WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus"})
+@WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus-manage"})
 public class SyllabusServlet extends HttpServlet {
 
     private final SyllabusDAO syllabusDAO = new SyllabusDAO();
@@ -52,7 +52,7 @@ public class SyllabusServlet extends HttpServlet {
         if ("create".equals(action)) {
             processCreate(request, response, user);
         } else {
-            response.sendRedirect(request.getContextPath() + "/syllabus?action=list");
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
         }
     }
 
@@ -129,7 +129,7 @@ public class SyllabusServlet extends HttpServlet {
 
             if (syllabusId > 0) {
                 response.sendRedirect(request.getContextPath()
-                        + "/syllabus?action=list&success=1");
+                        + "/syllabus-manage?action=list&success=1");
             } else {
                 request.setAttribute("error", "Lỗi khi lưu Syllabus. Vui lòng thử lại.");
                 showCreateForm(request, response);

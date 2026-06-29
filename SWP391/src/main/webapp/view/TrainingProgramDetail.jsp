@@ -44,7 +44,7 @@
                 </div>
                 <div class="toolbar-actions">
                     <span class="count-pill">(<%= curriculums != null ? curriculums.size() : 0 %>)</span>
-                    <a class="create-button" href="<%=request.getContextPath()%>/curriculum?action=create&programId=<%= program != null ? program.getProgramId() : 0 %>">Create curriculum</a>
+                    <a class="create-button" href="<%=request.getContextPath()%>/curriculum-manage?action=create&programId=<%= program != null ? program.getProgramId() : 0 %>">Create curriculum</a>
                 </div>
             </section>
 
@@ -104,7 +104,7 @@
                             <td><%= index++ %></td>
                             <td><%= code %></td>
                             <td>
-                                <a class="curriculum-link" href="<%=request.getContextPath()%>/curriculum?action=detail&id=<%= curriculum.getCurriculumId() %>"><%= curriculumName %></a>
+                                <a class="curriculum-link" href="<%=request.getContextPath()%>/curriculum/detail?curriculumId=<%= curriculum.getCurriculumId() %>"><%= curriculumName %></a>
                             </td>
                             <td><%= curriculumDescription %></td>
                             <td><%= curriculum.getTotalCredits() %></td>
