@@ -102,6 +102,12 @@ public class SyllabusServlet extends HttpServlet {
             return;
         }
 
+        // Always refresh Pre-Requisite from Subject table
+        String preReq = subjectDAO.getPreRequisiteText(syllabus.getSubjectId());
+        if (preReq != null && !preReq.isEmpty()) {
+            syllabus.setPreRequisiteText(preReq);
+        }
+
         // Load all children
         List<SyllabusMaterial> materials = syllabusDAO.getMaterials(syllabusId);
         List<CLO> clos = syllabusDAO.getCLOs(syllabusId);
@@ -264,19 +270,39 @@ public class SyllabusServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Base upload directory: {user.home}/tpms-uploads
+     * Mỗi máy tự động đúng, không mất file khi redeploy.
+     */
+    public static String getUploadBasePath() {
+        return System.getProperty("user.home") + File.separator + "tpms-uploads";
+    }
+
     private void handleFileUpload(HttpServletRequest request, int syllabusId, int userId) throws IOException, ServletException {
         Part filePart = request.getPart("student_material_file");
         if (filePart != null && filePart.getSize() > 0) {
-            String appPath = request.getServletContext().getRealPath("");
-            String uploadDir = "uploads/syllabus/" + syllabusId;
-            File dir = new File(appPath + File.separator + uploadDir);
+            // Validate: chỉ cho phép .zip
+            String submittedName = filePart.getSubmittedFileName();
+            if (submittedName == null || !submittedName.toLowerCase().endsWith(".zip")) {
+                System.out.println("Rejected upload: not a .zip file -> " + submittedName);
+                return;
+            }
+
+            String uploadDir = getUploadBasePath() + File.separator + "syllabus" + File.separator + syllabusId;
+            File dir = new File(uploadDir);
             if (!dir.exists()) dir.mkdirs();
 
             String fileName = "material.zip";
             String filePath = dir.getAbsolutePath() + File.separator + fileName;
-            filePart.write(filePath);
 
-            String dbPath = "/" + uploadDir + "/" + fileName;
+            // Write file
+            try (var input = filePart.getInputStream();
+                 var output = new java.io.FileOutputStream(filePath)) {
+                input.transferTo(output);
+            }
+
+            // Save path to DB (relative for portability)
+            String dbPath = "syllabus/" + syllabusId + "/" + fileName;
             syllabusDAO.saveMaterialFile(syllabusId, userId, dbPath);
         }
     }

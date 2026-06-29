@@ -68,8 +68,7 @@ public class LoginServlet extends HttpServlet {
         if (user.getRole() != null) {
             session.setAttribute("roleName", user.getRole().getRoleName());
         }
-        response.sendRedirect(request.getContextPath() + "/home");
-
+        
         response.sendRedirect(request.getContextPath() + getRedirectByRole(user));
     }
 
@@ -85,7 +84,7 @@ public class LoginServlet extends HttpServlet {
             return "/home";
         }
         return switch (roleName) {
-            case "Syllabus Designer" -> "/syllabus?action=list";
+            case "Syllabus Designer" -> "/home";
             case "Admin"             -> "/home"; // TODO: thay bằng /admin khi có
             case "Training Department" -> "/home"; // TODO: thay khi có
             case "Teacher"           -> "/home"; // TODO: thay khi có

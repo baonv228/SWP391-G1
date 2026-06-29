@@ -84,20 +84,13 @@
                 <div class="form-group">
                     <label>Syllabus Title <span class="required">*</span></label>
                     <input type="text" name="syllabusTitle" class="form-control"
-                           value="<%= syllabus.getSyllabusTitle() %>" required/>
+                           value="<%= syllabus.getSyllabusTitle() %>" required readonly style="background:#f0f0f0;"/>
                 </div>
                 <div class="form-group">
                     <label>Tên tiếng Việt</label>
                     <input type="text" name="syllabusName" class="form-control"
-                           value="<%= syllabus.getSyllabusName() != null ? syllabus.getSyllabusName() : "" %>"/>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Syllabus English</label>
-                    <input type="text" name="syllabusEnglish" class="form-control"
-                           value="<%= syllabus.getSyllabusEnglish() != null ? syllabus.getSyllabusEnglish() : "" %>"/>
+                           value="<%= syllabus.getSyllabusName() != null ? syllabus.getSyllabusName() : "" %>"
+                           placeholder="VD: Phát triển ứng dụng Web với Java"/>
                 </div>
                 <div class="form-group">
                     <label>Degree Level</label>

@@ -21,7 +21,6 @@
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById("syllabusTitle").value = data.syllabusTitle || "";
-                    document.getElementById("syllabusName").value = data.syllabusName || "";
                     document.getElementById("versionNo").value = data.versionNo || "1.0";
                     document.getElementById("preRequisiteText").value = data.preRequisiteText || "";
                 });
@@ -88,20 +87,12 @@
                 <div class="form-group">
                     <label>Syllabus Title <span class="required">*</span></label>
                     <input type="text" name="syllabusTitle" id="syllabusTitle" class="form-control"
-                           placeholder="VD: Software development project" required readonly style="background:#f0f0f0;"/>
+                           placeholder="Auto-fill từ Subject" required readonly style="background:#f0f0f0;"/>
                 </div>
                 <div class="form-group">
                     <label>Tên tiếng Việt</label>
                     <input type="text" name="syllabusName" id="syllabusName" class="form-control"
-                           placeholder="VD: Dự án phát triển phần mềm" readonly style="background:#f0f0f0;"/>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Syllabus English</label>
-                    <input type="text" name="syllabusEnglish" class="form-control"
-                           placeholder="VD: Software Development Project"/>
+                           placeholder="VD: Phát triển ứng dụng Web với Java"/>
                 </div>
                 <div class="form-group">
                     <label>Degree Level</label>
