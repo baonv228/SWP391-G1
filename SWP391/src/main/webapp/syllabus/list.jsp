@@ -28,7 +28,7 @@
             <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/home">
                 ← Trang chủ
             </a>
-            <a class="btn-syl btn-primary-syl" href="<%=request.getContextPath()%>/syllabus?action=create">
+            <a class="btn-syl btn-primary-syl" href="<%=request.getContextPath()%>/syllabus-manage?action=create">
                 + Tạo Syllabus mới
             </a>
         </div>
@@ -87,11 +87,11 @@
                     <td><%= s.getCreatedAt() != null ? s.getCreatedAt().toString().substring(0, 16) : "" %></td>
                     <td>
                         <% if ("Draft".equals(s.getStatus())) { %>
-                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus?action=edit&id=<%= s.getSyllabusId() %>">
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=edit&id=<%= s.getSyllabusId() %>">
                             ✏️ Sửa
                         </a>
                         <% } else { %>
-                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus?action=view&id=<%= s.getSyllabusId() %>" style="border-color:#1565c0; color:#1565c0;">
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=view&id=<%= s.getSyllabusId() %>" style="border-color:#1565c0; color:#1565c0;">
                             👁️ Xem
                         </a>
                         <% } %>

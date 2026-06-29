@@ -30,7 +30,7 @@ public class SyllabusDetailServlet extends HttpServlet {
 
         try {
             SyllabusDAO dao = new SyllabusDAO();
-            SyllabusDTO syllabus = dao.getSyllabusById(syllabusId);
+            SyllabusDTO syllabus = dao.getSyllabusDtoById(syllabusId);
 
             if (syllabus == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND,

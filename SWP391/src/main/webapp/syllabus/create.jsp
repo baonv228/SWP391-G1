@@ -17,7 +17,7 @@
         function fetchInitData() {
             const subjectId = document.getElementById("subjectId").value;
             if(!subjectId) return;
-            fetch(contextPath + "/syllabus?action=ajax_init&subjectId=" + subjectId)
+            fetch(contextPath + "/syllabus-manage?action=ajax_init&subjectId=" + subjectId)
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById("syllabusTitle").value = data.syllabusTitle || "";
@@ -54,7 +54,7 @@
     </nav>
 
     <form id="syllabusForm" method="post" enctype="multipart/form-data"
-          action="<%=request.getContextPath()%>/syllabus?action=create" accept-charset="UTF-8" onsubmit="return validateForm()">
+          action="<%=request.getContextPath()%>/syllabus-manage?action=create" accept-charset="UTF-8" onsubmit="return validateForm()">
         
         <input type="hidden" name="saveType" id="saveType" value="draft">
 
