@@ -568,7 +568,67 @@
         checkValidationStatus();
     }
 
-    function removeRow(btn, type) {
+        function addSessionRow(data = null) {
+        const i = sesCount++;
+        const row = document.createElement('tr');
+        row.id = 'sesRow_' + i;
+        row.className = 'session-row';
+        let topic = data ? data.topic : '';
+        let type = data ? data.type : '';
+        let itu = data ? data.itu : '';
+        let mat = data ? data.materials : '';
+        let down = data ? data.download : '';
+        let tasks = data ? data.tasks : '';
+        let urls = data ? data.urls : '';
+        let clos = data ? data.clos : [];
+        row.innerHTML =
+            '<td style="text-align:center" class="ses-idx">' + (i + 1) + '</td>' +
+            '<td><input type="text" name="ses_topic" class="form-control" value="'+topic+'" required/></td>' +
+            '<td><input type="text" name="ses_type" class="form-control" value="'+type+'" placeholder="Lecture, Discussion"/></td>' +
+            '<td id="sesClo_' + i + '">' + buildCLOCheckboxes('ses', i, clos) + '</td>' +
+            '<td><input type="text" name="ses_itu" class="form-control" value="'+itu+'" placeholder="AI literacy..."/></td>' +
+            '<td><input type="text" name="ses_materials" class="form-control" value="'+mat+'"/></td>' +
+            '<td><input type="text" name="ses_download" class="form-control" value="'+down+'"/></td>' +
+            '<td><input type="text" name="ses_tasks" class="form-control" value="'+tasks+'"/></td>' +
+            '<td><input type="text" name="ses_urls" class="form-control" value="'+urls+'"/></td>' +
+            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(this, \'ses\')">×</button></td>';
+        document.getElementById('sesBody').appendChild(row);
+        if(typeof checkValidationStatus === 'function') checkValidationStatus();
+    }
+
+    function addAssessmentRow(data = null) {
+        const i = asmCount++;
+        const row = document.createElement('tr');
+        row.id = 'asmRow_' + i;
+        row.className = 'assessment-row';
+        let cat = data ? data.category : '';
+        let type = data ? data.type : '';
+        let weight = data ? data.weight : '';
+        let criteria = data ? data.criteria : '';
+        let duration = data ? data.duration : '';
+        let qType = data ? data.qType : '';
+        let kSkill = data ? data.knowledgeSkill : '';
+        let guide = data ? data.gradingGuide : '';
+        let note = data ? data.note : '';
+        let clos = data ? data.clos : [];
+        row.innerHTML =
+            '<td style="text-align:center" class="asm-idx">' + (i + 1) + '</td>' +
+            '<td><input type="text" name="asm_category" class="form-control" value="'+cat+'" required placeholder="Quizzes"/></td>' +
+            '<td><input type="text" name="asm_type" class="form-control" value="'+type+'" placeholder="Multiple choice"/></td>' +
+            '<td><input type="number" step="0.1" name="asm_weight" class="form-control asm-weight" oninput="updateWeightTotal()" value="'+weight+'" required style="width:60px;"/></td>' +
+            '<td id="asmClo_' + i + '">' + buildCLOCheckboxes('asm', i, clos) + '</td>' +
+            '<td><input type="text" name="asm_criteria" class="form-control" value="'+criteria+'"/></td>' +
+            '<td><input type="text" name="asm_duration" class="form-control" value="'+duration+'"/></td>' +
+            '<td><input type="text" name="asm_questionType" class="form-control" value="'+qType+'"/></td>' +
+            '<td><input type="text" name="asm_knowledgeSkill" class="form-control" value="'+kSkill+'"/></td>' +
+            '<td><input type="text" name="asm_gradingGuide" class="form-control" value="'+guide+'"/></td>' +
+            '<td><input type="text" name="asm_note" class="form-control" value="'+note+'"/></td>' +
+            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(this, \'asm\')">×</button></td>';
+        document.getElementById('asmBody').appendChild(row);
+        if(typeof checkValidationStatus === 'function') checkValidationStatus();
+    }
+
+function removeRow(btn, type) {
         if(typeof btn === 'string') {
             const el = document.getElementById(btn);
             if(el) el.remove();
