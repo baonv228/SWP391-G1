@@ -16,7 +16,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Edit Syllabus — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=2"/>
     <script>
     function openPloModal(cloNum, btnEl) {
         const subjectInput = document.getElementById('subjectId') || document.querySelector('input[name="subjectId"]');
@@ -96,11 +96,11 @@
     <div class="alert alert-error"><%= error %></div>
     <% } %>
     <% if ("draft".equals(request.getParameter("success"))) { %>
-    <div class="alert alert-success" style="background:#e8f5e9; color:#2e7d32; padding:10px; margin-bottom:20px; border-radius:4px;">
+    <div class="alert alert-success" style="background:#fff0e6; color:#f26d21; padding:10px; margin-bottom:20px; border-radius:4px;">
         Đã lưu Draft thành công! Bạn có thể tiếp tục chỉnh sửa.
     </div>
     <% } else if ("update".equals(request.getParameter("success"))) { %>
-    <div class="alert alert-success" style="background:#e8f5e9; color:#2e7d32; padding:10px; margin-bottom:20px; border-radius:4px;">
+    <div class="alert alert-success" style="background:#fff0e6; color:#f26d21; padding:10px; margin-bottom:20px; border-radius:4px;">
         Cập nhật Draft thành công!
     </div>
     <% } %>
@@ -726,7 +726,7 @@ function removeRow(btn, type) {
         });
         const el = document.getElementById('weightTotal');
         el.textContent = 'Tổng weight: ' + total.toFixed(1) + '%';
-        el.style.color = (Math.abs(total - 100) < 0.01) ? '#2e7d32' : '#c62828';
+        el.style.color = (Math.abs(total - 100) < 0.01) ? '#f26d21' : '#c62828';
         checkValidationStatus();
     }
 
@@ -889,7 +889,7 @@ function removeRow(btn, type) {
     <!-- PLO Mapping Modal -->
     <div id="ploModal" style="display:none; position:fixed; z-index:1050; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
         <div style="background-color:#fff; margin:10% auto; padding:20px; border:1px solid #888; width:50%; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-            <h3 id="ploModalTitle" style="margin-top:0; color:#2e7d32;">Map PLO cho CLO</h3>
+            <h3 id="ploModalTitle" style="margin-top:0; color:#f26d21;">Map PLO cho CLO</h3>
             <input type="hidden" id="currentCloMappingNum">
             <div id="ploCheckboxContainer" style="margin:20px 0; max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:4px;">
                 <!-- Checkboxes go here -->

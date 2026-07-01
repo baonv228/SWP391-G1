@@ -11,7 +11,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Danh sách Syllabus — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=2"/>
 </head>
 <body class="syllabus-page">
 <div class="syl-container">
