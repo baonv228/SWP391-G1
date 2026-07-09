@@ -165,20 +165,19 @@ public class SyllabusServlet extends HttpServlet {
     }
 
     private void handleAjaxPlos(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        int programId = parseInt(request.getParameter("programId"), 0);
+        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
         int subjectId = parseInt(request.getParameter("subjectId"), 0);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        List<PLO> plos = new ArrayList<>();
-        if (programId > 0) {
-            plos = ploDAO.getPLOsByProgramId(programId);
+        if (curriculumId > 0) {
+            List<PLO> plos = ploDAO.getPLOsByCurriculumId(curriculumId);
+            response.getWriter().write(new Gson().toJson(plos));
         } else if (subjectId > 0) {
-            List<Integer> pIds = ploDAO.getProgramIdsForSubject(subjectId);
-            if (!pIds.isEmpty()) {
-                plos = ploDAO.getPLOsByProgramId(pIds.get(0));
-            }
+            List<java.util.Map<String, Object>> data = ploDAO.getCurriculaWithPLOsForSubject(subjectId);
+            response.getWriter().write(new Gson().toJson(data));
+        } else {
+            response.getWriter().write("[]");
         }
-        response.getWriter().write(new Gson().toJson(plos));
     }
 
     // =========================================================================

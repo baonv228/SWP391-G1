@@ -32,16 +32,25 @@
             .then(res => res.json())
             .then(data => {
                 if(!data || data.length === 0) {
-                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Training Program)</span>';
+                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Curriculum)</span>';
                     return;
                 }
                 let html = '';
-                data.forEach(p => {
-                    const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
-                    html += '<div style="margin-bottom:8px;">' +
-                            '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
-                            '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
+                data.forEach(c => {
+                    html += '<div style="margin-top:15px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #eee;">' +
+                            '<strong style="color:var(--primary-dark); font-size:15px;">Khung: ' + c.curriculumName + '</strong>' +
                             '</div>';
+                    if (c.plos && c.plos.length > 0) {
+                        c.plos.forEach(p => {
+                            const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
+                            html += '<div style="margin-bottom:8px; margin-left:10px;">' +
+                                    '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
+                                    '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
+                                    '</div>';
+                        });
+                    } else {
+                        html += '<div style="margin-left:10px; color:#888;">Chưa có PLO nào</div>';
+                    }
                 });
                 container.innerHTML = html;
             }).catch(err => {
@@ -381,16 +390,25 @@
             .then(res => res.json())
             .then(data => {
                 if(!data || data.length === 0) {
-                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Training Program)</span>';
+                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Curriculum)</span>';
                     return;
                 }
                 let html = '';
-                data.forEach(p => {
-                    const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
-                    html += '<div style="margin-bottom:8px;">' +
-                            '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
-                            '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
+                data.forEach(c => {
+                    html += '<div style="margin-top:15px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #eee;">' +
+                            '<strong style="color:var(--primary-dark); font-size:15px;">Khung: ' + c.curriculumName + '</strong>' +
                             '</div>';
+                    if (c.plos && c.plos.length > 0) {
+                        c.plos.forEach(p => {
+                            const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
+                            html += '<div style="margin-bottom:8px; margin-left:10px;">' +
+                                    '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
+                                    '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
+                                    '</div>';
+                        });
+                    } else {
+                        html += '<div style="margin-left:10px; color:#888;">Chưa có PLO nào</div>';
+                    }
                 });
                 container.innerHTML = html;
             }).catch(err => {

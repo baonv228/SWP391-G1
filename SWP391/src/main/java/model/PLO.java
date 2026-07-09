@@ -6,16 +6,16 @@ package model;
  */
 public class PLO {
     private int ploId;
-    private int programId;
+    private int curriculumId;
     private String ploCode;
     private String ploDescription;
 
     public PLO() {
     }
 
-    public PLO(int ploId, int programId, String ploCode, String ploDescription) {
+    public PLO(int ploId, int curriculumId, String ploCode, String ploDescription) {
         this.ploId = ploId;
-        this.programId = programId;
+        this.curriculumId = curriculumId;
         this.ploCode = ploCode;
         this.ploDescription = ploDescription;
     }
@@ -28,12 +28,12 @@ public class PLO {
         this.ploId = ploId;
     }
 
-    public int getProgramId() {
-        return programId;
+    public int getCurriculumId() {
+        return curriculumId;
     }
 
-    public void setProgramId(int programId) {
-        this.programId = programId;
+    public void setCurriculumId(int curriculumId) {
+        this.curriculumId = curriculumId;
     }
 
     public String getPloCode() {
