@@ -11,7 +11,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Tạo Syllabus — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=2"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=3"/>
     <script>
     function openPloModal(cloNum, btnEl) {
         const subjectInput = document.getElementById('subjectId') || document.querySelector('input[name="subjectId"]');
@@ -110,6 +110,28 @@
     <% if (error != null && !error.isEmpty()) { %>
     <div class="alert alert-error"><%= error %></div>
     <% } %>
+
+    
+    <!-- Excel Import Panel -->
+    <div class="syl-card" id="excelImportPanel" style="background: linear-gradient(135deg, #fff9f0, #fff0e6); border: 2px dashed var(--primary); margin-bottom: 20px;">
+        <h2 style="margin-bottom: 16px;">📥 Import từ Excel</h2>
+        <p style="color:var(--muted); margin-bottom: 16px; font-size:14px;">
+            Bạn có thể soạn Syllabus trên file Excel rồi import vào hệ thống. Tải file mẫu, điền dữ liệu vào các Sheet, rồi upload lên để tự động điền form.
+        </p>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <a class="btn-syl btn-outline-syl btn-sm" href="" id="downloadTemplateLink" style="text-decoration:none;">
+                📄 Tải file mẫu (.xlsx)
+            </a>
+            <div style="flex:1; min-width:250px;">
+                <input type="file" id="excelFileInput" accept=".xlsx"
+                       style="padding:8px; border:1px solid var(--border); border-radius:6px; background:#fff; width:100%;">
+            </div>
+            <button type="button" class="btn-syl btn-primary-syl btn-sm" onclick="importExcel()" id="btnImportExcel">
+                📥 Import Excel
+            </button>
+        </div>
+        <div id="importStatus" style="margin-top:12px; display:none;"></div>
+    </div>
 
     <!-- Section Nav -->
     <nav class="section-nav">
@@ -658,13 +680,16 @@ function removeRow(btn, type) {
         checkValidationStatus();
     }
 
-    function buildCLOCheckboxes(prefix, rowIdx) {
+        function buildCLOCheckboxes(prefix, rowIdx, checkedIds = []) {
         let html = '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
         let found = false;
         document.querySelectorAll('#cloBody tr').forEach((tr) => {
-            const num = parseInt(tr.querySelector('input[name="clo_name"]').value.replace('CLO',''));
+            let cloNameStr = tr.querySelector('input[name="clo_name"]').value.trim();
+            const match = cloNameStr.match(/CLO(\d+)/i);
+            const num = match ? parseInt(match[1]) : 0;
+            const isChecked = checkedIds.includes(num) ? 'checked' : '';
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '"/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
@@ -817,6 +842,183 @@ function removeRow(btn, type) {
         addMaterialRow();
         checkValidationStatus();
     });
+
+    // =========================================================================
+    // Excel Import
+    // =========================================================================
+    document.getElementById('downloadTemplateLink').href = contextPath + '/syllabus-manage?action=download_template';
+
+    function importExcel() {
+        const fileInput = document.getElementById('excelFileInput');
+        const statusDiv = document.getElementById('importStatus');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('Vui lòng chọn file Excel (.xlsx) trước!');
+            return;
+        }
+        const file = fileInput.files[0];
+        if (!file.name.toLowerCase().endsWith('.xlsx')) {
+            alert('Chỉ hỗ trợ file .xlsx!');
+            return;
+        }
+
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = '<em style="color:var(--primary);">⏳ Đang xử lý file Excel...</em>';
+        document.getElementById('btnImportExcel').disabled = true;
+
+        const formData = new FormData();
+        formData.append('excelFile', file);
+
+        fetch(contextPath + '/syllabus-manage?action=import_excel', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('btnImportExcel').disabled = false;
+                if (!data.success) {
+                    let errHtml = '<div style="color:#c62828; padding:12px; background:#ffeaea; border-radius:6px;">';
+                    errHtml += '<strong>⚠️ Lỗi khi import:</strong><ul style="margin:8px 0 0 16px;">';
+                    data.errors.forEach(e => errHtml += '<li>' + e + '</li>');
+                    errHtml += '</ul></div>';
+                    statusDiv.innerHTML = errHtml;
+                    return;
+                }
+                fillFormFromImport(data);
+                statusDiv.innerHTML = '<div style="color:#f26d21; padding:12px; background:#fff0e6; border-radius:6px;">' +
+                    '<strong>✅ Import thành công!</strong> Dữ liệu đã được điền vào form. Vui lòng kiểm tra lại trước khi lưu.' +
+                    '</div>';
+            })
+            .catch(err => {
+                document.getElementById('btnImportExcel').disabled = false;
+                statusDiv.innerHTML = '<div style="color:#c62828;">❌ Lỗi kết nối: ' + err.message + '</div>';
+            });
+    }
+
+    function fillFormFromImport(data) {
+        // 1. General Info
+        if (data.general) {
+            const g = data.general;
+            const setVal = (name, val) => {
+                const el = document.querySelector('[name="' + name + '"]');
+                if (el && val) { el.readOnly = false; el.value = val; }
+            };
+            setVal('syllabusName', g['Syllabus Name (Tiếng Việt)']);
+            setVal('syllabusEnglish', g['Syllabus English']);
+            setVal('description', g['Description']);
+            setVal('studentTasks', g['Student Tasks']);
+            setVal('timeAllocation', g['Time Allocation']);
+            setVal('tools', g['Tools']);
+            setVal('note', g['Note']);
+            setVal('decisionNo', g['Decision No']);
+            if (g['Scoring Scale']) {
+                const scale = document.getElementById('scoringScale');
+                if (scale) scale.value = g['Scoring Scale'];
+            }
+            if (g['Min Avg Mark To Pass']) {
+                const min = document.getElementById('minAvgMarkToPass');
+                if (min) min.value = g['Min Avg Mark To Pass'];
+            }
+            if (g['Degree Level']) {
+                const dl = document.querySelector('[name="degreeLevel"]');
+                if (dl) dl.value = g['Degree Level'];
+            }
+        }
+
+        // 2. Materials - clear existing and add new
+        document.getElementById('matBody').innerHTML = '';
+        matCount = 0;
+        if (data.materials && data.materials.length > 0) {
+            data.materials.forEach(m => {
+                addMaterialRow();
+                const rows = document.querySelectorAll('#matBody tr');
+                const row = rows[rows.length - 1];
+                const inputs = row.querySelectorAll('input[type="text"]');
+                if (inputs[0]) inputs[0].value = m.description || '';
+                if (inputs[1]) inputs[1].value = m.author || '';
+                if (inputs[2]) inputs[2].value = m.publisher || '';
+                if (inputs[3]) inputs[3].value = m.publishedDate || '';
+                if (inputs[4]) inputs[4].value = m.edition || '';
+                if (inputs[5]) inputs[5].value = m.isbn || '';
+                if (inputs[6]) inputs[6].value = m.note || '';
+                const cbs = row.querySelectorAll('input[type="checkbox"]');
+                if (cbs[0] && (m.isMain === 'x' || m.isMain === 'true')) cbs[0].checked = true;
+                if (cbs[1] && (m.isHard === 'x' || m.isHard === 'true')) cbs[1].checked = true;
+                if (cbs[2] && (m.isOnline === 'x' || m.isOnline === 'true')) cbs[2].checked = true;
+            });
+        }
+
+        // 3. CLOs - clear and add
+        document.getElementById('cloBody').innerHTML = '';
+        cloCount = 0;
+        if (data.clos && data.clos.length > 0) {
+            data.clos.forEach(c => {
+                addCLORow();
+                const rows = document.querySelectorAll('#cloBody tr');
+                const row = rows[rows.length - 1];
+                const nameInput = row.querySelector('input[name="clo_name"]');
+                const detailsInput = row.querySelector('input[name="clo_details"]');
+                const loInput = row.querySelector('input[name="clo_loDetails"]');
+                if (nameInput) nameInput.value = c.cloName || '';
+                if (detailsInput) detailsInput.value = c.cloDetails || '';
+                if (loInput) loInput.value = c.loDetails || '';
+            });
+        }
+
+        // 4. Sessions - clear and add
+        document.getElementById('sesBody').innerHTML = '';
+        sesCount = 0;
+        if (data.sessions && data.sessions.length > 0) {
+            data.sessions.forEach(s => {
+                // Parse CLO references: "CLO1,CLO3" -> [1,3]
+                let cloNums = [];
+                if (s.clos) {
+                    s.clos.split(/[,;\s]+/).forEach(ref => {
+                        const match = ref.trim().match(/CLO(\d+)/i);
+                        if (match) cloNums.push(parseInt(match[1]));
+                    });
+                }
+                addSessionRow({
+                    topic: s.topic || '',
+                    type: s.type || '',
+                    itu: s.itu || '',
+                    materials: s.materials || '',
+                    download: s.download || '',
+                    tasks: s.tasks || '',
+                    urls: s.urls || '',
+                    clos: cloNums
+                });
+            });
+        }
+
+        // 5. Assessments - clear and add
+        document.getElementById('asmBody').innerHTML = '';
+        asmCount = 0;
+        if (data.assessments && data.assessments.length > 0) {
+            data.assessments.forEach(a => {
+                let cloNums = [];
+                if (a.clos) {
+                    a.clos.split(/[,;\s]+/).forEach(ref => {
+                        const match = ref.trim().match(/CLO(\d+)/i);
+                        if (match) cloNums.push(parseInt(match[1]));
+                    });
+                }
+                addAssessmentRow({
+                    category: a.category || '',
+                    type: a.type || '',
+                    weight: a.weight || '',
+                    criteria: a.criteria || '',
+                    duration: a.duration || '',
+                    qType: a.questionType || '',
+                    knowledgeSkill: a.knowledgeSkill || '',
+                    gradingGuide: a.gradingGuide || '',
+                    note: a.note || '',
+                    clos: cloNums
+                });
+            });
+        }
+
+        // Refresh validation
+        if (typeof updateWeightTotal === 'function') updateWeightTotal();
+        if (typeof checkValidationStatus === 'function') checkValidationStatus();
+    }
+
 </script>
 
     <!-- PLO Mapping Modal -->
