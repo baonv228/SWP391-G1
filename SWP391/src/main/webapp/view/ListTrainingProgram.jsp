@@ -81,8 +81,6 @@
                     <dd><%= selectedProgram.getProgramId() %></dd>
                     <dt>Mã ngành</dt>
                     <dd><%= selectedProgram.getProgramCode() != null ? selectedProgram.getProgramCode() : "" %></dd>
-                    <dt>Năm học</dt>
-                    <dd><%= selectedProgram.getAcademicYear() != null ? selectedProgram.getAcademicYear() : "" %></dd>
                     <dt>Tên chương trình</dt>
                     <dd><%= selectedProgram.getProgramName() != null ? selectedProgram.getProgramName() : "" %></dd>
                     <dt>Trạng thái</dt>

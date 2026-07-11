@@ -10,15 +10,16 @@ import model.PLO;
 public class PLODAO extends DBContext {
 
     /**
-     * Get all PLOs belonging to a Training_Program.
+     * Get all PLOs through curriculums belonging to a Training_Program.
      */
     public List<PLO> getPLOsByProgramId(int programId) {
         List<PLO> list = new ArrayList<>();
         String sql = """
-                SELECT PloID, ProgramID, PloCode, PloDescription
-                FROM dbo.[PLO]
-                WHERE ProgramID = ?
-                ORDER BY PloCode
+                SELECT p.plo_id, p.CurriculumID, p.plo_code, p.plo_description
+                FROM dbo.[PLO] p
+                JOIN dbo.[Curriculum] c ON p.CurriculumID = c.CurriculumID
+                WHERE c.ProgramID = ?
+                ORDER BY p.plo_code
                 """;
 
         try (Connection con = getConnection();
@@ -27,10 +28,10 @@ public class PLODAO extends DBContext {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     PLO p = new PLO();
-                    p.setPloId(rs.getInt("PloID"));
-                    p.setProgramId(rs.getInt("ProgramID"));
-                    p.setPloCode(rs.getString("PloCode"));
-                    p.setPloDescription(rs.getString("PloDescription"));
+                    p.setPloId(rs.getInt("plo_id"));
+                    p.setCurriculumId(rs.getInt("CurriculumID"));
+                    p.setPloCode(rs.getString("plo_code"));
+                    p.setPloDescription(rs.getString("plo_description"));
                     list.add(p);
                 }
             }

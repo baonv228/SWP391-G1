@@ -2,16 +2,16 @@ package model;
 
 public class PO {
     private int poId;
-    private int programId;
+    private int curriculumId;
     private String poCode;
     private String poDescription;
 
     public PO() {
     }
 
-    public PO(int poId, int programId, String poCode, String poDescription) {
+    public PO(int poId, int curriculumId, String poCode, String poDescription) {
         this.poId = poId;
-        this.programId = programId;
+        this.curriculumId = curriculumId;
         this.poCode = poCode;
         this.poDescription = poDescription;
     }
@@ -24,12 +24,20 @@ public class PO {
         this.poId = poId;
     }
 
+    public int getCurriculumId() {
+        return curriculumId;
+    }
+
+    public void setCurriculumId(int curriculumId) {
+        this.curriculumId = curriculumId;
+    }
+
     public int getProgramId() {
-        return programId;
+        return curriculumId;
     }
 
     public void setProgramId(int programId) {
-        this.programId = programId;
+        this.curriculumId = programId;
     }
 
     public String getPoCode() {

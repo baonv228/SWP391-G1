@@ -129,7 +129,7 @@ public class CurriculumDAO extends DBContext {
 
         String sql = """
                 SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
-                       tp.ProgramCode, tp.ProgramName, tp.MajorName, tp.AcademicYear
+                       tp.ProgramCode, tp.ProgramName, tp.MajorName
                 FROM dbo.[Curriculum] c
                 JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
                 """ + whereClause + """
@@ -175,7 +175,7 @@ public class CurriculumDAO extends DBContext {
     public CurriculumDTO getCurriculumById(int curriculumId) throws SQLException {
         String sql = """
                 SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
-                       tp.ProgramCode, tp.ProgramName, tp.MajorName, tp.AcademicYear
+                       tp.ProgramCode, tp.ProgramName, tp.MajorName
                 FROM dbo.[Curriculum] c
                 JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
                 WHERE c.CurriculumID = ?
@@ -312,7 +312,6 @@ public class CurriculumDAO extends DBContext {
         dto.setProgramCode(rs.getString("ProgramCode"));
         dto.setProgramName(rs.getString("ProgramName"));
         dto.setMajorName(rs.getString("MajorName"));
-        dto.setAcademicYear(rs.getString("AcademicYear"));
         return dto;
     }
 
