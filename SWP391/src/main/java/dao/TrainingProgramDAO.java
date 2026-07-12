@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import model.PLO;
 import model.PO;
 import model.TrainingProgram;
 
@@ -19,7 +18,7 @@ public class TrainingProgramDAO extends DBContext {
         int offset = Math.max(page - 1, 0) * pageSize;
 
         String sql = """
-                SELECT ProgramID, CreatedBy, ProgramCode, ProgramName, AcademicYear,
+                SELECT ProgramID, CreatedBy, ProgramCode, ProgramName,
                        MajorName, Description, Status
                 FROM dbo.[Training_Program]
                 WHERE (? = '' OR ProgramCode = ?)
@@ -70,7 +69,7 @@ public class TrainingProgramDAO extends DBContext {
     public List<TrainingProgram> getTrainingProgramOptions() {
         List<TrainingProgram> list = new ArrayList<>();
         String sql = """
-                SELECT ProgramID, CreatedBy, ProgramCode, ProgramName, AcademicYear,
+                SELECT ProgramID, CreatedBy, ProgramCode, ProgramName,
                        MajorName, Description, Status
                 FROM dbo.[Training_Program]
                 ORDER BY ProgramID
@@ -90,7 +89,7 @@ public class TrainingProgramDAO extends DBContext {
 
     public TrainingProgram getTrainingProgramById(int programId) {
         String sql = """
-                SELECT ProgramID, CreatedBy, ProgramCode, ProgramName, AcademicYear,
+                SELECT ProgramID, CreatedBy, ProgramCode, ProgramName,
                        MajorName, Description, Status
                 FROM dbo.[Training_Program]
                 WHERE ProgramID = ?
@@ -128,9 +127,10 @@ public class TrainingProgramDAO extends DBContext {
     public List<PO> getPOsByProgramId(int programId) {
         List<PO> list = new ArrayList<>();
         String sql = """
-                SELECT po_id, ProgramID, po_code, po_description
-                FROM dbo.[PO]
-                WHERE ProgramID = ?
+                SELECT po.po_id, po.CurriculumID, po.po_code, po.po_description
+                FROM dbo.[PO] po
+                JOIN dbo.[Curriculum] c ON po.CurriculumID = c.CurriculumID
+                WHERE c.ProgramID = ?
                 ORDER BY po_code
                 """;
 
@@ -141,7 +141,7 @@ public class TrainingProgramDAO extends DBContext {
                 while (rs.next()) {
                     PO po = new PO();
                     po.setPoId(rs.getInt("po_id"));
-                    po.setProgramId(rs.getInt("ProgramID"));
+                    po.setCurriculumId(rs.getInt("CurriculumID"));
                     po.setPoCode(rs.getString("po_code"));
                     po.setPoDescription(rs.getString("po_description"));
                     list.add(po);
@@ -153,15 +153,13 @@ public class TrainingProgramDAO extends DBContext {
         return list;
     }
 
-    public int createTrainingProgram(TrainingProgram program, List<PLO> plos, List<PO> pos) {
+    public int createTrainingProgram(TrainingProgram program) {
         Connection con = null;
         try {
             con = getConnection();
             con.setAutoCommit(false);
 
             int programId = insertTrainingProgram(con, program);
-            insertPLOs(con, programId, plos);
-            insertPOs(con, programId, pos);
 
             con.commit();
             return programId;
@@ -190,18 +188,17 @@ public class TrainingProgramDAO extends DBContext {
     private int insertTrainingProgram(Connection con, TrainingProgram program) throws SQLException {
         String sql = """
                 INSERT INTO dbo.[Training_Program]
-                (CreatedBy, ProgramCode, ProgramName, AcademicYear, MajorName, Description, Status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (CreatedBy, ProgramCode, ProgramName, MajorName, Description, Status)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
         try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, program.getCreatedBy());
             ps.setString(2, normalizeProgramCode(program.getProgramCode()));
             ps.setString(3, program.getProgramName());
-            ps.setString(4, program.getAcademicYear());
-            ps.setString(5, program.getMajorName());
-            ps.setString(6, program.getDescription());
-            ps.setString(7, program.getStatus());
+            ps.setString(4, program.getMajorName());
+            ps.setString(5, program.getDescription());
+            ps.setString(6, program.getStatus());
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -213,41 +210,12 @@ public class TrainingProgramDAO extends DBContext {
         throw new SQLException("Cannot get generated ProgramID.");
     }
 
-    private void insertPLOs(Connection con, int programId, List<PLO> plos) throws SQLException {
-        String sql = "INSERT INTO dbo.[PLO] (ProgramID, PloCode, PloDescription) VALUES (?, ?, ?)";
-
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            for (PLO plo : plos) {
-                ps.setInt(1, programId);
-                ps.setString(2, plo.getPloCode());
-                ps.setString(3, plo.getPloDescription());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    private void insertPOs(Connection con, int programId, List<PO> pos) throws SQLException {
-        String sql = "INSERT INTO dbo.[PO] (ProgramID, po_code, po_description) VALUES (?, ?, ?)";
-
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            for (PO po : pos) {
-                ps.setInt(1, programId);
-                ps.setString(2, po.getPoCode());
-                ps.setString(3, po.getPoDescription());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
     private TrainingProgram mapTrainingProgram(ResultSet rs) throws SQLException {
         TrainingProgram program = new TrainingProgram();
         program.setProgramId(rs.getInt("ProgramID"));
         program.setCreatedBy(rs.getInt("CreatedBy"));
         program.setProgramCode(rs.getString("ProgramCode"));
         program.setProgramName(rs.getString("ProgramName"));
-        program.setAcademicYear(rs.getString("AcademicYear"));
         program.setMajorName(rs.getString("MajorName"));
         program.setDescription(rs.getString("Description"));
         program.setStatus(rs.getString("Status"));
