@@ -365,6 +365,7 @@
             to { opacity: 1; }
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body>
     <header class="topbar">
@@ -386,6 +387,7 @@
                 <p>Danh sách tất cả các tài khoản sinh viên, giảng viên và quản trị viên trong hệ thống.</p>
             </div>
             <button class="btn-primary" onclick="openAddModal()">+ Thêm người dùng</button>
+            <a class="btn-secondary" href="<%=request.getContextPath()%>/admin/users?action=export">Export Excel</a>
         </div>
 
         <div class="search-bar">
