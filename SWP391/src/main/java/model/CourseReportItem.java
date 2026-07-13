@@ -30,6 +30,8 @@ public class CourseReportItem {
     public void setSubjectId(int subjectId) { this.subjectId = subjectId; }
     public String getSubjectCode() { return subjectCode; }
     public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
+    /** Course IDs in TPMS are the subject codes (for example, SWP391). */
+    public String getCourseId() { return subjectCode; }
     public String getSubjectName() { return subjectName; }
     public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
     public String getCourseDescription() { return courseDescription; }

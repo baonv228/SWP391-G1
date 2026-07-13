@@ -17,14 +17,18 @@ public class ReportDAO extends DBContext {
                 + "(SELECT COUNT(*) FROM Curriculum) TotalCurriculums, "
                 + "(SELECT COUNT(*) FROM Subject) TotalSubjects, "
                 + "(SELECT COUNT(*) FROM Syllabus) TotalSyllabuses";
-        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+        try (Connection con = getConnection();
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 stats.setTotalPrograms(rs.getInt("TotalPrograms"));
                 stats.setTotalCurriculums(rs.getInt("TotalCurriculums"));
                 stats.setTotalSubjects(rs.getInt("TotalSubjects"));
                 stats.setTotalSyllabuses(rs.getInt("TotalSyllabuses"));
             }
-        } catch (Exception e) { System.out.println("getReportStats error: " + e.getMessage()); }
+        } catch (Exception e) {
+            System.out.println("getReportStats error: " + e.getMessage());
+        }
         return stats;
     }
 
@@ -35,20 +39,38 @@ public class ReportDAO extends DBContext {
         List<Object> parameters = new ArrayList<>();
         if (hasText(keyword)) {
             sql.append(" AND (sub.SubjectCode LIKE ? OR sub.SubjectName LIKE ?) ");
-            parameters.add("%" + keyword.trim() + "%"); parameters.add("%" + keyword.trim() + "%");
+            parameters.add("%" + keyword.trim() + "%");
+            parameters.add("%" + keyword.trim() + "%");
         }
-        if (hasText(status)) { sql.append(" AND sy.Status = ? "); parameters.add(status.trim()); }
+        if (hasText(status)) {
+            sql.append(" AND sy.Status = ? ");
+            parameters.add(status.trim());
+        }
         if (hasText(programFilter)) {
-            sql.append(" AND EXISTS (SELECT 1 FROM Curriculum_Subject fcs JOIN Curriculum fc ON fcs.CurriculumID = fc.CurriculumID WHERE fcs.SubjectID = sub.SubjectID AND fc.ProgramID = ?) ");
+            sql.append(" AND EXISTS (SELECT 1 FROM Curriculum_Subject fcs "
+                    + "JOIN Curriculum fc ON fcs.CurriculumID = fc.CurriculumID "
+                    + "WHERE fcs.SubjectID = sub.SubjectID AND fc.ProgramID = ?) ");
             parameters.add(Integer.parseInt(programFilter.trim()));
         }
-        if (hasText(fromDate)) { sql.append(" AND CAST(sy.CreatedAt AS DATE) >= ? "); parameters.add(Date.valueOf(fromDate)); }
-        if (hasText(toDate)) { sql.append(" AND CAST(sy.CreatedAt AS DATE) <= ? "); parameters.add(Date.valueOf(toDate)); }
+        if (hasText(fromDate)) {
+            sql.append(" AND CAST(sy.CreatedAt AS DATE) >= ? ");
+            parameters.add(Date.valueOf(fromDate));
+        }
+        if (hasText(toDate)) {
+            sql.append(" AND CAST(sy.CreatedAt AS DATE) <= ? ");
+            parameters.add(Date.valueOf(toDate));
+        }
         sql.append(orderBy(sort));
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
             bind(ps, parameters);
-            try (ResultSet rs = ps.executeQuery()) { while (rs.next()) reports.add(map(rs)); }
-        } catch (Exception e) { System.out.println("getCourseReports error: " + e.getMessage()); }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    reports.add(map(rs));
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getCourseReports error: " + e.getMessage());
+        }
         return reports;
     }
 
@@ -56,8 +78,13 @@ public class ReportDAO extends DBContext {
         String sql = baseSelect() + " WHERE sy.SyllabusID = ?";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, reportId);
-            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? map(rs) : null; }
-        } catch (Exception e) { System.out.println("getCourseReportById error: " + e.getMessage()); return null; }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? map(rs) : null;
+            }
+        } catch (Exception e) {
+            System.out.println("getCourseReportById error: " + e.getMessage());
+            return null;
+        }
     }
 
     private String baseSelect() {
@@ -65,40 +92,79 @@ public class ReportDAO extends DBContext {
             SELECT sy.SyllabusID AS ReportID, sub.SubjectID, sub.SubjectCode, sub.SubjectName,
                    COALESCE(NULLIF(sub.Description, ''), sy.Description, '') AS CourseDescription,
                    sub.Credits, COALESCE(sy.Status, 'Draft') AS SyllabusStatus, sy.VersionNo,
-                   CASE WHEN sy.VersionNo IS NULL OR sy.VersionNo IN ('1', '1.0', 'v1', 'V1') THEN 'Created' ELSE 'Updated' END AS ReportType,
-                   CASE WHEN sy.VersionNo IS NULL OR sy.VersionNo IN ('1', '1.0', 'v1', 'V1') THEN 0 ELSE 1 END AS NumberOfChanges,
-                   CASE WHEN sy.VersionNo IS NULL OR sy.VersionNo IN ('1', '1.0', 'v1', 'V1') THEN 'Initial syllabus version created.' ELSE CONCAT('Syllabus version ', sy.VersionNo, ' created as an update.') END AS ChangeDetails,
-                   creator.FullName AS CreatedBy, creator.FullName AS ModifiedBy, sy.CreatedAt AS CreatedDate, sy.CreatedAt AS LastModifiedDate,
-                   reviewer.FullName AS Reviewer, sy.ApprovedAt AS ReviewDate,
+                   CASE WHEN versionInfo.VersionCount = 1 THEN 'Created' ELSE 'Updated' END AS ReportType,
+                   versionInfo.VersionCount - 1 AS NumberOfChanges,
+                   CASE WHEN versionInfo.VersionCount = 1 THEN 'Initial syllabus version created.'
+                        ELSE CONCAT('Syllabus version ', sy.VersionNo, ' created as update #', versionInfo.VersionCount - 1, '.') END AS ChangeDetails,
+                   originalCreator.FullName AS CreatedBy, modifier.FullName AS ModifiedBy,
+                   originalVersion.CreatedAt AS CreatedDate, sy.CreatedAt AS LastModifiedDate,
+                   COALESCE(requestReviewer.FullName, approvedReviewer.FullName) AS Reviewer,
+                   COALESCE(latestRequest.ReviewedAt, sy.ApprovedAt) AS ReviewDate,
                    (SELECT STRING_AGG(c.CurriculumName, ', ') FROM Curriculum_Subject cs JOIN Curriculum c ON cs.CurriculumID = c.CurriculumID WHERE cs.SubjectID = sub.SubjectID) AS AssociatedCurriculums,
                    (SELECT STRING_AGG(tp.ProgramName, ', ') FROM Curriculum_Subject cs JOIN Curriculum c ON cs.CurriculumID = c.CurriculumID JOIN Training_Program tp ON c.ProgramID = tp.ProgramID WHERE cs.SubjectID = sub.SubjectID) AS AssociatedPrograms
             FROM Syllabus sy
             JOIN Subject sub ON sy.SubjectID = sub.SubjectID
-            LEFT JOIN dbo.[User] creator ON sy.CreatedBy = creator.UserID
-            LEFT JOIN dbo.[User] reviewer ON sy.ApprovedBy = reviewer.UserID
+            OUTER APPLY (SELECT TOP 1 initial.CreatedBy, initial.CreatedAt FROM Syllabus initial WHERE initial.SubjectID = sy.SubjectID ORDER BY initial.CreatedAt ASC, initial.SyllabusID ASC) originalVersion
+            OUTER APPLY (SELECT COUNT(*) AS VersionCount FROM Syllabus versions WHERE versions.SubjectID = sy.SubjectID AND (versions.CreatedAt < sy.CreatedAt OR (versions.CreatedAt = sy.CreatedAt AND versions.SyllabusID <= sy.SyllabusID))) versionInfo
+            OUTER APPLY (SELECT TOP 1 approval.ReviewedBy, approval.ReviewedAt FROM Syllabus_Approval_Request approval WHERE approval.SyllabusID = sy.SyllabusID AND approval.ReviewedAt IS NOT NULL ORDER BY approval.ReviewedAt DESC, approval.RequestID DESC) latestRequest
+            LEFT JOIN dbo.[User] originalCreator ON originalVersion.CreatedBy = originalCreator.UserID
+            LEFT JOIN dbo.[User] modifier ON sy.CreatedBy = modifier.UserID
+            LEFT JOIN dbo.[User] requestReviewer ON latestRequest.ReviewedBy = requestReviewer.UserID
+            LEFT JOIN dbo.[User] approvedReviewer ON sy.ApprovedBy = approvedReviewer.UserID
             """;
     }
 
     private String orderBy(String sort) {
-        if ("created_asc".equals(sort)) return " ORDER BY sy.CreatedAt ASC";
-        if ("modified_desc".equals(sort)) return " ORDER BY sy.CreatedAt DESC";
-        if ("modified_asc".equals(sort)) return " ORDER BY sy.CreatedAt ASC";
+        if ("created_asc".equals(sort)) {
+            return " ORDER BY originalVersion.CreatedAt ASC, sy.SyllabusID ASC";
+        }
+        if ("created_desc".equals(sort)) {
+            return " ORDER BY originalVersion.CreatedAt DESC, sy.SyllabusID DESC";
+        }
+        if ("modified_desc".equals(sort)) {
+            return " ORDER BY sy.CreatedAt DESC";
+        }
+        if ("modified_asc".equals(sort)) {
+            return " ORDER BY sy.CreatedAt ASC";
+        }
         return " ORDER BY sy.CreatedAt DESC";
     }
-    private boolean hasText(String value) { return value != null && !value.trim().isEmpty(); }
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
     private void bind(PreparedStatement ps, List<Object> params) throws Exception {
         for (int i = 0; i < params.size(); i++) {
-            Object value = params.get(i); if (value instanceof Integer) ps.setInt(i + 1, (Integer) value);
-            else if (value instanceof Date) ps.setDate(i + 1, (Date) value); else ps.setString(i + 1, String.valueOf(value));
+            Object value = params.get(i);
+            if (value instanceof Integer) {
+                ps.setInt(i + 1, (Integer) value);
+            } else if (value instanceof Date) {
+                ps.setDate(i + 1, (Date) value);
+            } else {
+                ps.setString(i + 1, String.valueOf(value));
+            }
         }
     }
     private CourseReportItem map(ResultSet rs) throws Exception {
         CourseReportItem r = new CourseReportItem();
-        r.setReportId(rs.getInt("ReportID")); r.setSubjectId(rs.getInt("SubjectID")); r.setSubjectCode(rs.getString("SubjectCode")); r.setSubjectName(rs.getString("SubjectName"));
-        r.setCourseDescription(rs.getString("CourseDescription")); r.setCredits(rs.getInt("Credits")); r.setSyllabusStatus(rs.getString("SyllabusStatus")); r.setVersionNo(rs.getString("VersionNo"));
-        r.setReportType(rs.getString("ReportType")); r.setNumberOfChanges(rs.getInt("NumberOfChanges")); r.setChangeDetails(rs.getString("ChangeDetails"));
-        r.setCreatedBy(rs.getString("CreatedBy")); r.setModifiedBy(rs.getString("ModifiedBy")); r.setCreatedDate(rs.getTimestamp("CreatedDate")); r.setLastModifiedDate(rs.getTimestamp("LastModifiedDate"));
-        r.setReviewer(rs.getString("Reviewer")); r.setReviewDate(rs.getTimestamp("ReviewDate")); r.setAssociatedCurriculums(rs.getString("AssociatedCurriculums")); r.setAssociatedPrograms(rs.getString("AssociatedPrograms"));
+        r.setReportId(rs.getInt("ReportID"));
+        r.setSubjectId(rs.getInt("SubjectID"));
+        r.setSubjectCode(rs.getString("SubjectCode"));
+        r.setSubjectName(rs.getString("SubjectName"));
+        r.setCourseDescription(rs.getString("CourseDescription"));
+        r.setCredits(rs.getInt("Credits"));
+        r.setSyllabusStatus(rs.getString("SyllabusStatus"));
+        r.setVersionNo(rs.getString("VersionNo"));
+        r.setReportType(rs.getString("ReportType"));
+        r.setNumberOfChanges(rs.getInt("NumberOfChanges"));
+        r.setChangeDetails(rs.getString("ChangeDetails"));
+        r.setCreatedBy(rs.getString("CreatedBy"));
+        r.setModifiedBy(rs.getString("ModifiedBy"));
+        r.setCreatedDate(rs.getTimestamp("CreatedDate"));
+        r.setLastModifiedDate(rs.getTimestamp("LastModifiedDate"));
+        r.setReviewer(rs.getString("Reviewer"));
+        r.setReviewDate(rs.getTimestamp("ReviewDate"));
+        r.setAssociatedCurriculums(rs.getString("AssociatedCurriculums"));
+        r.setAssociatedPrograms(rs.getString("AssociatedPrograms"));
         return r;
     }
 }
