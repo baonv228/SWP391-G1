@@ -3,7 +3,32 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
+
+    <!-- Welcome file -->
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
+
+    <!--
+        Upload directory for learning materials.
+        Set this to an ABSOLUTE path on the server where ZIP/PDF files are stored.
+        Example Windows: D:\uploads\materials
+        Example Linux:   /var/uploads/materials
+        Leave empty to use {webapp_root}/materials (default for development).
+    -->
+    <context-param>
+        <param-name>upload.dir</param-name>
+        <param-value></param-value>
+    </context-param>
+
+    <!-- Error Pages -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/view/error/404.jsp</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/view/error/500.jsp</location>
+    </error-page>
+
 </web-app>

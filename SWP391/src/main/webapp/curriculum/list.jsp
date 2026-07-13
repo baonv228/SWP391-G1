@@ -26,7 +26,7 @@
         <div>
             <a class="btn-train btn-outline-train" href="<%=request.getContextPath()%>/home">Dashboard</a>
             <% if (canManage) { %>
-            <a class="btn-train btn-primary-train" href="<%=request.getContextPath()%>/curriculum?action=create">+ New Curriculum</a>
+            <a class="btn-train btn-primary-train" href="<%=request.getContextPath()%>/curriculum-manage?action=create">+ New Curriculum</a>
             <% } %>
         </div>
     </div>
@@ -41,7 +41,7 @@
         <div class="empty-state">
             <p>Chua co curriculum nao.</p>
             <% if (canManage) { %>
-            <a class="btn-train btn-primary-train" href="<%=request.getContextPath()%>/curriculum?action=create">Create first curriculum</a>
+            <a class="btn-train btn-primary-train" href="<%=request.getContextPath()%>/curriculum-manage?action=create">Create first curriculum</a>
             <% } %>
         </div>
         <% } else { %>

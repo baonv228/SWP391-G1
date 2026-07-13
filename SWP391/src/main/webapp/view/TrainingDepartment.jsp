@@ -3,12 +3,15 @@
 <%
     User currentUser = (User) session.getAttribute("user");
     String roleName = (String) session.getAttribute("roleName");
+
     if (roleName == null && currentUser != null && currentUser.getRole() != null) {
         roleName = currentUser.getRole().getRoleName();
         session.setAttribute("roleName", roleName);
     }
 
-    if (currentUser == null || roleName == null || !"Training Department".equalsIgnoreCase(roleName.trim())) {
+    if (currentUser == null || roleName == null ||
+        (!"Training Department".equalsIgnoreCase(roleName.trim())
+        && !"Admin".equalsIgnoreCase(roleName.trim()))) {
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
@@ -45,69 +48,34 @@
                 </div>
             </header>
 
-            <section class="content">
-                <div class="welcome">
-                    <h1>Welcome, Training Department</h1>
-                    <p>Here is the overview of syllabus requests and training programs.</p>
-                </div>
+            <a class="module-card" href="<%=request.getContextPath()%>/training-program?action=list">
+                <span class="module-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m22 10-10-5-10 5 10 5z"></path>
+                        <path d="M6 12v5c3 2 9 2 12 0v-5"></path>
+                        <path d="M22 10v6"></path>
+                    </svg>
+                </span>
+                <span class="module-title">Training Program</span>
+            </a>
 
-                <nav class="module-grid" aria-label="Training Department dashboard">
-                    <a class="module-card" href="#">
-                        <span class="module-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M9 5h6"></path>
-                                <path d="M9 12h6"></path>
-                                <path d="M9 16h4"></path>
-                                <path d="M8 3h8l1 2h3v16H4V5h3z"></path>
-                            </svg>
-                        </span>
-                        <span class="module-title">Request List</span>
-                    </a>
-                    <a class="module-card" href="#">
-                        <span class="module-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path>
-                            </svg>
-                        </span>
-                        <span class="module-title">Course List</span>
-                    </a>
-                    <a class="module-card" href="<%=request.getContextPath()%>/curriculum?action=list">
-                        <span class="module-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <path d="M14 2v6h6"></path>
-                                <path d="M8 13h8"></path>
-                                <path d="M8 17h5"></path>
-                            </svg>
-                        </span>
-                        <span class="module-title">Curriculum</span>
-                    </a>
-                    <a class="module-card" href="<%=request.getContextPath()%>/training-program?action=list">
-                        <span class="module-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="m22 10-10-5-10 5 10 5z"></path>
-                                <path d="M6 12v5c3 2 9 2 12 0v-5"></path>
-                                <path d="M22 10v6"></path>
-                            </svg>
-                        </span>
-                        <span class="module-title">Training Program</span>
-                    </a>
-                    <a class="module-card" href="<%=request.getContextPath()%>/report">
-                        <span class="module-icon">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 20h16"></path>
-                                <path d="M7 16V9"></path>
-                                <path d="M12 16V5"></path>
-                                <path d="M17 16v-3"></path>
-                            </svg>
-                        </span>
-                        <span class="module-title">Training Report</span>
-                    </a>
-                </nav>
-            </section>
+            <a class="module-card" href="<%=request.getContextPath()%>/report">
+                <span class="module-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 20h16"></path>
+                        <path d="M7 16V9"></path>
+                        <path d="M12 16V5"></path>
+                        <path d="M17 16v-3"></path>
+                    </svg>
+                </span>
+                <span class="module-title">Training Report</span>
+            </a>
+        </nav>
+    </section>
 
-            <footer class="footer">© 2026 Training Program Management System. All rights reserved.</footer>
-        </main>
-    </body>
+    <footer class="footer">
+        © 2026 Training Program Management System. All rights reserved.
+    </footer>
+</main>
+</body>
 </html>

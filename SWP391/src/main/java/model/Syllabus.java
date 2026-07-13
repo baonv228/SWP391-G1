@@ -139,6 +139,8 @@ public class Syllabus {
     public void setIsActive(boolean isActive) { this.isActive = isActive; }
 
     // ===== Transient display fields =====
+    private String materialFilePath;
+    private String approvedByName;
 
     public String getSubjectCode() { return subjectCode; }
     public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
@@ -148,4 +150,10 @@ public class Syllabus {
 
     public String getCreatedByName() { return createdByName; }
     public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
+
+    public String getMaterialFilePath() { return materialFilePath; }
+    public void setMaterialFilePath(String materialFilePath) { this.materialFilePath = materialFilePath; }
+
+    public String getApprovedByName() { return approvedByName; }
+    public void setApprovedByName(String approvedByName) { this.approvedByName = approvedByName; }
 }

@@ -1,5 +1,8 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CLO {
     private int cloId;
     private int syllabusId;
@@ -7,6 +10,10 @@ public class CLO {
     private String cloDetails;
     private String loDetails;
     private int displayOrder;
+
+    // Transient — for PLO mapping
+    private List<Integer> ploIds = new ArrayList<>();
+    private List<PLO> plos = new ArrayList<>();
 
     public CLO() {}
 
@@ -27,4 +34,10 @@ public class CLO {
 
     public int getDisplayOrder() { return displayOrder; }
     public void setDisplayOrder(int displayOrder) { this.displayOrder = displayOrder; }
+
+    public List<Integer> getPloIds() { return ploIds; }
+    public void setPloIds(List<Integer> ploIds) { this.ploIds = ploIds; }
+
+    public List<PLO> getPlos() { return plos; }
+    public void setPlos(List<PLO> plos) { this.plos = plos; }
 }
