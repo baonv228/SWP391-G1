@@ -36,6 +36,18 @@ public class PLO {
         this.curriculumId = curriculumId;
     }
 
+    public int getProgramId() {
+        return curriculumId;
+    }
+
+    public void setProgramId(int programId) {
+        this.curriculumId = programId;
+    }
+
+    public void setCurriculumId(int curriculumId) {
+        this.curriculumId = curriculumId;
+    }
+
     public String getPloCode() {
         return ploCode;
     }

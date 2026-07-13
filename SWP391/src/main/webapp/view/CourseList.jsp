@@ -6,6 +6,8 @@
     List<Subject> courses = (List<Subject>) request.getAttribute("courses");
     Subject selectedCourse = (Subject) request.getAttribute("course");
     String subjectCode = (String) request.getAttribute("subjectCode");
+    String selectedStatus = (String) request.getAttribute("selectedStatus");
+    List<String> statusOptions = (List<String>) request.getAttribute("statusOptions");
     Integer currentPage = (Integer) request.getAttribute("currentPage");
     Integer totalPages = (Integer) request.getAttribute("totalPages");
     Integer totalItems = (Integer) request.getAttribute("totalItems");
@@ -14,6 +16,12 @@
 
     if (subjectCode == null) {
         subjectCode = "";
+    }
+    if (selectedStatus == null) {
+        selectedStatus = "";
+    }
+    if (statusOptions == null) {
+        statusOptions = java.util.Collections.emptyList();
     }
     if (currentPage == null) {
         currentPage = 1;
@@ -44,7 +52,6 @@
             <header class="course-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/home">Home</a>
                 <div>
-
                     <h1>Course List</h1>
                 </div>
             </header>
@@ -52,16 +59,24 @@
             <section class="toolbar <%= canCreateCourse ? "has-action" : "" %>" aria-label="Course filters">
                 <div>
                     <h2>Subject Management</h2>
-                    <p>Search môn học theo Subject Code.</p>
+                    <p>Search môn học theo Subject Code và lọc theo trạng thái.</p>
                 </div>
 
                 <form class="search-form" method="get" action="<%=request.getContextPath()%>/course">
                     <input type="hidden" name="action" value="list" />
-                    <label for="subjectCode">Subject Code</label>
+                    <label for="subjectCode">Filter</label>
                     <div class="search-row">
                         <input id="subjectCode" name="subjectCode" value="<%= subjectCode %>" placeholder="VD: SWP hoặc SWP391" />
+                        <select id="status" name="status" aria-label="Status">
+                            <option value="">All Status</option>
+                            <% for (String statusOption : statusOptions) {
+                                boolean selected = selectedStatus.equalsIgnoreCase(statusOption);
+                            %>
+                            <option value="<%= statusOption %>" <%= selected ? "selected" : "" %>><%= statusOption %></option>
+                            <% } %>
+                        </select>
                         <button type="submit">Search</button>
-                        <% if (!subjectCode.isBlank()) { %>
+                        <% if (!subjectCode.isBlank() || !selectedStatus.isBlank()) { %>
                         <a class="clear-button" href="<%=request.getContextPath()%>/course?action=list">Clear</a>
                         <% } %>
                     </div>
@@ -101,7 +116,7 @@
                             <th>Subject Code</th>
                             <th>Subject Name</th>
                             <th>Credits</th>
-                            <th>Môn điều kiện</th>
+                            <th>Prerequisite</th>
                             <th>Status</th>
                             <th>Detail</th>
                         </tr>
@@ -109,7 +124,7 @@
                     <tbody>
                         <% if (courses == null || courses.isEmpty()) { %>
                         <tr>
-                            <td colspan="6" class="empty">Không có môn học phù hợp.</td>
+                            <td colspan="7" class="empty">Không có môn học phù hợp.</td>
                         </tr>
                         <% } else {
                             int index = (currentPage - 1) * 10 + 1;
@@ -135,7 +150,7 @@
                             </td>
                             <td><span class="status"><%= course.getStatus() != null ? course.getStatus() : "" %></span></td>
                             <td>
-                                <a class="detail-link" href="<%=request.getContextPath()%>/course?action=detail&id=<%= course.getSubjectId() %>&subjectCode=<%= java.net.URLEncoder.encode(subjectCode, "UTF-8") %>&page=<%= currentPage %>">chi tiết</a>
+                                <a class="detail-link" href="<%=request.getContextPath()%>/course?action=detail&id=<%= course.getSubjectId() %>&subjectCode=<%= java.net.URLEncoder.encode(subjectCode, "UTF-8") %>&status=<%= java.net.URLEncoder.encode(selectedStatus, "UTF-8") %>&page=<%= currentPage %>">chi tiết</a>
                             </td>
                         </tr>
                         <%  }
@@ -147,7 +162,7 @@
             <nav class="pagination" aria-label="Pagination">
                 <% for (int i = 1; i <= totalPages; i++) { %>
                 <a class="<%= i == currentPage ? "active" : "" %>"
-                   href="<%=request.getContextPath()%>/course?action=list&subjectCode=<%= java.net.URLEncoder.encode(subjectCode, "UTF-8") %>&page=<%= i %>"><%= i %></a>
+                   href="<%=request.getContextPath()%>/course?action=list&subjectCode=<%= java.net.URLEncoder.encode(subjectCode, "UTF-8") %>&status=<%= java.net.URLEncoder.encode(selectedStatus, "UTF-8") %>&page=<%= i %>"><%= i %></a>
                 <% } %>
                 <span>/ <%= totalPages %></span>
             </nav>

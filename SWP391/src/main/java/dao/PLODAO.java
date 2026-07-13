@@ -12,6 +12,7 @@ import model.PLO;
 public class PLODAO extends DBContext {
 
     /**
+     * Get all PLOs through curriculums belonging to a Training_Program.
      * Get all PLOs belonging to a Curriculum.
      */
     public List<PLO> getPLOsByCurriculumId(int curriculumId) {
