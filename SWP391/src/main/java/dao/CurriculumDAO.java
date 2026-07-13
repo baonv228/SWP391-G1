@@ -335,7 +335,7 @@ public class CurriculumDAO extends DBContext {
 
     private void insertPLOs(Connection con, int curriculumId, List<PLO> plos) throws Exception {
         String sql = """
-                INSERT INTO dbo.[PLO] (CurriculumID, plo_code, plo_description)
+                INSERT INTO dbo.[PLO] (CurriculumID, PloCode, PloDescription)
                 VALUES (?, ?, ?)
                 """;
 
@@ -352,7 +352,7 @@ public class CurriculumDAO extends DBContext {
 
     private void insertPOs(Connection con, int curriculumId, List<PO> pos) throws Exception {
         String sql = """
-                INSERT INTO dbo.[PO] (CurriculumID, po_code, po_description)
+                INSERT INTO dbo.[PO] (CurriculumID, PoCode, PoDescription)
                 VALUES (?, ?, ?)
                 """;
 

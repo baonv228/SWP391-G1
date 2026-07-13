@@ -127,11 +127,11 @@ public class TrainingProgramDAO extends DBContext {
     public List<PO> getPOsByProgramId(int programId) {
         List<PO> list = new ArrayList<>();
         String sql = """
-                SELECT po.po_id, po.CurriculumID, po.po_code, po.po_description
+                SELECT po.PoID, po.CurriculumID, po.PoCode, po.PoDescription
                 FROM dbo.[PO] po
                 JOIN dbo.[Curriculum] c ON po.CurriculumID = c.CurriculumID
                 WHERE c.ProgramID = ?
-                ORDER BY po_code
+                ORDER BY po.PoCode
                 """;
 
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -140,10 +140,10 @@ public class TrainingProgramDAO extends DBContext {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     PO po = new PO();
-                    po.setPoId(rs.getInt("po_id"));
+                    po.setPoId(rs.getInt("PoID"));
                     po.setCurriculumId(rs.getInt("CurriculumID"));
-                    po.setPoCode(rs.getString("po_code"));
-                    po.setPoDescription(rs.getString("po_description"));
+                    po.setPoCode(rs.getString("PoCode"));
+                    po.setPoDescription(rs.getString("PoDescription"));
                     list.add(po);
                 }
             }
