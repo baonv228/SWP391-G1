@@ -207,6 +207,28 @@ public class SyllabusDAO extends DBContext {
         return false;
     }
 
+    public boolean deleteSyllabus(int syllabusId) {
+        Connection con = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+            deleteChildren(con, syllabusId);
+            String sql = "DELETE FROM dbo.[Syllabus] WHERE SyllabusID=?";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, syllabusId);
+                ps.executeUpdate();
+            }
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            if (con != null) { try { con.rollback(); } catch (Exception ex) {} }
+            System.out.println("deleteSyllabus error: " + e.getMessage());
+            return false;
+        } finally {
+            if (con != null) { try { con.setAutoCommit(true); con.close(); } catch (Exception ex) {} }
+        }
+    }
+
     // =========================================================================
     // SAVE CHILDREN — transactional (delete old + insert new)
     // =========================================================================
@@ -260,7 +282,8 @@ public class SyllabusDAO extends DBContext {
             "DELETE FROM dbo.[Syllabus_Assessment] WHERE SyllabusID=?",
             "DELETE FROM dbo.[Syllabus_Session] WHERE SyllabusID=?",
             "DELETE FROM dbo.[CLO] WHERE SyllabusID=?",
-            "DELETE FROM dbo.[Syllabus_Material] WHERE SyllabusID=?"
+            "DELETE FROM dbo.[Syllabus_Material] WHERE SyllabusID=?",
+            "DELETE FROM dbo.[Learning_Material] WHERE SyllabusID=?"
         };
         for (String sql : deleteJunctions) {
             try (PreparedStatement ps = con.prepareStatement(sql)) {

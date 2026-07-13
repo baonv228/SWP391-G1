@@ -14,11 +14,14 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.*;
+import service.ExcelImportService;
+import service.ExcelTemplateGenerator;
 
 @WebServlet(name = "SyllabusServlet", urlPatterns = {"/syllabus-manage"})
 @MultipartConfig(
@@ -53,6 +56,12 @@ public class SyllabusServlet extends HttpServlet {
             case "ajax_plos":
                 handleAjaxPlos(request, response);
                 break;
+            case "delete":
+                handleDelete(request, response, user);
+                break;
+            case "download_template":
+                handleDownloadTemplate(request, response);
+                break;
             case "list":
             default:
                 showList(request, response, user);
@@ -75,6 +84,9 @@ public class SyllabusServlet extends HttpServlet {
                 break;
             case "edit":
                 processEdit(request, response, user);
+                break;
+            case "import_excel":
+                handleImportExcel(request, response);
                 break;
             default:
                 response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
@@ -162,14 +174,19 @@ public class SyllabusServlet extends HttpServlet {
     }
 
     private void handleAjaxPlos(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        int programId = parseInt(request.getParameter("programId"), 0);
+        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
+        int subjectId = parseInt(request.getParameter("subjectId"), 0);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        List<PLO> plos = new ArrayList<>();
-        if (programId > 0) {
-            plos = ploDAO.getPLOsByProgramId(programId);
+        if (curriculumId > 0) {
+            List<PLO> plos = ploDAO.getPLOsByCurriculumId(curriculumId);
+            response.getWriter().write(new Gson().toJson(plos));
+        } else if (subjectId > 0) {
+            List<java.util.Map<String, Object>> data = ploDAO.getCurriculaWithPLOsForSubject(subjectId);
+            response.getWriter().write(new Gson().toJson(data));
+        } else {
+            response.getWriter().write("[]");
         }
-        response.getWriter().write(new Gson().toJson(plos));
     }
 
     // =========================================================================
@@ -536,5 +553,84 @@ public class SyllabusServlet extends HttpServlet {
     private double parseDouble(String value, double defaultValue) {
         try { return Double.parseDouble(value.trim()); }
         catch (Exception e) { return defaultValue; }
+    }
+
+    private void handleDelete(jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response, model.User user)
+            throws jakarta.servlet.ServletException, IOException {
+        int id = parseInt(request.getParameter("id"), 0);
+        if (id > 0) {
+            syllabusDAO.deleteSyllabus(id);
+        }
+        response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
+    }
+
+    // =========================================================================
+    // Excel Import / Template Download
+    // =========================================================================
+
+    private void handleDownloadTemplate(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=Syllabus_Template.xlsx");
+        try {
+            ExcelTemplateGenerator.generate(response.getOutputStream());
+        } catch (Exception e) {
+            System.out.println("Template generation error: " + e.getMessage());
+            response.sendError(500, "Lỗi tạo file template.");
+        }
+    }
+
+    private void handleImportExcel(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("application/json; charset=UTF-8");
+        Gson gson = new Gson();
+
+        try {
+            Part filePart = request.getPart("excelFile");
+            if (filePart == null || filePart.getSize() == 0) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("errors", List.of("Vui lòng chọn file Excel (.xlsx) để upload."));
+                response.getWriter().write(gson.toJson(err));
+                return;
+            }
+
+            String fileName = filePart.getSubmittedFileName();
+            if (fileName == null || !fileName.toLowerCase().endsWith(".xlsx")) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("errors", List.of("Chỉ hỗ trợ file .xlsx. Vui lòng kiểm tra lại."));
+                response.getWriter().write(gson.toJson(err));
+                return;
+            }
+
+            ExcelImportService service = new ExcelImportService();
+            ExcelImportService.ImportResult result;
+            try (InputStream is = filePart.getInputStream()) {
+                result = service.parseExcel(is);
+            }
+
+            Map<String, Object> json = new HashMap<>();
+            if (result.hasErrors()) {
+                json.put("success", false);
+                json.put("errors", result.errors);
+            } else {
+                json.put("success", true);
+                json.put("general", result.generalInfo);
+                json.put("clos", result.clos);
+                json.put("sessions", result.sessions);
+                json.put("materials", result.materials);
+                json.put("assessments", result.assessments);
+            }
+            response.getWriter().write(gson.toJson(json));
+
+        } catch (Exception e) {
+            System.out.println("Import Excel error: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> err = new HashMap<>();
+            err.put("success", false);
+            err.put("errors", List.of("Lỗi hệ thống khi xử lý file: " + e.getMessage()));
+            response.getWriter().write(gson.toJson(err));
+        }
     }
 }

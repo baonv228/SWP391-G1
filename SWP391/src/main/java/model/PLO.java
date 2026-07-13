@@ -44,6 +44,10 @@ public class PLO {
         this.curriculumId = programId;
     }
 
+    public void setCurriculumId(int curriculumId) {
+        this.curriculumId = curriculumId;
+    }
+
     public String getPloCode() {
         return ploCode;
     }

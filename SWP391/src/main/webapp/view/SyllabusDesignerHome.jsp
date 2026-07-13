@@ -9,7 +9,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Syllabus Designer Home — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=2"/>
     <style>
         .home-grid {
             display: grid;
@@ -23,7 +23,7 @@
             border-radius: 12px;
             padding: 32px 24px;
             text-align: center;
-            border: 1px solid rgba(47, 125, 50, 0.15);
+            border: 1px solid rgba(242, 109, 33, 0.15);
             box-shadow: 0 4px 16px rgba(75, 63, 53, 0.05);
             transition: all 0.3s ease;
             text-decoration: none;
@@ -37,20 +37,20 @@
 
         .action-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(47, 125, 50, 0.15);
-            border-color: var(--leaf);
+            box-shadow: 0 8px 24px rgba(242, 109, 33, 0.15);
+            border-color: var(--primary);
         }
 
         .action-icon {
             font-size: 48px;
             margin-bottom: 16px;
-            color: var(--leaf);
+            color: var(--primary);
         }
 
         .action-title {
             font-size: 20px;
             font-weight: 700;
-            color: var(--leaf-dark);
+            color: var(--primary-dark);
             margin-bottom: 8px;
         }
 
@@ -61,12 +61,12 @@
         }
         
         .welcome-banner {
-            background: var(--leaf);
+            background: var(--primary);
             color: var(--white);
             padding: 40px;
             border-radius: 12px;
             margin-bottom: 32px;
-            box-shadow: 0 8px 24px rgba(47, 125, 50, 0.2);
+            box-shadow: 0 8px 24px rgba(242, 109, 33, 0.2);
             text-align: center;
         }
         
@@ -87,7 +87,7 @@
 
     <!-- Header / Navbar -->
     <div class="syl-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px;">
-        <div style="font-size: 24px; font-weight: 800; color: var(--leaf-dark); letter-spacing: 0.05em;">TPMS</div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--primary-dark); letter-spacing: 0.05em;">TPMS</div>
         <div>
             <span style="margin-right:16px; color:var(--muted); font-size:15px; font-weight: 500;">
                 Xin chào, <%= user != null ? user.getFullName() : "Designer" %>

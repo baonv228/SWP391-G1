@@ -5,55 +5,56 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import model.PLO;
 
 public class PLODAO extends DBContext {
 
     /**
      * Get all PLOs through curriculums belonging to a Training_Program.
+     * Get all PLOs belonging to a Curriculum.
      */
-    public List<PLO> getPLOsByProgramId(int programId) {
+    public List<PLO> getPLOsByCurriculumId(int curriculumId) {
         List<PLO> list = new ArrayList<>();
         String sql = """
-                SELECT p.plo_id, p.CurriculumID, p.plo_code, p.plo_description
-                FROM dbo.[PLO] p
-                JOIN dbo.[Curriculum] c ON p.CurriculumID = c.CurriculumID
-                WHERE c.ProgramID = ?
-                ORDER BY p.plo_code
+                SELECT PloID, CurriculumID, PloCode, PloDescription
+                FROM dbo.[PLO]
+                WHERE CurriculumID = ?
+                ORDER BY PloCode
                 """;
 
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, programId);
+            ps.setInt(1, curriculumId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     PLO p = new PLO();
-                    p.setPloId(rs.getInt("plo_id"));
+                    p.setPloId(rs.getInt("PloID"));
                     p.setCurriculumId(rs.getInt("CurriculumID"));
-                    p.setPloCode(rs.getString("plo_code"));
-                    p.setPloDescription(rs.getString("plo_description"));
+                    p.setPloCode(rs.getString("PloCode"));
+                    p.setPloDescription(rs.getString("PloDescription"));
                     list.add(p);
                 }
             }
         } catch (Exception e) {
-            System.out.println("getPLOsByProgramId error: " + e.getMessage());
+            System.out.println("getPLOsByCurriculumId error: " + e.getMessage());
         }
         return list;
     }
 
     /**
-     * Find Training_Program IDs that contain a given Subject.
-     * Path: Training_Program → Curriculum → Curriculum_Subject → Subject
+     * Find Curriculum IDs that contain a given Subject.
+     * Path: Curriculum -> Curriculum_Subject -> Subject
      */
-    public List<Integer> getProgramIdsForSubject(int subjectId) {
+    public List<Integer> getCurriculumIdsForSubject(int subjectId) {
         List<Integer> ids = new ArrayList<>();
         String sql = """
-                SELECT DISTINCT tp.ProgramID
-                FROM dbo.[Training_Program] tp
-                JOIN dbo.[Curriculum] c ON tp.ProgramID = c.ProgramID
+                SELECT DISTINCT c.CurriculumID
+                FROM dbo.[Curriculum] c
                 JOIN dbo.[Curriculum_Subject] cs ON c.CurriculumID = cs.CurriculumID
                 WHERE cs.SubjectID = ?
-                ORDER BY tp.ProgramID
+                ORDER BY c.CurriculumID
                 """;
 
         try (Connection con = getConnection();
@@ -61,13 +62,44 @@ public class PLODAO extends DBContext {
             ps.setInt(1, subjectId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ids.add(rs.getInt("ProgramID"));
+                    ids.add(rs.getInt("CurriculumID"));
                 }
             }
         } catch (Exception e) {
-            System.out.println("getProgramIdsForSubject error: " + e.getMessage());
+            System.out.println("getCurriculumIdsForSubject error: " + e.getMessage());
         }
         return ids;
+    }
+
+    /**
+     * Get list of Curricula (with their PLOs) that contain a given Subject.
+     */
+    public List<Map<String, Object>> getCurriculaWithPLOsForSubject(int subjectId) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        String sql = """
+                SELECT DISTINCT c.CurriculumID, c.CurriculumName
+                FROM dbo.[Curriculum] c
+                JOIN dbo.[Curriculum_Subject] cs ON c.CurriculumID = cs.CurriculumID
+                WHERE cs.SubjectID = ?
+                ORDER BY c.CurriculumID
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    int currId = rs.getInt("CurriculumID");
+                    map.put("curriculumId", currId);
+                    map.put("curriculumName", rs.getString("CurriculumName"));
+                    map.put("plos", getPLOsByCurriculumId(currId));
+                    result.add(map);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getCurriculaWithPLOsForSubject error: " + e.getMessage());
+        }
+        return result;
     }
 
     /**
