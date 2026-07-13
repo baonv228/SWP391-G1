@@ -39,7 +39,7 @@ body {
 
 .tp-header h1 {
     margin: 0;
-    color: #b90000;
+    color: var(--orange-dark);
     font-size: clamp(28px, 4vw, 44px);
     line-height: 1.1;
     font-weight: 900;

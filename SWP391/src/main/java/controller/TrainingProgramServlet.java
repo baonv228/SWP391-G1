@@ -1,6 +1,7 @@
 package controller;
 
 import dao.TrainingProgramDAO;
+import dao.CurriculumDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,10 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import model.PLO;
-import model.PO;
+import model.Curriculum;
 import model.TrainingProgram;
 import model.User;
 
@@ -21,6 +20,7 @@ public class TrainingProgramServlet extends HttpServlet {
     private static final String TRAINING_DEPARTMENT_ROLE = "Training Department";
     private static final int PAGE_SIZE = 10;
     private final TrainingProgramDAO trainingProgramDAO = new TrainingProgramDAO();
+    private final CurriculumDAO curriculumDAO = new CurriculumDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -95,28 +95,24 @@ public class TrainingProgramServlet extends HttpServlet {
         program.setCreatedBy(user.getUserId());
         program.setProgramName(safeTrim(request.getParameter("programName")));
         program.setProgramCode(safeTrim(request.getParameter("programCode")).toUpperCase());
-        program.setAcademicYear(safeTrim(request.getParameter("academicYear")));
         program.setMajorName(safeTrim(request.getParameter("majorName")));
         program.setDescription(safeTrim(request.getParameter("description")));
         program.setStatus("Active");
 
-        List<PLO> plos = parsePLOs(request);
-        List<PO> pos = parsePOs(request);
-
-        String validationError = validateCreate(program, plos, pos);
+        String validationError = validateCreate(program);
         if (validationError != null) {
-            forwardCreateError(validationError, program, plos, pos, request, response);
+            forwardCreateError(validationError, program, request, response);
             return;
         }
 
         if (trainingProgramDAO.existsProgramCode(program.getProgramCode())) {
-            forwardCreateError("Mã ngành đã tồn tại. Vui lòng nhập mã ngành khác.", program, plos, pos, request, response);
+            forwardCreateError("Mã ngành đã tồn tại. Vui lòng nhập mã ngành khác.", program, request, response);
             return;
         }
 
-        int programId = trainingProgramDAO.createTrainingProgram(program, plos, pos);
+        int programId = trainingProgramDAO.createTrainingProgram(program);
         if (programId <= 0) {
-            forwardCreateError("Tạo Training Program thất bại. Vui lòng kiểm tra database PLO và PO.", program, plos, pos, request, response);
+            forwardCreateError("Tạo Training Program thất bại. Vui lòng kiểm tra database.", program, request, response);
             return;
         }
 
@@ -132,14 +128,9 @@ public class TrainingProgramServlet extends HttpServlet {
             return;
         }
         request.setAttribute("program", program);
-        request.setAttribute("programs", trainingProgramDAO.getTrainingPrograms("", 1, PAGE_SIZE));
-        request.setAttribute("programOptions", trainingProgramDAO.getTrainingProgramOptions());
-        request.setAttribute("selectedProgramCode", "");
-        request.setAttribute("currentPage", 1);
-        int totalItems = trainingProgramDAO.countTrainingPrograms("");
-        request.setAttribute("totalItems", totalItems);
-        request.setAttribute("totalPages", Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE)));
-        request.getRequestDispatcher("/view/ListTrainingProgram.jsp").forward(request, response);
+        List<Curriculum> curriculums = curriculumDAO.getCurriculumsByProgramId(programId);
+        request.setAttribute("curriculums", curriculums);
+        request.getRequestDispatcher("/view/TrainingProgramDetail.jsp").forward(request, response);
     }
 
     private User getLoggedInTrainingDepartment(HttpServletRequest request, HttpServletResponse response)
@@ -178,44 +169,9 @@ public class TrainingProgramServlet extends HttpServlet {
         return value == null ? "" : value.trim();
     }
 
-    private List<PLO> parsePLOs(HttpServletRequest request) {
-        List<PLO> list = new ArrayList<>();
-        String[] codes = request.getParameterValues("ploCode");
-        String[] descriptions = request.getParameterValues("ploDescription");
-        if (codes == null || descriptions == null) {
-            return list;
-        }
-
-        for (int i = 0; i < codes.length; i++) {
-            PLO plo = new PLO();
-            plo.setPloCode(safeTrim(codes[i]).toUpperCase());
-            plo.setPloDescription(i < descriptions.length ? safeTrim(descriptions[i]) : "");
-            list.add(plo);
-        }
-        return list;
-    }
-
-    private List<PO> parsePOs(HttpServletRequest request) {
-        List<PO> list = new ArrayList<>();
-        String[] codes = request.getParameterValues("poCode");
-        String[] descriptions = request.getParameterValues("poDescription");
-        if (codes == null || descriptions == null) {
-            return list;
-        }
-
-        for (int i = 0; i < codes.length; i++) {
-            PO po = new PO();
-            po.setPoCode(safeTrim(codes[i]).toUpperCase());
-            po.setPoDescription(i < descriptions.length ? safeTrim(descriptions[i]) : "");
-            list.add(po);
-        }
-        return list;
-    }
-
-    private String validateCreate(TrainingProgram program, List<PLO> plos, List<PO> pos) {
+    private String validateCreate(TrainingProgram program) {
         if (program.getProgramName().isEmpty()
                 || program.getProgramCode().isEmpty()
-                || program.getAcademicYear().isEmpty()
                 || program.getMajorName().isEmpty()
                 || program.getDescription().isEmpty()) {
             return "Vui lòng nhập đầy đủ thông tin chính của Training Program.";
@@ -223,32 +179,14 @@ public class TrainingProgramServlet extends HttpServlet {
         if (!program.getProgramCode().matches("^[A-Z0-9_-]{2,50}$")) {
             return "Mã ngành chỉ gồm chữ, số, dấu gạch dưới hoặc gạch ngang, độ dài 2-50 ký tự.";
         }
-        if (plos.isEmpty()) {
-            return "Vui lòng thêm ít nhất một PLO.";
-        }
-        if (pos.isEmpty()) {
-            return "Vui lòng thêm ít nhất một PO.";
-        }
-        for (PLO plo : plos) {
-            if (plo.getPloCode().isEmpty() || plo.getPloDescription().isEmpty()) {
-                return "Không được để trống mã hoặc mô tả PLO.";
-            }
-        }
-        for (PO po : pos) {
-            if (po.getPoCode().isEmpty() || po.getPoDescription().isEmpty()) {
-                return "Không được để trống mã hoặc mô tả PO.";
-            }
-        }
         return null;
     }
 
-    private void forwardCreateError(String error, TrainingProgram program, List<PLO> plos, List<PO> pos,
+    private void forwardCreateError(String error, TrainingProgram program,
                                     HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", error);
         request.setAttribute("program", program);
-        request.setAttribute("plos", plos);
-        request.setAttribute("pos", pos);
         showCreateForm(request, response);
     }
 

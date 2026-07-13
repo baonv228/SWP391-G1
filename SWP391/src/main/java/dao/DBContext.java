@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 public class DBContext {
 
+
     // Cau hinh ket noi SQL Server. Sua lai cho dung may cua ban.
     private static final String serverName = "localhost";
     private static final String portNumber = "1433";

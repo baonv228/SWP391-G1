@@ -18,6 +18,13 @@ public class LogoutServlet extends HttpServlet {
         if (session != null) {
             session.invalidate();
         }
+        response.sendRedirect(request.getContextPath() + "/login");
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        doGet(request, response);
         response.sendRedirect(request.getContextPath() + "/login?logout=1");
     }
 }

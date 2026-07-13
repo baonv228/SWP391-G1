@@ -4,6 +4,7 @@
     String success = request.getParameter("success");
     String reset = request.getParameter("reset");
     String emailValue = (String) request.getAttribute("emailValue");
+
     if (emailValue == null) {
         emailValue = "";
     }
@@ -14,6 +15,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Đăng nhập</title>
+
     <style>
         :root {
             --orange: #f37021;
@@ -22,6 +24,7 @@
             --muted: #6b7280;
             --border: #eaded4;
             --danger: #dc3545;
+            --green: #28a745;
         }
 
         * {
@@ -37,8 +40,8 @@
             justify-content: center;
             padding: 24px;
             background:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 241, 231, 0.98)),
-                radial-gradient(circle at 15% 20%, rgba(243, 112, 33, 0.1), transparent 26%);
+                linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,241,231,0.98)),
+                radial-gradient(circle at 15% 20%, rgba(243,112,33,0.1), transparent 26%);
         }
 
         .card {
@@ -47,7 +50,7 @@
             background: #fff;
             border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.12);
             padding: 22px;
         }
 
@@ -76,14 +79,14 @@
         }
 
         .message {
-            border: 1px solid rgba(243, 112, 33, 0.22);
+            border: 1px solid rgba(243,112,33,0.22);
             background: #fff7f0;
             color: var(--orange-dark);
         }
 
         .error {
-            border: 1px solid rgba(220, 53, 69, 0.35);
-            background: rgba(220, 53, 69, 0.08);
+            border: 1px solid rgba(220,53,69,0.35);
+            background: rgba(220,53,69,0.08);
             color: var(--danger);
         }
 
@@ -119,8 +122,8 @@
         }
 
         input:focus {
-            border-color: rgba(243, 112, 33, 0.9);
-            box-shadow: 0 0 0 0.2rem rgba(243, 112, 33, 0.16);
+            border-color: rgba(243,112,33,0.9);
+            box-shadow: 0 0 0 0.2rem rgba(243,112,33,0.16);
         }
 
         .toggle-pass {
@@ -220,19 +223,128 @@
             font-weight: 700;
         }
 
-        .register-now {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 13px;
-            color: var(--muted);
+        .quick-login {
+            margin: 14px 0 16px;
         }
 
-        .register-now a {
-            color: var(--orange-dark);
-            text-decoration: none;
+        .quick-login-label {
+            font-size: 11px;
             font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-login-label::before,
+        .quick-login-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .quick-cards {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quick-card {
+            flex: 1;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 8px;
+            cursor: pointer;
+            background: #f9fafb;
+            transition: border-color 0.18s, background 0.18s, transform 0.15s, box-shadow 0.18s;
+            text-align: center;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-card::after {
+            content: "Click để điền";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(40,167,69,0.82);
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.18s;
+        }
+
+        .quick-card:hover::after {
+            opacity: 1;
+        }
+
+        .quick-card:hover {
+            border-color: var(--green);
+            background: #f0fff4;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(40,167,69,0.18);
+        }
+
+        .quick-card:active {
+            transform: scale(0.96);
+        }
+
+        .quick-card .qc-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .quick-card .qc-role {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: 0.04em;
+        }
+
+        .quick-card .qc-email {
+            font-size: 9.5px;
+            color: var(--muted);
+            margin-top: 2px;
+            word-break: break-all;
+            line-height: 1.3;
+        }
+
+        .quick-card .qc-pass {
+            font-size: 9px;
+            color: #9ca3af;
+            margin-top: 1px;
+        }
+
+        .quick-card.filled {
+            border-color: var(--green);
+            background: #ecfff1;
+            animation: fillPulse 0.4s ease;
+        }
+
+        @keyframes fillPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(40,167,69,0.45);
+            }
+
+            60% {
+                box-shadow: 0 0 0 8px rgba(40,167,69,0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(40,167,69,0);
+            }
         }
     </style>
+
     <script>
         function validateLoginForm() {
             const email = document.getElementById("email").value.trim();
@@ -249,18 +361,47 @@
                 return false;
             }
 
+            if (pass.length < 6) {
+                alert("Mật khẩu phải từ 6 ký tự trở lên.");
+                return false;
+            }
+
             return true;
         }
 
         function togglePassword() {
             const input = document.getElementById("password");
             const btn = document.querySelector(".toggle-pass");
+
             input.type = input.type === "password" ? "text" : "password";
             btn.textContent = input.type === "password" ? "Hiện" : "Ẩn";
+        }
+
+        function fillCredentials(email, password, cardEl) {
+            document.getElementById("email").value = email;
+            document.getElementById("password").value = password;
+
+            document.querySelectorAll(".quick-card").forEach(function (card) {
+                card.classList.remove("filled");
+            });
+
+            cardEl.classList.add("filled");
+
+            const passInput = document.getElementById("password");
+            const toggleBtn = document.querySelector(".toggle-pass");
+
+            passInput.type = "text";
+            toggleBtn.textContent = "Ẩn";
+
+            setTimeout(function () {
+                passInput.type = "password";
+                toggleBtn.textContent = "Hiện";
+            }, 1200);
         }
     </script>
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
+
 <body>
 <div class="card">
     <h2>Đăng nhập</h2>
@@ -278,23 +419,74 @@
     <div class="error"><%= error %></div>
     <% } %>
 
-    <form method="post" action="<%=request.getContextPath()%>/login" onsubmit="return validateLoginForm();">
+    <form method="post"
+          action="<%=request.getContextPath()%>/login"
+          onsubmit="return validateLoginForm();">
+
         <input type="hidden" name="action" value="login" />
+
+        <div class="quick-login">
+            <div class="quick-login-label">Đăng nhập nhanh theo vai trò</div>
+
+            <div class="quick-cards">
+                <div class="quick-card"
+                     onclick="fillCredentials('admin.tpms@gmail.com','123456',this)"
+                     title="Admin — admin.tpms@gmail.com / 123456">
+                    <span class="qc-icon">🛡️</span>
+                    <div class="qc-role">Admin</div>
+                    <div class="qc-email">admin.tpms@gmail.com</div>
+                    <div class="qc-pass">123456</div>
+                </div>
+
+                <div class="quick-card"
+                     onclick="fillCredentials('teacher.tpms@gmail.com','123456',this)"
+                     title="Teacher — teacher.tpms@gmail.com / 123456">
+                    <span class="qc-icon">👨‍🏫</span>
+                    <div class="qc-role">Teacher</div>
+                    <div class="qc-email">teacher.tpms@gmail.com</div>
+                    <div class="qc-pass">123456</div>
+                </div>
+
+                <div class="quick-card"
+                     onclick="fillCredentials('student.tpms@gmail.com','123456',this)"
+                     title="Student — student.tpms@gmail.com / 123456">
+                    <span class="qc-icon">🎓</span>
+                    <div class="qc-role">Student</div>
+                    <div class="qc-email">student.tpms@gmail.com</div>
+                    <div class="qc-pass">123456</div>
+                </div>
+            </div>
+        </div>
 
         <div class="row">
             <label for="email">Email</label>
-            <input id="email" type="email" name="email" value="<%= emailValue %>" placeholder="example@email.com" />
+            <input id="email"
+                   type="email"
+                   name="email"
+                   value="<%= emailValue %>"
+                   placeholder="example@email.com" />
         </div>
 
         <div class="row">
             <label for="password">Mật khẩu</label>
+
             <div class="input-wrap">
-                <input id="password" type="password" name="password" placeholder="Nhập mật khẩu" />
-                <button class="toggle-pass" type="button" onclick="togglePassword()">Hiện</button>
+                <input id="password"
+                       type="password"
+                       name="password"
+                       placeholder="Nhập mật khẩu" />
+
+                <button class="toggle-pass"
+                        type="button"
+                        onclick="togglePassword()">
+                    Hiện
+                </button>
             </div>
         </div>
 
-        <button type="submit" class="btn-login">Đăng nhập</button>
+        <button type="submit" class="btn-login">
+            Đăng nhập
+        </button>
 
         <div class="divider">hoặc</div>
         <a class="btn-google" href="<%=request.getContextPath()%>/login/google">
@@ -303,8 +495,16 @@
         </a>
 
         <div class="actions">
-            <a href="<%=request.getContextPath()%>/forgot-password">Quên mật khẩu?</a>
-            <span>Chưa có tài khoản? <a href="<%=request.getContextPath()%>/register">Đăng ký ngay</a></span>
+            <a href="<%=request.getContextPath()%>/forgot-password">
+                Quên mật khẩu?
+            </a>
+
+            <span>
+                Chưa có tài khoản?
+                <a href="<%=request.getContextPath()%>/register">
+                    Đăng ký ngay
+                </a>
+            </span>
         </div>
     </form>
 </div>
