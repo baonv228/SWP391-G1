@@ -216,6 +216,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body>
 <% if ("1".equals(loginSuccess)) { %>

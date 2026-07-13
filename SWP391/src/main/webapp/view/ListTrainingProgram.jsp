@@ -30,7 +30,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Training Program Management System</title>
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/ListTrainingProgram.css" />
-    </head>
+        <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
+</head>
     <body>
         <main class="tp-page">
             <header class="tp-header">

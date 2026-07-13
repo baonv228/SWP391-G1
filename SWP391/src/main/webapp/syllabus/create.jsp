@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Tạo Syllabus — TPMS</title>
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body class="syllabus-page">
 <div class="syl-container">

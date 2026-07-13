@@ -7,7 +7,6 @@
         roleName = currentUser.getRole().getRoleName();
         session.setAttribute("roleName", roleName);
     }
-
     if (currentUser == null || roleName == null || !"Admin".equalsIgnoreCase(roleName.trim())) {
         response.sendRedirect(request.getContextPath() + "/login");
         return;
@@ -47,7 +46,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: var(--ink);
             background-color: var(--bg);
-            background-image: 
+            background-image:
                 radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.05) 0%, transparent 35%),
                 radial-gradient(circle at 100% 100%, rgba(79, 70, 229, 0.05) 0%, transparent 35%);
         }
@@ -223,6 +222,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body>
     <div class="page">
@@ -254,12 +254,6 @@
                     <div class="card-icon">📚</div>
                     <div class="card-title">Xem chương trình học</div>
                     <div class="card-desc">Truy cập danh sách chương trình đào tạo hiện có trên toàn hệ thống.</div>
-                </a>
-
-                <a href="<%=request.getContextPath()%>/profile" class="card">
-                    <div class="card-icon">👤</div>
-                    <div class="card-title">Hồ sơ cá nhân</div>
-                    <div class="card-desc">Cập nhật thông tin tài khoản cá nhân, đổi mật khẩu bảo mật.</div>
                 </a>
 
                 <a href="<%=request.getContextPath()%>/admin/roles" class="card">
