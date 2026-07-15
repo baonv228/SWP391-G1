@@ -19,9 +19,9 @@
     <title>Quản lý người dùng — TPMS</title>
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
-            --primary-soft: #e0e7ff;
+            --primary: #d95f12;
+            --primary-dark: #b94f0c;
+            --primary-soft: #fff1e7;
             --success: #10b981;
             --success-soft: #d1fae5;
             --danger: #ef4444;
@@ -123,7 +123,7 @@
             font-weight: 600;
             font-size: 14px;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(217, 95, 18, 0.2);
         }
 
         .btn-primary:hover {

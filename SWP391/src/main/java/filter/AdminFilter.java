@@ -17,7 +17,8 @@ import model.User;
     "/admin/*",
     "/view/AdminHome.jsp",
     "/view/admin_users.jsp",
-    "/view/admin_roles.jsp"
+    "/view/admin_roles.jsp",
+    "/view/admin_system_reports.jsp"
 })
 public class AdminFilter implements Filter {
 

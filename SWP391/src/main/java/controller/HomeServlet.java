@@ -46,6 +46,14 @@ public class HomeServlet extends HttpServlet {
         }
 
         if ("Admin".equalsIgnoreCase(roleName)) {
+            try {
+                dao.ReportDAO reportDAO = new dao.ReportDAO();
+                java.util.Map<String, Integer> dashboardStats = reportDAO.getAdminSummary();
+                request.setAttribute("dashboardStats", dashboardStats);
+            } catch (Exception e) {
+                getServletContext().log("Admin dashboard stats error", e);
+                request.setAttribute("dashboardStats", new java.util.LinkedHashMap<String, Integer>());
+            }
             request.getRequestDispatcher("/view/AdminHome.jsp").forward(request, response);
             return;
         }
