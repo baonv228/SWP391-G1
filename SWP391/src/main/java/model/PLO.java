@@ -9,6 +9,7 @@ public class PLO {
     private int curriculumId;
     private String ploCode;
     private String ploDescription;
+    private String clientKey;
 
     public PLO() {
     }
@@ -44,9 +45,7 @@ public class PLO {
         this.curriculumId = programId;
     }
 
-    public void setCurriculumId(int curriculumId) {
-        this.curriculumId = curriculumId;
-    }
+
 
     public String getPloCode() {
         return ploCode;
@@ -62,5 +61,13 @@ public class PLO {
 
     public void setPloDescription(String ploDescription) {
         this.ploDescription = ploDescription;
+    }
+
+    public String getClientKey() {
+        return clientKey;
+    }
+
+    public void setClientKey(String clientKey) {
+        this.clientKey = clientKey;
     }
 }

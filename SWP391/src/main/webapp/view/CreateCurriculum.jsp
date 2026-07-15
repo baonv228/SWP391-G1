@@ -125,9 +125,14 @@
                         </div>
                         <div class="outcome-list" id="ploRows">
                             <% if (plos != null && !plos.isEmpty()) {
+                                int ploIndex = 0;
                                 for (PLO plo : plos) {
+                                    String ploKey = plo.getClientKey() != null && !plo.getClientKey().isBlank()
+                                            ? plo.getClientKey()
+                                            : "plo_" + ploIndex++;
                             %>
                             <div class="outcome-row">
+                                <input type="hidden" name="ploKeys" value="<%= h(ploKey) %>" />
                                 <input type="text" name="ploCode" value="<%= h(plo.getPloCode()) %>" placeholder="PLO code" />
                                 <textarea name="ploDescription" rows="2" placeholder="PLO description"><%= h(plo.getPloDescription()) %></textarea>
                                 <button type="button" class="remove-button remove-outcome">Remove</button>
@@ -183,7 +188,7 @@
                                     <th>Course name</th>
                                     <th>NoCredit</th>
                                     <th>PreCondition</th>
-                                    <th></th>
+                                    <th>Action / PLO</th>
                                 </tr>
                             </thead>
                             <tbody id="subjectRows">
@@ -240,6 +245,7 @@
                                     data-code="<%= h(subject.getSubjectCode()) %>"
                                     data-name="<%= h(subject.getSubjectName()) %>"
                                     data-credits="<%= subject.getCredits() %>"
+                                    data-status="<%= h(subject.getStatus()) %>"
                                     data-prereqs="<%= h(prerequisiteIds) %>"
                                     data-prereqtext="<%= h(prerequisiteText) %>">
                                 <%= h(subject.getSubjectCode()) %> - <%= h(subject.getSubjectName()) %> (<%= subject.getCredits() %> credits)
@@ -248,6 +254,10 @@
                             } %>
                         </select>
                     </div>
+                    <aside class="prerequisite-preview">
+                        <div class="preview-title">Môn điều kiện</div>
+                        <div id="subjectPrereqPreview">Chọn môn học để xem môn điều kiện.</div>
+                    </aside>
                     <div class="modal-message" id="subjectMessage"></div>
                 </div>
                 <div class="modal-actions">
@@ -273,14 +283,51 @@
             </div>
         </div>
 
+        <div class="modal-backdrop" id="subjectPloModal" aria-hidden="true">
+            <div class="modal confirm-modal">
+                <div class="modal-header">
+                    <h3>Thêm PLO cho môn học</h3>
+                    <button type="button" class="icon-button" data-close="subjectPloModal">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Chọn PLO đã thêm ở tab PLO</label>
+                        <div id="subjectPloChecklist" class="plo-checklist"></div>
+                        <div class="field-hint">Tick một hoặc nhiều PLO để liên kết với môn học.</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Contribution level</label>
+                        <select id="subjectPloContribution">
+                            <option value="">Không chọn</option>
+                            <option value="I">I - Introduce</option>
+                            <option value="R">R - Reinforce</option>
+                            <option value="M">M - Master</option>
+                        </select>
+                    </div>
+                    <div class="modal-message" id="subjectPloMessage"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="outline-button" data-close="subjectPloModal">Cancel</button>
+                    <button type="button" class="primary-button" id="confirmAddSubjectPlo">Thêm PLO</button>
+                </div>
+            </div>
+        </div>
+
         <script>
             const selectedSubjects = [];
+            let subjectKeyCounter = 0;
+            let ploKeyCounter = document.querySelectorAll("#ploRows .outcome-row").length;
             const subjectModal = document.getElementById("subjectModal");
             const confirmModal = document.getElementById("confirmModal");
+            const subjectPloModal = document.getElementById("subjectPloModal");
             const subjectSelect = document.getElementById("subjectSelect");
             const subjectSearch = document.getElementById("subjectSearch");
             const semesterInput = document.getElementById("semesterInput");
             const subjectMessage = document.getElementById("subjectMessage");
+            const subjectPrereqPreview = document.getElementById("subjectPrereqPreview");
+            const subjectPloChecklist = document.getElementById("subjectPloChecklist");
+            const subjectPloContribution = document.getElementById("subjectPloContribution");
+            const subjectPloMessage = document.getElementById("subjectPloMessage");
             const subjectRows = document.getElementById("subjectRows");
             const hiddenSubjects = document.getElementById("hiddenSubjects");
             const selectedCredits = document.getElementById("selectedCredits");
@@ -288,6 +335,7 @@
             const curriculumForm = document.getElementById("curriculumForm");
             const ploRows = document.getElementById("ploRows");
             const poRows = document.getElementById("poRows");
+            let activeSubjectKeyForPlo = null;
 
             document.querySelectorAll(".tab-button").forEach(function (button) {
                 button.addEventListener("click", function () {
@@ -317,7 +365,11 @@
                 }
                 const row = document.createElement("div");
                 row.className = "outcome-row";
+                const keyInput = codeName === "ploCode"
+                        ? '<input type="hidden" name="ploKeys" value="plo_' + (ploKeyCounter++) + '">'
+                        : "";
                 row.innerHTML =
+                        keyInput +
                         '<input type="text" name="' + codeName + '" placeholder="' + codePlaceholder + '">' +
                         '<textarea name="' + descriptionName + '" rows="2" placeholder="' + descriptionPlaceholder + '"></textarea>' +
                         '<button type="button" class="remove-button remove-outcome">Remove</button>';
@@ -328,7 +380,12 @@
             function bindOutcomeRemove(button) {
                 button.addEventListener("click", function () {
                     const container = button.closest(".outcome-list");
-                    button.closest(".outcome-row").remove();
+                    const row = button.closest(".outcome-row");
+                    const ploKeyInput = row.querySelector('input[name="ploKeys"]');
+                    if (ploKeyInput) {
+                        removePloFromAllSubjects(ploKeyInput.value);
+                    }
+                    row.remove();
                     if (!container.querySelector(".outcome-row")) {
                         const empty = document.createElement("div");
                         empty.className = "empty-outcome";
@@ -341,6 +398,15 @@
             }
 
             document.querySelectorAll(".remove-outcome").forEach(bindOutcomeRemove);
+
+            function removePloFromAllSubjects(ploKey) {
+                selectedSubjects.forEach(function (item) {
+                    item.plos = item.plos.filter(function (mapping) {
+                        return mapping.ploKey !== ploKey;
+                    });
+                });
+                renderSubjects();
+            }
 
             function openModal(modal) {
                 modal.classList.add("show");
@@ -360,6 +426,7 @@
                 if (subjectSelect.options.length > 0) {
                     subjectSelect.selectedIndex = 0;
                 }
+                updateSubjectPrerequisitePreview();
                 openModal(subjectModal);
             });
 
@@ -371,13 +438,25 @@
 
             subjectSearch.addEventListener("input", function () {
                 filterSubjects(subjectSearch.value);
+                updateSubjectPrerequisitePreview();
             });
+
+            subjectSelect.addEventListener("change", updateSubjectPrerequisitePreview);
 
             function filterSubjects(keyword) {
                 const normalized = keyword.trim().toLowerCase();
                 Array.from(subjectSelect.options).forEach(function (option) {
                     option.hidden = normalized !== "" && !option.textContent.toLowerCase().includes(normalized);
                 });
+            }
+
+            function updateSubjectPrerequisitePreview() {
+                const option = subjectSelect.selectedOptions[0];
+                if (!option || option.hidden) {
+                    subjectPrereqPreview.textContent = "Chọn môn học để xem môn điều kiện.";
+                    return;
+                }
+                subjectPrereqPreview.textContent = option.dataset.prereqtext || "none";
             }
 
             document.getElementById("confirmAddSubject").addEventListener("click", function () {
@@ -413,12 +492,15 @@
                 }
 
                 selectedSubjects.push({
+                    key: "subject_" + (subjectKeyCounter++),
                     subjectId: subjectId,
                     semester: semester,
                     code: option.dataset.code,
                     name: option.dataset.name,
                     credits: Number(option.dataset.credits),
-                    prerequisiteText: option.dataset.prereqtext || "none"
+                    status: option.dataset.status || "",
+                    prerequisiteText: option.dataset.prereqtext || "none",
+                    plos: []
                 });
                 selectedSubjects.sort(function (a, b) {
                     return a.semester - b.semester || a.code.localeCompare(b.code);
@@ -444,24 +526,131 @@
                             "<td>" + escapeHtml(item.name) + "</td>" +
                             "<td>" + item.credits + "</td>" +
                             "<td>" + escapeHtml(item.prerequisiteText || "none") + "</td>" +
-                            '<td><button type="button" class="remove-button" data-index="' + index + '">Remove</button></td>';
+                            '<td>' +
+                            '<div class="subject-action-cell">' +
+                            '<button type="button" class="remove-button subject-remove-button" data-index="' + index + '">Remove</button>' +
+                            '<button type="button" class="secondary-button subject-plo-button" data-key="' + item.key + '">Thêm PLO</button>' +
+                            '<div class="subject-plo-tags">' + renderPloTags(item.plos) + '</div>' +
+                            '</div>' +
+                            '</td>';
                     subjectRows.appendChild(row);
 
                     hiddenSubjects.insertAdjacentHTML("beforeend",
+                            '<input type="hidden" name="subjectKeys" value="' + item.key + '">' +
                             '<input type="hidden" name="subjectIds" value="' + item.subjectId + '">' +
                             '<input type="hidden" name="semesterNos" value="' + item.semester + '">');
+                    item.plos.forEach(function (mapping) {
+                        hiddenSubjects.insertAdjacentHTML("beforeend",
+                                '<input type="hidden" name="subjectPloSubjectKey" value="' + item.key + '">' +
+                                '<input type="hidden" name="subjectPloPloKey" value="' + mapping.ploKey + '">' +
+                                '<input type="hidden" name="subjectPloContributionLevel" value="' + escapeHtml(mapping.level || "") + '">');
+                    });
                 });
                 selectedCredits.textContent = total;
 
-                document.querySelectorAll(".remove-button").forEach(function (button) {
+                document.querySelectorAll(".subject-remove-button").forEach(function (button) {
                     button.addEventListener("click", function () {
                         selectedSubjects.splice(Number(button.dataset.index), 1);
                         renderSubjects();
                     });
                 });
+                document.querySelectorAll(".subject-plo-button").forEach(function (button) {
+                    button.addEventListener("click", function () {
+                        openSubjectPloModal(button.dataset.key);
+                    });
+                });
             }
 
+            function renderPloTags(plos) {
+                if (!plos || plos.length === 0) {
+                    return '<span class="empty-plo-tag">Chưa thêm PLO</span>';
+                }
+                return plos.map(function (mapping) {
+                    const label = getPloLabel(mapping.ploKey);
+                    const level = mapping.level ? " (" + mapping.level + ")" : "";
+                    return '<span class="plo-tag">' + escapeHtml(label + level) + '</span>';
+                }).join("");
+            }
+
+            function getCurrentPLOOptions() {
+                return Array.from(ploRows.querySelectorAll(".outcome-row")).map(function (row) {
+                    const keyInput = row.querySelector('input[name="ploKeys"]');
+                    const codeInput = row.querySelector('input[name="ploCode"]');
+                    const descriptionInput = row.querySelector('textarea[name="ploDescription"]');
+                    return {
+                        key: keyInput ? keyInput.value : "",
+                        code: codeInput ? codeInput.value.trim() : "",
+                        description: descriptionInput ? descriptionInput.value.trim() : ""
+                    };
+                }).filter(function (item) {
+                    return item.key && item.code;
+                });
+            }
+
+            function getPloLabel(ploKey) {
+                const option = getCurrentPLOOptions().find(function (item) {
+                    return item.key === ploKey;
+                });
+                return option ? option.code : ploKey;
+            }
+
+            function openSubjectPloModal(subjectKey) {
+                activeSubjectKeyForPlo = subjectKey;
+                subjectPloMessage.textContent = "";
+                subjectPloContribution.value = "";
+                subjectPloChecklist.innerHTML = "";
+                const subject = selectedSubjects.find(function (item) {
+                    return item.key === subjectKey;
+                });
+                const existingKeys = subject ? subject.plos.map(function (item) { return item.ploKey; }) : [];
+                const options = getCurrentPLOOptions().filter(function (item) {
+                    return !existingKeys.includes(item.key);
+                });
+                if (options.length === 0) {
+                    subjectPloChecklist.innerHTML = '<div class="empty-outcome">Chưa có PLO khả dụng. Hãy thêm PLO ở tab PLO trước.</div>';
+                } else {
+                    options.forEach(function (item) {
+                        const label = document.createElement("label");
+                        label.className = "plo-check-item";
+                        label.innerHTML =
+                                '<input type="checkbox" value="' + escapeHtml(item.key) + '">' +
+                                '<span><strong>' + escapeHtml(item.code) + '</strong>' +
+                                (item.description ? '<small>' + escapeHtml(item.description) + '</small>' : '') +
+                                '</span>';
+                        subjectPloChecklist.appendChild(label);
+                    });
+                }
+                openModal(subjectPloModal);
+            }
+
+            document.getElementById("confirmAddSubjectPlo").addEventListener("click", function () {
+                const selectedPloInputs = Array.from(subjectPloChecklist.querySelectorAll('input[type="checkbox"]:checked'))
+                        .filter(function (input) {
+                            return input.value;
+                        });
+                if (!activeSubjectKeyForPlo || selectedPloInputs.length === 0) {
+                    subjectPloMessage.textContent = "Vui lòng chọn PLO.";
+                    return;
+                }
+                const subject = selectedSubjects.find(function (item) {
+                    return item.key === activeSubjectKeyForPlo;
+                });
+                if (!subject) {
+                    subjectPloMessage.textContent = "Môn học không hợp lệ.";
+                    return;
+                }
+                selectedPloInputs.forEach(function (input) {
+                    subject.plos.push({
+                        ploKey: input.value,
+                        level: subjectPloContribution.value
+                    });
+                });
+                renderSubjects();
+                closeModal(subjectPloModal);
+            });
+
             document.getElementById("openCreateConfirm").addEventListener("click", function () {
+                renderSubjects();
                 if (!curriculumForm.reportValidity()) {
                     return;
                 }
@@ -481,6 +670,7 @@
             });
 
             document.getElementById("confirmCreate").addEventListener("click", function () {
+                renderSubjects();
                 curriculumForm.submit();
             });
 
