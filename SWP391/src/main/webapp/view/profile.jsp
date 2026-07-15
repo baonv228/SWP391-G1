@@ -6,6 +6,14 @@
     String message = (String) request.getAttribute("message");
     String fullNameValue = current != null && current.getFullName() != null ? current.getFullName() : "";
     String emailValue = current != null && current.getEmail() != null ? current.getEmail() : "";
+
+    String roleName = (String) session.getAttribute("roleName");
+    if (roleName == null && current != null && current.getRole() != null) {
+        roleName = current.getRole().getRoleName();
+    }
+    boolean isAdmin = roleName != null && "Admin".equalsIgnoreCase(roleName.trim());
+    String brandLabel = isAdmin ? "TPMS ADMIN" : "TPMS";
+    String ctx = request.getContextPath();
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -21,19 +29,55 @@
             --muted: #6b7280;
             --border: #eaded4;
             --danger: #dc3545;
+            --line: #e5e7eb;
         }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: var(--text);
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 241, 231, 0.98)),
+                radial-gradient(circle at 15% 20%, rgba(243, 112, 33, 0.1), transparent 26%);
+        }
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 clamp(18px, 4vw, 40px);
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+        }
+        .brand {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            color: var(--orange-dark);
+            text-decoration: none;
+        }
+        .brand:hover {
+            color: var(--orange);
+        }
+        .top-home {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--orange-dark);
+            text-decoration: none;
+        }
+        .top-home:hover { text-decoration: underline; }
+        .content {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 241, 231, 0.98)),
-                radial-gradient(circle at 15% 20%, rgba(243, 112, 33, 0.1), transparent 26%);
         }
         .card {
             width: 100%;
@@ -147,36 +191,44 @@
     </script>
 </head>
 <body>
-<div class="card">
-    <h2>Hồ sơ cá nhân</h2>
-    <div class="subtitle">Xem và cập nhật thông tin tài khoản.</div>
+<div class="page">
+    <header class="topbar">
+        <a class="brand" href="<%=ctx%>/home" title="Về trang chủ"><%= brandLabel %></a>
+        <a class="top-home" href="<%=ctx%>/home">← Về trang chủ</a>
+    </header>
 
-    <% if (message != null) { %>
-    <div class="message"><%= message %></div>
-    <% } %>
+    <div class="content">
+        <div class="card">
+            <h2>Hồ sơ cá nhân</h2>
+            <div class="subtitle">Xem và cập nhật thông tin tài khoản.</div>
 
-    <% if (error != null) { %>
-    <div class="error"><%= error %></div>
-    <% } %>
+            <% if (message != null) { %>
+            <div class="message"><%= message %></div>
+            <% } %>
 
-    <div class="meta">
-        <div><strong>Email:</strong> <%= emailValue %></div>
-        <div><strong>Vai trò:</strong> <%= current != null && current.getRole() != null ? current.getRole().getRoleName() : "" %></div>
-    </div>
+            <% if (error != null) { %>
+            <div class="error"><%= error %></div>
+            <% } %>
 
-    <form method="post" action="<%=request.getContextPath()%>/profile" onsubmit="return validateProfile();">
-        <div class="row">
-            <label for="fullName">Họ tên</label>
-            <input id="fullName" type="text" name="fullName" value="<%= fullNameValue %>" />
+            <div class="meta">
+                <div><strong>Email:</strong> <%= emailValue %></div>
+                <div><strong>Vai trò:</strong> <%= current != null && current.getRole() != null ? current.getRole().getRoleName() : "" %></div>
+            </div>
+
+            <form method="post" action="<%=ctx%>/profile" onsubmit="return validateProfile();">
+                <div class="row">
+                    <label for="fullName">Họ tên</label>
+                    <input id="fullName" type="text" name="fullName" value="<%= fullNameValue %>" />
+                </div>
+
+                <button class="btn-primary" type="submit">Lưu thay đổi</button>
+            </form>
+
+            <div class="links">
+                <a href="<%=ctx%>/change-password">Đổi mật khẩu</a>
+                <a href="<%=ctx%>/logout">Đăng xuất</a>
+            </div>
         </div>
-
-
-        <button class="btn-primary" type="submit">Lưu thay đổi</button>
-    </form>
-
-    <div class="links">
-        <a href="<%=request.getContextPath()%>/change-password">Đổi mật khẩu</a>
-        <a href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
     </div>
 </div>
 </body>
