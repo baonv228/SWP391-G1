@@ -472,26 +472,6 @@ a:hover { color: var(--fpt-blue); text-decoration: underline; }
     color: #fff !important;
 }
 
-.combo-page-heading {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-}
-
-.combo-list-section {
-    background: #fff;
-    border-radius: 8px;
-    padding: 18px;
-    box-shadow: 0 1px 8px rgba(0,0,0,.07);
-}
-
-.combo-subject-codes {
-    color: var(--fpt-orange-dark);
-    font-weight: 600;
-}
-
 /* ---- Flow Diagram (Prerequisite Detail) ---- */
 .prereq-detail-wrapper { margin-top: 24px; }
 
