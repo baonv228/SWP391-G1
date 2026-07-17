@@ -430,6 +430,68 @@ a:hover { color: var(--fpt-blue); text-decoration: underline; }
     padding: 18px 22px;
 }
 
+.curriculum-action-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+}
+
+.curriculum-action-btn {
+    min-width: 132px;
+    border-radius: 999px;
+    padding: 10px 24px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    box-shadow: 0 8px 18px rgba(242, 113, 28, .16);
+}
+
+#btn-curriculum-combo,
+.btn-combo {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    border: 1px solid #f97316;
+    color: #fff !important;
+}
+
+#btn-curriculum-elective,
+.btn-elective {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    border: 1px solid #f97316;
+    color: #fff !important;
+}
+
+#btn-curriculum-combo:focus,
+#btn-curriculum-elective:focus,
+#btn-curriculum-combo:active,
+#btn-curriculum-elective:active,
+.btn-combo:hover,
+.btn-elective:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #ea580c, #f97316);
+    border-color: #ea580c;
+    color: #fff !important;
+}
+
+.combo-page-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.combo-list-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: 0 1px 8px rgba(0,0,0,.07);
+}
+
+.combo-subject-codes {
+    color: var(--fpt-orange-dark);
+    font-weight: 600;
+}
+
 /* ---- Flow Diagram (Prerequisite Detail) ---- */
 .prereq-detail-wrapper { margin-top: 24px; }
 
