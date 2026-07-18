@@ -127,11 +127,12 @@ public class TrainingProgramDAO extends DBContext {
     public List<PO> getPOsByProgramId(int programId) {
         List<PO> list = new ArrayList<>();
         String sql = """
-                SELECT po.po_id, po.CurriculumID, po.po_code, po.po_description
+                SELECT po.PoID AS po_id, po.CurriculumID,
+                       po.PoCode AS po_code, po.PoDescription AS po_description
                 FROM dbo.[PO] po
                 JOIN dbo.[Curriculum] c ON po.CurriculumID = c.CurriculumID
                 WHERE c.ProgramID = ?
-                ORDER BY po_code
+                ORDER BY po.PoCode
                 """;
 
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
