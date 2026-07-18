@@ -652,7 +652,7 @@ function removeRow(btn, type) {
                     tdClo.id = 'sesClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -668,7 +668,7 @@ function removeRow(btn, type) {
                     tdClo.id = 'asmClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -689,7 +689,7 @@ function removeRow(btn, type) {
             const num = match ? parseInt(match[1]) : 0;
             const isChecked = checkedIds.includes(num) ? 'checked' : '';
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
@@ -779,6 +779,15 @@ function removeRow(btn, type) {
         if (sesCountActual < 10 || sesCountActual > 60) {
             errors.push('Section 4: Phải có từ 10 đến 60 Sessions.');
         }
+
+        // Each CLO must have at least 1 PLO mapped
+        let cloPloMissing = false;
+        document.querySelectorAll('#cloBody tr').forEach((tr, index) => {
+            if (tr.querySelectorAll('input[name="clo_plo_' + index + '"]').length === 0) {
+                cloPloMissing = true;
+            }
+        });
+        if (cloPloMissing) errors.push('Section 3: Mỗi CLO phải được map với ít nhất 1 PLO.');
 
         // Each session must have at least 1 CLO
         let sessionCloMissing = false;
