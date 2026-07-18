@@ -695,7 +695,7 @@ function removeRow(btn, type) {
                     tdClo.id = 'sesClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -711,7 +711,7 @@ function removeRow(btn, type) {
                     tdClo.id = 'asmClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -732,7 +732,7 @@ function removeRow(btn, type) {
             const num = match ? parseInt(match[1]) : 0;
             const isChecked = checkedIds.includes(num) ? 'checked' : '';
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
