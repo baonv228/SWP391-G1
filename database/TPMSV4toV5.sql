@@ -95,3 +95,22 @@ BEGIN
     PRINT 'TABLE Curriculum_Subject_PLO already exists.';
 END
 GO
+
+
+
+
+-- Xóa RequiredCredits
+IF COL_LENGTH('Curriculum_Elective', 'RequiredCredits') IS NOT NULL
+BEGIN
+    ALTER TABLE Curriculum_Elective
+    DROP COLUMN RequiredCredits;
+END
+GO
+
+-- Xóa RequiredSubjectCount
+IF COL_LENGTH('Curriculum_Elective', 'RequiredSubjectCount') IS NOT NULL
+BEGIN
+    ALTER TABLE Curriculum_Elective
+    DROP COLUMN RequiredSubjectCount;
+END
+GO
