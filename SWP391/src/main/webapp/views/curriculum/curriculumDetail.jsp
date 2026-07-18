@@ -73,10 +73,11 @@
                                style="background: linear-gradient(135deg, #f97316, #fb923c); border-color: #f97316; color: #fff;">
                                 Combo
                             </a>
-                            <button type="button" class="btn curriculum-action-btn btn-elective" id="btn-curriculum-elective"
-                                    style="background: linear-gradient(135deg, #f97316, #fb923c); border-color: #f97316; color: #fff;">
+                            <a class="btn curriculum-action-btn btn-elective" id="btn-curriculum-elective"
+                               href="${pageContext.request.contextPath}/elective?action=list&curriculumId=${curriculum.curriculumId}"
+                               style="background: linear-gradient(135deg, #f97316, #fb923c); border-color: #f97316; color: #fff;">
                                 Elective
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
