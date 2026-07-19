@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --orange: #f59e3d;
     --orange-dark: #bd5d10;
     --orange-soft: #fff0dc;
@@ -161,6 +161,16 @@ tbody tr:nth-child(even) {
     color: var(--orange-dark);
     font-weight: 900;
     white-space: nowrap;
+}
+
+.subject-link {
+    color: var(--orange-dark);
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.subject-link:hover {
+    text-decoration: underline;
 }
 
 .empty {

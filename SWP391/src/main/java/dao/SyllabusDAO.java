@@ -113,12 +113,17 @@ public class SyllabusDAO extends DBContext {
         s.setSyllabusId(rs.getInt("SyllabusID"));
         s.setSubjectId(rs.getInt("SubjectID"));
         s.setCreatedBy(rs.getInt("CreatedBy"));
+        int approvedBy = rs.getInt("ApprovedBy");
+        s.setApprovedBy(rs.wasNull() ? null : approvedBy);
         s.setVersionNo(rs.getString("VersionNo"));
         s.setSyllabusTitle(rs.getString("SyllabusTitle"));
         s.setDescription(rs.getString("Description"));
+        s.setLearningOutcome(rs.getString("LearningOutcome"));
+        s.setAssessmentMethod(rs.getString("AssessmentMethod"));
         s.setStatus(rs.getString("Status"));
         s.setCurrentVersion(rs.getBoolean("IsCurrentVersion"));
         s.setCreatedAt(rs.getTimestamp("CreatedAt"));
+        s.setApprovedAt(rs.getTimestamp("ApprovedAt"));
         s.setSyllabusName(rs.getString("SyllabusName"));
         s.setSyllabusEnglish(rs.getString("SyllabusEnglish"));
         s.setDegreeLevel(rs.getString("DegreeLevel"));
@@ -228,6 +233,64 @@ public class SyllabusDAO extends DBContext {
             return ps.executeUpdate() > 0;
         } catch (Exception e) { System.out.println("updateStatus error: " + e.getMessage()); }
         return false;
+    }
+
+    public boolean approveSyllabus(int syllabusId, int reviewerId) {
+        String sql = """
+                UPDATE dbo.[Syllabus]
+                SET Status = 'Approved', ApprovedBy = ?, ApprovedAt = GETDATE(), IsCurrentVersion = 1
+                WHERE SyllabusID = ?
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, reviewerId);
+            ps.setInt(2, syllabusId);
+            boolean updated = ps.executeUpdate() > 0;
+            updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
+            return updated;
+        } catch (Exception e) {
+            System.out.println("approveSyllabus error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public boolean rejectSyllabus(int syllabusId, int reviewerId, String reason) {
+        String sql = """
+                UPDATE dbo.[Syllabus]
+                SET Status = 'Rejected', ApprovedBy = NULL, ApprovedAt = NULL, Note = ?
+                WHERE SyllabusID = ?
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setInt(2, syllabusId);
+            boolean updated = ps.executeUpdate() > 0;
+            updateLatestApprovalRequest(syllabusId, reviewerId, "Rejected", reason);
+            return updated;
+        } catch (Exception e) {
+            System.out.println("rejectSyllabus error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private void updateLatestApprovalRequest(int syllabusId, int reviewerId, String status, String reviewNote) {
+        String sql = """
+                UPDATE dbo.[Syllabus_Approval_Request]
+                SET Status = ?, ReviewedBy = ?, ReviewedAt = GETDATE(), ReviewNote = ?
+                WHERE RequestID = (
+                    SELECT TOP 1 RequestID
+                    FROM dbo.[Syllabus_Approval_Request]
+                    WHERE SyllabusID = ? AND Status IN ('Pending', 'Pending Approval')
+                    ORDER BY RequestedAt DESC, RequestID DESC
+                )
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, reviewerId);
+            ps.setString(3, reviewNote);
+            ps.setInt(4, syllabusId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("updateLatestApprovalRequest warning: " + e.getMessage());
+        }
     }
 
     public boolean deleteSyllabus(int syllabusId) {
