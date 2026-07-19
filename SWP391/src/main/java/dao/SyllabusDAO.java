@@ -161,6 +161,29 @@ public class SyllabusDAO extends DBContext {
         return list;
     }
 
+    public List<Syllabus> getPendingApprovalSyllabuses() {
+        List<Syllabus> list = new ArrayList<>();
+        String sql = """
+                SELECT s.*, sub.SubjectCode, sub.SubjectName, u.FullName AS CreatedByName
+                FROM dbo.[Syllabus] s
+                JOIN dbo.[Subject] sub ON s.SubjectID = sub.SubjectID
+                JOIN dbo.[User] u ON s.CreatedBy = u.UserID
+                WHERE s.IsActive = 1 AND s.Status = 'Pending Approval'
+                ORDER BY s.CreatedAt DESC, s.SyllabusID DESC
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapSyllabusRow(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("getPendingApprovalSyllabuses error: " + e.getMessage());
+        }
+        return list;
+    }
+
     // =========================================================================
     // UPDATE — details only
     // =========================================================================
