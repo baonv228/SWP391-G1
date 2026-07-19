@@ -47,6 +47,7 @@ public class SyllabusServlet extends HttpServlet {
             case "create":
                 showCreateForm(request, response);
                 break;
+            case "view":
             case "edit":
                 showEditForm(request, response);
                 break;
