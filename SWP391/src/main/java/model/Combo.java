@@ -3,6 +3,7 @@ package model;
 public class Combo {
     private int comboId;
     private int curriculumId;
+    private String comboCode;
     private String comboName;
     private String description;
     private String status;
@@ -14,13 +15,12 @@ public class Combo {
     public Combo() {
     }
 
-    public Combo(int comboId, int curriculumId, String comboName, String description, String status, Integer displayOrder) {
+    public Combo(int comboId, int curriculumId, String comboCode, String comboName, String description) {
         this.comboId = comboId;
         this.curriculumId = curriculumId;
+        this.comboCode = comboCode;
         this.comboName = comboName;
         this.description = description;
-        this.status = status;
-        this.displayOrder = displayOrder;
     }
 
     public int getComboId() {
@@ -37,6 +37,14 @@ public class Combo {
 
     public void setCurriculumId(int curriculumId) {
         this.curriculumId = curriculumId;
+    }
+
+    public String getComboCode() {
+        return comboCode;
+    }
+
+    public void setComboCode(String comboCode) {
+        this.comboCode = comboCode;
     }
 
     public String getComboName() {
@@ -69,6 +77,17 @@ public class Combo {
 
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
+    }
+
+    @Override
+    public String toString() {
+        return "Combo{" +
+                "comboId=" + comboId +
+                ", curriculumId=" + curriculumId +
+                ", comboCode='" + comboCode + '\'' +
+                ", comboName='" + comboName + '\'' +
+                ", description='" + description + '\'' +
+                '}';
     }
 
     public int getSubjectCount() {

@@ -48,12 +48,12 @@ public class ReportServlet extends HttpServlet {
             request.setAttribute("materialTypes", materialTypes);
             request.setAttribute("requestStatus", requestStatus);
 
-            request.getRequestDispatcher("/views/teacher/systemReport.jsp")
+            request.getRequestDispatcher("/view/teacher/systemReport.jsp")
                     .forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("DB error in ReportServlet", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

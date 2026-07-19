@@ -13,74 +13,7 @@
     <title>Tạo Syllabus — TPMS</title>
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=3"/>
     <script>
-    function openPloModal(cloNum, btnEl) {
-        const subjectInput = document.getElementById('subjectId') || document.querySelector('input[name="subjectId"]');
-        const subjectId = subjectInput ? subjectInput.value : '';
-        if (!subjectId) {
-            alert('Vui lòng chọn Subject trước khi map PLO!');
-            return;
-        }
-        document.getElementById('currentCloMappingNum').value = cloNum;
-        document.getElementById('ploModalTitle').textContent = 'Map PLO cho CLO' + cloNum;
-        const tr = btnEl.closest('tr');
-        const existingInputs = tr.querySelectorAll('input[name^="clo_plo_"]');
-        const mappedPloIds = Array.from(existingInputs).map(inp => inp.value);
-        const container = document.getElementById('ploCheckboxContainer');
-        container.innerHTML = '<em>Đang tải danh sách PLO...</em>';
-        document.getElementById('ploModal').style.display = 'block';
-        fetch(contextPath + '/syllabus-manage?action=ajax_plos&subjectId=' + subjectId)
-            .then(res => res.json())
-            .then(data => {
-                if(!data || data.length === 0) {
-                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Curriculum)</span>';
-                    return;
-                }
-                let html = '';
-                data.forEach(c => {
-                    html += '<div style="margin-top:15px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #eee;">' +
-                            '<strong style="color:var(--primary-dark); font-size:15px;">Khung: ' + c.curriculumName + '</strong>' +
-                            '</div>';
-                    if (c.plos && c.plos.length > 0) {
-                        c.plos.forEach(p => {
-                            const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
-                            html += '<div style="margin-bottom:8px; margin-left:10px;">' +
-                                    '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
-                                    '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
-                                    '</div>';
-                        });
-                    } else {
-                        html += '<div style="margin-left:10px; color:#888;">Chưa có PLO nào</div>';
-                    }
-                });
-                container.innerHTML = html;
-            }).catch(err => {
-                container.innerHTML = '<span style="color:#d32f2f;">Lỗi khi tải PLO. Vui lòng thử lại.</span>';
-            });
-    }
-    function closePloModal() {
-        document.getElementById('ploModal').style.display = 'none';
-    }
-    function savePloMapping() {
-        const cloNum = document.getElementById('currentCloMappingNum').value;
-        const tr = document.getElementById('cloBody').children[cloNum - 1];
-        tr.querySelectorAll('input[name^="clo_plo_"]').forEach(inp => inp.remove());
-        const idx = cloNum - 1;
-        const selected = document.querySelectorAll('#ploCheckboxContainer input[type="checkbox"]:checked');
-        let countText = '';
-        if(selected.length > 0) countText = ' (' + selected.length + ')';
-        selected.forEach(cb => {
-            const inp = document.createElement('input');
-            inp.type = 'hidden';
-            inp.name = 'clo_plo_' + idx;
-            inp.value = cb.value;
-            tr.querySelector('td:last-child').appendChild(inp);
-        });
-        const btn = tr.querySelector('.btn-map-plo');
-        if(btn) btn.innerHTML = 'Map PLO' + countText;
-        closePloModal();
-    }
-
-        const contextPath = '<%=request.getContextPath()%>';
+    const contextPath = '<%=request.getContextPath()%>';
         function fetchInitData() {
             const subjectId = document.getElementById("subjectId").value;
             if(!subjectId) return;
@@ -111,7 +44,6 @@
     <div class="alert alert-error"><%= error %></div>
     <% } %>
 
-    
     <!-- Excel Import Panel -->
     <div class="syl-card" id="excelImportPanel" style="background: linear-gradient(135deg, #fff9f0, #fff0e6); border: 2px dashed var(--primary); margin-bottom: 20px;">
         <h2 style="margin-bottom: 16px;">📥 Import từ Excel</h2>
@@ -476,8 +408,11 @@
             return;
         }
 
-        if (type !== 'draft' && !validateForm()) {
-            return;
+        const form = document.getElementById('syllabusForm');
+        if (type !== 'draft') {
+            if (!form.reportValidity() || !validateForm()) {
+                return;
+            }
         }
 
         const btn = document.getElementById('btnSubmitApproval');
@@ -553,54 +488,72 @@
     }
     
     function removeCLORow(btn, cloNum) {
-        const isUsed = document.querySelector('input[name^="ses_clo_"][name$="_' + cloNum + '"]:checked') ||
-                       document.querySelector('input[name^="asm_clo_"][name$="_' + cloNum + '"]:checked');
-        if(isUsed) {
-            alert('KhÃ´ng thá»ƒ xÃ³a CLO nÃ y vÃ¬ nÃ³ Ä‘ang Ä‘Æ°á»£c map trong Session hoáº·c Assessment!');
+        const isUsed = document.querySelector(
+            'input[name^="ses_clo_"][value="' + cloNum + '"]:checked, ' +
+            'input[name^="asm_clo_"][value="' + cloNum + '"]:checked'
+        );
+
+        if (isUsed) {
+            alert('Không thể xóa CLO này vì nó đang được map trong Session hoặc Assessment!');
             return;
         }
-        const checkedMap = {};
-        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => { checkedMap[cb.name] = true; });
-        if(typeof btn === 'string') { const el = document.getElementById(btn); if(el) el.remove(); }
-        else { btn.closest('tr').remove(); }
+
+        const selectedByCell = {};
+        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
+            selectedByCell[td.id] = Array.from(td.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value, 10));
+        });
+
+        btn.closest('tr').remove();
+
         const cloRows = document.querySelectorAll('#cloBody tr');
         const oldToNew = {};
+
         cloRows.forEach((tr, index) => {
-            const num = index + 1;
+            const newNum = index + 1;
             const nameInput = tr.querySelector('input[name="clo_name"]');
             const detailsInput = tr.querySelector('input[name="clo_details"]');
-            const oldNum = parseInt(nameInput.value.replace('CLO', ''));
-            oldToNew[oldNum] = num;
-            nameInput.value = 'CLO' + num;
-            if(detailsInput.value === 'CLO' + oldNum) detailsInput.value = 'CLO' + num;
-            const actionBtn = tr.querySelector('.btn-danger-syl');
-            if(actionBtn) actionBtn.setAttribute('onclick', 'removeCLORow(this, ' + num + ')');
+            const oldNum = parseInt(nameInput.value.replace(/\D/g, ''), 10);
+
+            oldToNew[oldNum] = newNum;
+            tr.id = 'cloRow_' + index;
+            nameInput.value = 'CLO' + newNum;
+
+            if (detailsInput && detailsInput.value === 'CLO' + oldNum) {
+                detailsInput.value = 'CLO' + newNum;
+            }
+
+            const deleteBtn = tr.querySelector('.btn-danger-syl');
+            if (deleteBtn) {
+                deleteBtn.setAttribute('onclick', 'removeCLORow(this, ' + newNum + ')');
+            }
+
             const mapBtn = tr.querySelector('.btn-map-plo');
-            if(mapBtn) mapBtn.setAttribute('onclick', 'openPloModal(' + num + ', this)');
-            tr.querySelectorAll('input[name^="clo_plo_"]').forEach(inp => { inp.name = 'clo_plo_' + (num - 1); });
+            if (mapBtn) {
+                mapBtn.setAttribute('onclick', 'openPloModal(' + newNum + ', this)');
+            }
+
+            tr.querySelectorAll('input[name^="clo_plo_"]').forEach(input => {
+                input.name = 'clo_plo_' + index;
+            });
         });
+
         cloCount = cloRows.length;
-        const newCheckedMap = {};
-        for(let key in checkedMap) {
-            const parts = key.split('_');
-            if(parts.length >= 4 && (parts[0] === 'ses' || parts[0] === 'asm') && parts[1] === 'clo') {
-                const oldNum = parseInt(parts[3]);
-                if(oldToNew[oldNum]) { parts[3] = oldToNew[oldNum]; newCheckedMap[parts.join('_')] = true; }
-            } else { newCheckedMap[key] = true; }
-        }
-        document.querySelectorAll('[id^="sesClo_"]').forEach(function (td) {
-            const idx = td.id.split('_')[1]; td.innerHTML = buildCLOCheckboxes('ses', idx);
+
+        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
+            const prefix = td.id.startsWith('sesClo_') ? 'ses' : 'asm';
+            const rowIdx = td.id.split('_')[1];
+            const selected = (selectedByCell[td.id] || [])
+                .filter(oldNum => oldToNew[oldNum])
+                .map(oldNum => oldToNew[oldNum]);
+
+            td.innerHTML = buildCLOCheckboxes(prefix, rowIdx, selected);
         });
-        document.querySelectorAll('[id^="asmClo_"]').forEach(function (td) {
-            const idx = td.id.split('_')[1]; td.innerHTML = buildCLOCheckboxes('asm', idx);
-        });
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            if(newCheckedMap[cb.name]) cb.checked = true;
-        });
+
         checkValidationStatus();
     }
 
-        function addSessionRow(data = null) {
+    function addSessionRow(data = null) {
         const i = sesCount++;
         const row = document.createElement('tr');
         row.id = 'sesRow_' + i;
@@ -660,7 +613,7 @@
         if(typeof checkValidationStatus === 'function') checkValidationStatus();
     }
 
-function removeRow(btn, type) {
+    function removeRow(btn, type) {
         if(typeof btn === 'string') {
             const el = document.getElementById(btn);
             if(el) el.remove();
@@ -714,45 +667,44 @@ function removeRow(btn, type) {
         updateWeightTotal();
         checkValidationStatus();
     }
-
-        function buildCLOCheckboxes(prefix, rowIdx, checkedIds = []) {
+    function buildCLOCheckboxes(prefix, rowIdx, checkedIds = []) {
+        const selected = checkedIds.map(Number);
         let html = '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
         let found = false;
-        document.querySelectorAll('#cloBody tr').forEach((tr) => {
-            let cloNameStr = tr.querySelector('input[name="clo_name"]').value.trim();
-            const match = cloNameStr.match(/CLO(\d+)/i);
-            const num = match ? parseInt(match[1]) : 0;
-            const isChecked = checkedIds.includes(num) ? 'checked' : '';
+
+        document.querySelectorAll('#cloBody tr').forEach(tr => {
+            const cloName = tr.querySelector('input[name="clo_name"]').value.trim();
+            const match = cloName.match(/CLO(\d+)/i);
+            if (!match) return;
+
+            const num = parseInt(match[1], 10);
+            const checked = selected.includes(num) ? ' checked' : '';
+
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" ' +
+                'class="' + prefix + '-clo-cb" ' +
+                'name="' + prefix + '_clo_' + rowIdx + '" ' +
+                'value="' + num + '"' + checked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
-        if (!found) html += '<span style="color:var(--muted);font-size:12px;">Thêm CLO trước</span>';
+
+        if (!found) {
+            html += '<span style="color:var(--muted);font-size:12px;">Thêm CLO trước</span>';
+        }
+
         html += '</div>';
         return html;
     }
 
     function updateCLOCheckboxes() {
-        // Find existing checked values
-        const checkedMap = {};
-        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            checkedMap[cb.name] = true;
-        });
+        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
+            const prefix = td.id.startsWith('sesClo_') ? 'ses' : 'asm';
+            const rowIdx = td.id.split('_')[1];
+            const selected = Array.from(td.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value, 10));
 
-        // Rebuild CLO checkboxes in all session and assessment rows
-        document.querySelectorAll('[id^="sesClo_"]').forEach(function (td) {
-            const idx = td.id.split('_')[1];
-            td.innerHTML = buildCLOCheckboxes('ses', idx);
-        });
-        document.querySelectorAll('[id^="asmClo_"]').forEach(function (td) {
-            const idx = td.id.split('_')[1];
-            td.innerHTML = buildCLOCheckboxes('asm', idx);
-        });
-
-        // Restore checked values
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            if(checkedMap[cb.name]) cb.checked = true;
+            td.innerHTML = buildCLOCheckboxes(prefix, rowIdx, selected);
         });
     }
 
@@ -763,7 +715,7 @@ function removeRow(btn, type) {
         });
         const el = document.getElementById('weightTotal');
         el.textContent = 'Tổng weight: ' + total.toFixed(1) + '%';
-        el.style.color = (Math.abs(total - 100) < 0.01) ? '#f26d21' : '#c62828';
+        el.style.color = (Math.abs(total - 100) < 0.01) ? '#2e7d32' : '#c62828';
         checkValidationStatus();
     }
 

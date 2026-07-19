@@ -43,6 +43,11 @@ public class ComboDAO extends DBContext {
         return combos;
     }
 
+    /** Backward-compatible alias for the legacy curriculum controller. */
+    public List<Combo> getComboByCurriculum(int curriculumId) {
+        return getCombosByCurriculumId(curriculumId);
+    }
+
     public Combo getComboById(int comboId) {
         String sql = """
                 SELECT c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder,

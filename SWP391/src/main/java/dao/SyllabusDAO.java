@@ -544,7 +544,7 @@ public class SyllabusDAO extends DBContext {
                 FROM dbo.[Syllabus] sy
                 JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
                 """ + whereClause + """
-                ORDER BY sy.SyllabusID
+                ORDER BY sy.CreatedAt DESC, sy.SyllabusID DESC
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
 
@@ -596,6 +596,10 @@ public class SyllabusDAO extends DBContext {
                        sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
                        sy.LearningOutcome, sy.AssessmentMethod,
                        sy.CreatedAt, sy.ApprovedAt,
+                       sy.SyllabusName, sy.SyllabusEnglish, sy.DegreeLevel,
+                       sy.TimeAllocation, sy.PreRequisiteText, sy.StudentTasks,
+                       sy.Tools, sy.ScoringScale, sy.DecisionNo, sy.Note,
+                       sy.MinAvgMarkToPass, sy.IsActive,
                        su.SubjectCode, su.SubjectName, su.Credits
                 FROM dbo.[Syllabus] sy
                 JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
@@ -618,6 +622,29 @@ public class SyllabusDAO extends DBContext {
 
         if (dto != null) {
             dto.setLearningOutcomes(parseLearningOutcomes(dto.getLearningOutcome()));
+
+            // Load child lists
+            dto.setTextbooks(getMaterials(syllabusId));
+            dto.setClos(getCLOs(syllabusId));
+            dto.setAssessments(getAssessments(syllabusId));
+
+            // Load Syllabus_Session and map to SessionDTO list
+            List<SyllabusSession> dbSessions = getSessions(syllabusId);
+            List<SyllabusDTO.SessionDTO> mappedSessions = new ArrayList<>();
+            for (SyllabusSession s : dbSessions) {
+                SyllabusDTO.SessionDTO sDto = new SyllabusDTO.SessionDTO();
+                sDto.setSessionNo(s.getSessionNumber());
+                sDto.setTopic(s.getTopic());
+                sDto.setLearningTeachingType(s.getLearningTeachingType());
+                sDto.setLo(s.getItu()); 
+                sDto.setItu(s.getItu());
+                sDto.setStudentMaterials(s.getStudentMaterials());
+                sDto.setSDownload(s.getSDownload());
+                sDto.setStudentTasks(s.getStudentTasks());
+                sDto.setUrls(s.getUrls());
+                mappedSessions.add(sDto);
+            }
+            dto.setSessions(mappedSessions);
 
             MaterialDAO materialDAO = new MaterialDAO();
             dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
@@ -687,12 +714,30 @@ public class SyllabusDAO extends DBContext {
         return startIdx;
     }
 
+    private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columns = metaData.getColumnCount();
+        for (int i = 1; i <= columns; i++) {
+            if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i)) 
+                    || columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private SyllabusDTO mapRow(ResultSet rs) throws SQLException {
         SyllabusDTO dto = new SyllabusDTO();
 
         dto.setSyllabusId(rs.getInt("SyllabusID"));
         dto.setSyllabusTitle(rs.getString("SyllabusTitle"));
-        dto.setSyllabusEnglishName(rs.getString("SyllabusTitle"));
+        
+        if (hasColumn(rs, "SyllabusEnglish") && rs.getString("SyllabusEnglish") != null) {
+            dto.setSyllabusEnglishName(rs.getString("SyllabusEnglish"));
+        } else {
+            dto.setSyllabusEnglishName(rs.getString("SyllabusTitle"));
+        }
+        
         dto.setVersionNo(rs.getString("VersionNo"));
         dto.setStatus(rs.getString("Status"));
         dto.setCurrentVersion(rs.getBoolean("IsCurrentVersion"));
@@ -708,6 +753,51 @@ public class SyllabusDAO extends DBContext {
         dto.setSubjectCode(rs.getString("SubjectCode"));
         dto.setSubjectName(rs.getString("SubjectName"));
         dto.setCredits(rs.getInt("Credits"));
+
+        if (hasColumn(rs, "SyllabusName")) {
+            dto.setSyllabusName(rs.getString("SyllabusName"));
+        }
+        if (hasColumn(rs, "SyllabusEnglish")) {
+            dto.setSyllabusEnglish(rs.getString("SyllabusEnglish"));
+        }
+        if (hasColumn(rs, "DegreeLevel")) {
+            dto.setDegreeLevel(rs.getString("DegreeLevel"));
+        }
+        if (hasColumn(rs, "TimeAllocation")) {
+            dto.setTimeAllocation(rs.getString("TimeAllocation"));
+        }
+        if (hasColumn(rs, "PreRequisiteText")) {
+            dto.setPreRequisiteText(rs.getString("PreRequisiteText"));
+        }
+        if (hasColumn(rs, "StudentTasks")) {
+            dto.setStudentTasks(rs.getString("StudentTasks"));
+        }
+        if (hasColumn(rs, "Tools")) {
+            dto.setTools(rs.getString("Tools"));
+        }
+        if (hasColumn(rs, "DecisionNo")) {
+            dto.setDecisionNo(rs.getString("DecisionNo"));
+        }
+        if (hasColumn(rs, "Note")) {
+            dto.setNote(rs.getString("Note"));
+        }
+        if (hasColumn(rs, "IsActive")) {
+            dto.setIsActive(rs.getBoolean("IsActive"));
+        }
+
+        if (hasColumn(rs, "ScoringScale")) {
+            int scoringScale = rs.getInt("ScoringScale");
+            if (!rs.wasNull()) {
+                dto.setScoringScale(scoringScale);
+            }
+        }
+        
+        if (hasColumn(rs, "MinAvgMarkToPass")) {
+            double minAvgMarkToPass = rs.getDouble("MinAvgMarkToPass");
+            if (!rs.wasNull()) {
+                dto.setMinAvgMarkToPass(minAvgMarkToPass);
+            }
+        }
 
         return dto;
     }
