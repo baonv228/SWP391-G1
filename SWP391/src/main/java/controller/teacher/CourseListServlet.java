@@ -66,12 +66,12 @@ public class CourseListServlet extends HttpServlet {
             request.setAttribute("keyword", keyword != null ? keyword : "");
             request.setAttribute("searched", keyword != null && !keyword.trim().isEmpty());
 
-            request.getRequestDispatcher("/views/teacher/courseList.jsp")
+            request.getRequestDispatcher("/view/teacher/courseList.jsp")
                     .forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("DB error in TeacherCourseListServlet", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 }

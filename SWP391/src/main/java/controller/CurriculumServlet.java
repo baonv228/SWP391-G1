@@ -11,8 +11,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import model.Curriculum;
+import model.CurriculumSubject;
+import model.CurriculumSubjectPLO;
+import model.PLO;
+import model.PO;
 import model.Subject;
 import model.TrainingProgram;
 import model.User;
@@ -82,9 +90,31 @@ public class CurriculumServlet extends HttpServlet {
             throws ServletException, IOException {
         List<TrainingProgram> programs = trainingProgramDAO.getTrainingPrograms("", 1, 1000);
         List<Subject> subjects = subjectDAO.getAllSubjects();
+        int requestedProgramId = parseInt(request.getParameter("programId"), 0);
+        Curriculum curriculum = (Curriculum) request.getAttribute("curriculum");
+        if (curriculum != null && curriculum.getProgramId() > 0) {
+            requestedProgramId = curriculum.getProgramId();
+        }
+        TrainingProgram selectedProgram = requestedProgramId > 0
+                ? trainingProgramDAO.getTrainingProgramById(requestedProgramId)
+                : null;
+
+        Map<Integer, String> prerequisiteTextMap = new HashMap<>();
+        Map<Integer, String> prerequisiteIdsMap = new HashMap<>();
+        for (Subject subject : subjects) {
+            List<Integer> prerequisiteIds = subjectDAO.getPrerequisiteSubjectIds(subject.getSubjectId());
+            prerequisiteIdsMap.put(subject.getSubjectId(), joinIds(prerequisiteIds));
+            String prerequisiteText = subjectDAO.getPreRequisiteText(subject.getSubjectId());
+            prerequisiteTextMap.put(subject.getSubjectId(), prerequisiteText == null || prerequisiteText.isBlank() ? "none" : prerequisiteText);
+        }
+
         request.setAttribute("programs", programs);
         request.setAttribute("subjects", subjects);
-        request.getRequestDispatcher("/curriculum/create.jsp").forward(request, response);
+        request.setAttribute("selectedProgram", selectedProgram);
+        request.setAttribute("selectedProgramId", requestedProgramId);
+        request.setAttribute("prerequisiteTextMap", prerequisiteTextMap);
+        request.setAttribute("prerequisiteIdsMap", prerequisiteIdsMap);
+        request.getRequestDispatcher("/view/CreateCurriculum.jsp").forward(request, response);
     }
 
     private void processCreate(HttpServletRequest request, HttpServletResponse response, User user)
@@ -94,38 +124,299 @@ public class CurriculumServlet extends HttpServlet {
         curriculum.setCreatedBy(user.getUserId());
         curriculum.setCurriculumName(safeTrim(request.getParameter("curriculumName")));
         curriculum.setDescription(safeTrim(request.getParameter("description")));
-        curriculum.setStatus(defaultStatus(safeTrim(request.getParameter("status"))));
 
-        List<Integer> subjectIds = parseSubjectIds(request.getParameterValues("subjectIds"));
-        if (curriculum.getProgramId() <= 0 || isBlank(curriculum.getCurriculumName())) {
-            request.setAttribute("error", "Program va Curriculum Name la bat buoc.");
+        int requiredTotalCredits = parseInt(request.getParameter("totalCredits"), 0);
+        List<CurriculumSubject> curriculumSubjects = parseCurriculumSubjects(
+                request.getParameterValues("subjectKeys"),
+                request.getParameterValues("subjectIds"),
+                request.getParameterValues("semesterNos")
+        );
+        List<PLO> plos = parsePLOs(request);
+        List<PO> pos = parsePOs(request);
+        List<CurriculumSubjectPLO> subjectPLOs = parseSubjectPLOs(request);
+        Map<Integer, Subject> subjectMap = buildSubjectMap(subjectDAO.getAllSubjects());
+
+        String validationError = validateCreate(curriculum, requiredTotalCredits, curriculumSubjects, subjectMap, plos, pos, subjectPLOs);
+        if (validationError != null) {
+            request.setAttribute("error", validationError);
             request.setAttribute("curriculum", curriculum);
+            request.setAttribute("totalCredits", requiredTotalCredits);
+            request.setAttribute("plos", plos);
+            request.setAttribute("pos", pos);
             showCreateForm(request, response);
             return;
         }
 
-        int id = curriculumDAO.createCurriculum(curriculum, subjectIds);
+        curriculum.setStatus(resolveCurriculumStatus(curriculumSubjects, subjectMap));
+
+        int id = curriculumDAO.createCurriculumWithSubjects(curriculum, curriculumSubjects, plos, pos, subjectPLOs);
         if (id > 0) {
-            response.sendRedirect(request.getContextPath() + "/curriculum-manage?action=list&success=1");
+            response.sendRedirect(request.getContextPath() + "/training-program?action=detail&id=" + curriculum.getProgramId());
         } else {
             request.setAttribute("error", "Khong the tao Curriculum.");
             request.setAttribute("curriculum", curriculum);
+            request.setAttribute("totalCredits", requiredTotalCredits);
+            request.setAttribute("plos", plos);
+            request.setAttribute("pos", pos);
             showCreateForm(request, response);
         }
     }
 
-    private List<Integer> parseSubjectIds(String[] values) {
-        List<Integer> list = new ArrayList<>();
-        if (values == null) {
+    private List<CurriculumSubject> parseCurriculumSubjects(String[] subjectKeys, String[] subjectIds, String[] semesterNos) {
+        List<CurriculumSubject> list = new ArrayList<>();
+        if (subjectIds == null || semesterNos == null) {
             return list;
         }
-        for (String value : values) {
-            try {
-                list.add(Integer.parseInt(value));
-            } catch (Exception ignored) {
+        int length = Math.min(subjectIds.length, semesterNos.length);
+        for (int i = 0; i < length; i++) {
+            int subjectId = parseInt(subjectIds[i], 0);
+            int semesterNo = parseInt(semesterNos[i], 0);
+            String clientKey = subjectKeys != null && i < subjectKeys.length ? safeTrim(subjectKeys[i]) : "";
+            if (subjectId <= 0 || semesterNo <= 0) {
+                continue;
             }
+            CurriculumSubject item = new CurriculumSubject();
+            item.setClientKey(clientKey);
+            item.setSubjectId(subjectId);
+            item.setSemesterNo(semesterNo);
+            item.setRequired(true);
+            item.setDisplayOrder(i + 1);
+            list.add(item);
         }
         return list;
+    }
+
+    private Map<Integer, Subject> buildSubjectMap(List<Subject> subjects) {
+        Map<Integer, Subject> map = new HashMap<>();
+        if (subjects == null) {
+            return map;
+        }
+        for (Subject subject : subjects) {
+            map.put(subject.getSubjectId(), subject);
+        }
+        return map;
+    }
+
+    private List<PLO> parsePLOs(HttpServletRequest request) {
+        List<PLO> list = new ArrayList<>();
+        String[] codes = request.getParameterValues("ploCode");
+        String[] descriptions = request.getParameterValues("ploDescription");
+        String[] clientKeys = request.getParameterValues("ploKeys");
+        if (codes == null || descriptions == null) {
+            return list;
+        }
+        int length = Math.min(codes.length, descriptions.length);
+        for (int i = 0; i < length; i++) {
+            String code = safeTrim(codes[i]).toUpperCase();
+            String description = safeTrim(descriptions[i]);
+            String clientKey = clientKeys != null && i < clientKeys.length ? safeTrim(clientKeys[i]) : "";
+            if (code.isEmpty() && description.isEmpty()) {
+                continue;
+            }
+            PLO plo = new PLO();
+            plo.setClientKey(clientKey);
+            plo.setPloCode(code);
+            plo.setPloDescription(description);
+            list.add(plo);
+        }
+        return list;
+    }
+
+    private List<CurriculumSubjectPLO> parseSubjectPLOs(HttpServletRequest request) {
+        List<CurriculumSubjectPLO> list = new ArrayList<>();
+        String[] subjectKeys = request.getParameterValues("subjectPloSubjectKey");
+        String[] ploKeys = request.getParameterValues("subjectPloPloKey");
+        String[] contributionLevels = request.getParameterValues("subjectPloContributionLevel");
+        if (subjectKeys == null || ploKeys == null) {
+            return list;
+        }
+        int length = Math.min(subjectKeys.length, ploKeys.length);
+        Set<String> uniqueMappings = new HashSet<>();
+        for (int i = 0; i < length; i++) {
+            String subjectKey = safeTrim(subjectKeys[i]);
+            String ploKey = safeTrim(ploKeys[i]);
+            String contributionLevel = contributionLevels != null && i < contributionLevels.length
+                    ? safeTrim(contributionLevels[i]).toUpperCase()
+                    : "";
+            if (subjectKey.isEmpty() || ploKey.isEmpty()) {
+                continue;
+            }
+            String uniqueKey = subjectKey + "::" + ploKey;
+            if (!uniqueMappings.add(uniqueKey)) {
+                continue;
+            }
+            CurriculumSubjectPLO mapping = new CurriculumSubjectPLO();
+            mapping.setCurriculumSubjectClientKey(subjectKey);
+            mapping.setPloClientKey(ploKey);
+            mapping.setContributionLevel(contributionLevel);
+            list.add(mapping);
+        }
+        return list;
+    }
+
+    private List<PO> parsePOs(HttpServletRequest request) {
+        List<PO> list = new ArrayList<>();
+        String[] codes = request.getParameterValues("poCode");
+        String[] descriptions = request.getParameterValues("poDescription");
+        if (codes == null || descriptions == null) {
+            return list;
+        }
+        int length = Math.min(codes.length, descriptions.length);
+        for (int i = 0; i < length; i++) {
+            String code = safeTrim(codes[i]).toUpperCase();
+            String description = safeTrim(descriptions[i]);
+            if (code.isEmpty() && description.isEmpty()) {
+                continue;
+            }
+            PO po = new PO();
+            po.setPoCode(code);
+            po.setPoDescription(description);
+            list.add(po);
+        }
+        return list;
+    }
+
+    private String validateCreate(Curriculum curriculum, int requiredTotalCredits,
+                                  List<CurriculumSubject> curriculumSubjects,
+                                  Map<Integer, Subject> subjectMap,
+                                  List<PLO> plos, List<PO> pos,
+                                  List<CurriculumSubjectPLO> subjectPLOs) {
+        if (curriculum.getProgramId() <= 0) {
+            return "Vui long chon Training Program.";
+        }
+        if (isBlank(curriculum.getCurriculumName())) {
+            return "Vui long nhap ten khung chuong trinh.";
+        }
+        if (isBlank(curriculum.getDescription())) {
+            return "Vui long nhap muc tieu cua khung chuong trinh.";
+        }
+        if (requiredTotalCredits <= 0) {
+            return "Vui long nhap tong credit hop le.";
+        }
+        if (curriculumSubjects == null || curriculumSubjects.isEmpty()) {
+            return "Vui long them it nhat mot mon hoc.";
+        }
+
+        int actualCredits = 0;
+        Set<Integer> selectedSubjectIds = new HashSet<>();
+        for (CurriculumSubject item : curriculumSubjects) {
+            Subject subject = subjectMap.get(item.getSubjectId());
+            if (subject == null) {
+                return "Mon hoc khong hop le.";
+            }
+            if (item.getSemesterNo() == null || item.getSemesterNo() <= 0) {
+                return "Ky hoc cua mon " + subject.getSubjectCode() + " khong hop le.";
+            }
+            if (!selectedSubjectIds.add(item.getSubjectId())) {
+                return "Mon " + subject.getSubjectCode() + " da duoc them vao khung chuong trinh.";
+            }
+            actualCredits += subject.getCredits();
+        }
+
+        if (actualCredits < requiredTotalCredits) {
+            return "Khong du tin chi. Tong credit mon hoc hien tai la " + actualCredits
+                    + ", nho hon tong credit da nhap la " + requiredTotalCredits + ".";
+        }
+
+        for (CurriculumSubject item : curriculumSubjects) {
+            List<Integer> prerequisiteIds = subjectDAO.getPrerequisiteSubjectIds(item.getSubjectId());
+            if (prerequisiteIds.isEmpty()) {
+                continue;
+            }
+            for (Integer prerequisiteId : prerequisiteIds) {
+                if (!hasPrerequisiteInEarlierSemester(prerequisiteId, item.getSemesterNo(), curriculumSubjects)) {
+                    Subject subject = subjectMap.get(item.getSubjectId());
+                    Subject prerequisite = subjectMap.get(prerequisiteId);
+                    String subjectCode = subject != null ? subject.getSubjectCode() : String.valueOf(item.getSubjectId());
+                    String prerequisiteCode = prerequisite != null ? prerequisite.getSubjectCode() : String.valueOf(prerequisiteId);
+                    return "Chua co mon dieu kien " + prerequisiteCode
+                            + " o cac ky truoc cua mon " + subjectCode + ".";
+                }
+            }
+        }
+
+        for (PLO plo : plos) {
+            if (isBlank(plo.getPloCode()) || isBlank(plo.getPloDescription())) {
+                return "Khong duoc de trong ma hoac mo ta PLO.";
+            }
+            if (isBlank(plo.getClientKey())) {
+                return "Du lieu PLO tren form khong hop le.";
+            }
+        }
+        for (PO po : pos) {
+            if (isBlank(po.getPoCode()) || isBlank(po.getPoDescription())) {
+                return "Khong duoc de trong ma hoac mo ta PO.";
+            }
+        }
+
+        Set<String> subjectKeys = new HashSet<>();
+        for (CurriculumSubject item : curriculumSubjects) {
+            if (!isBlank(item.getClientKey())) {
+                subjectKeys.add(item.getClientKey());
+            }
+        }
+        Set<String> ploKeys = new HashSet<>();
+        for (PLO plo : plos) {
+            if (!isBlank(plo.getClientKey())) {
+                ploKeys.add(plo.getClientKey());
+            }
+        }
+        for (CurriculumSubjectPLO mapping : subjectPLOs) {
+            if (!subjectKeys.contains(mapping.getCurriculumSubjectClientKey())) {
+                return "Lien ket PLO voi mon hoc khong hop le.";
+            }
+            if (!ploKeys.contains(mapping.getPloClientKey())) {
+                return "PLO duoc lien ket voi mon hoc khong ton tai.";
+            }
+            String contributionLevel = mapping.getContributionLevel();
+            if (!isBlank(contributionLevel)
+                    && !"I".equals(contributionLevel)
+                    && !"R".equals(contributionLevel)
+                    && !"M".equals(contributionLevel)) {
+                return "Contribution level cua PLO chi duoc la I, R hoac M.";
+            }
+        }
+        return null;
+    }
+
+    private String resolveCurriculumStatus(List<CurriculumSubject> curriculumSubjects, Map<Integer, Subject> subjectMap) {
+        for (CurriculumSubject item : curriculumSubjects) {
+            Subject subject = subjectMap.get(item.getSubjectId());
+            if (subject == null || subject.getStatus() == null || !"Active".equalsIgnoreCase(subject.getStatus().trim())) {
+                return "Not active";
+            }
+        }
+        return "Active";
+    }
+
+    private boolean hasPrerequisiteInEarlierSemester(Integer prerequisiteId, Integer semesterNo,
+                                                     List<CurriculumSubject> curriculumSubjects) {
+        for (CurriculumSubject item : curriculumSubjects) {
+            if (item.getSubjectId() == prerequisiteId
+                    && item.getSemesterNo() != null
+                    && semesterNo != null
+                    && item.getSemesterNo() < semesterNo) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String joinIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (Integer id : ids) {
+            if (id == null) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(',');
+            }
+            builder.append(id);
+        }
+        return builder.toString();
     }
 
     private User getLoggedInUser(HttpServletRequest request, HttpServletResponse response)
@@ -142,10 +433,6 @@ public class CurriculumServlet extends HttpServlet {
         return user != null
                 && user.getRole() != null
                 && "Training Department".equalsIgnoreCase(user.getRole().getRoleName());
-    }
-
-    private String defaultStatus(String status) {
-        return isBlank(status) ? "Active" : status;
     }
 
     private String safeTrim(String value) {

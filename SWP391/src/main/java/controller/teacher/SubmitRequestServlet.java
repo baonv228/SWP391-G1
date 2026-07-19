@@ -60,12 +60,12 @@ public class SubmitRequestServlet extends HttpServlet {
             request.setAttribute("pagination", pagination);
             request.setAttribute("totalRequests", total);
 
-            request.getRequestDispatcher("/views/teacher/submitRequest.jsp")
+            request.getRequestDispatcher("/view/teacher/submitRequest.jsp")
                     .forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("DB error in SubmitRequestServlet GET", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

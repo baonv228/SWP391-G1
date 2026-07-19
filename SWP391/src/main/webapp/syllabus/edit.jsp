@@ -16,7 +16,7 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Edit Syllabus — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=3"/>
     <script>
         const contextPath = '<%=request.getContextPath()%>';
     </script>
@@ -38,14 +38,35 @@
     <div class="alert alert-error"><%= error %></div>
     <% } %>
     <% if ("draft".equals(request.getParameter("success"))) { %>
-    <div class="alert alert-success" style="background:#e8f5e9; color:#2e7d32; padding:10px; margin-bottom:20px; border-radius:4px;">
+    <div class="alert alert-success" style="background:#fff0e6; color:#f26d21; padding:10px; margin-bottom:20px; border-radius:4px;">
         Đã lưu Draft thành công! Bạn có thể tiếp tục chỉnh sửa.
     </div>
     <% } else if ("update".equals(request.getParameter("success"))) { %>
-    <div class="alert alert-success" style="background:#e8f5e9; color:#2e7d32; padding:10px; margin-bottom:20px; border-radius:4px;">
+    <div class="alert alert-success" style="background:#fff0e6; color:#f26d21; padding:10px; margin-bottom:20px; border-radius:4px;">
         Cập nhật Draft thành công!
     </div>
     <% } %>
+
+    <!-- Excel Import Panel -->
+    <div class="syl-card" id="excelImportPanel" style="background: linear-gradient(135deg, #fff9f0, #fff0e6); border: 2px dashed var(--primary); margin-bottom: 20px;">
+        <h2 style="margin-bottom: 16px;">📥 Import từ Excel</h2>
+        <p style="color:var(--muted); margin-bottom: 16px; font-size:14px;">
+            Bạn có thể soạn Syllabus trên file Excel rồi import vào hệ thống. Tải file mẫu, điền dữ liệu vào các Sheet, rồi upload lên để tự động điền form.
+        </p>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <a class="btn-syl btn-outline-syl btn-sm" href="" id="downloadTemplateLink" style="text-decoration:none;">
+                📄 Tải file mẫu (.xlsx)
+            </a>
+            <div style="flex:1; min-width:250px;">
+                <input type="file" id="excelFileInput" accept=".xlsx"
+                       style="padding:8px; border:1px solid var(--border); border-radius:6px; background:#fff; width:100%;">
+            </div>
+            <button type="button" class="btn-syl btn-primary-syl btn-sm" onclick="importExcel()" id="btnImportExcel">
+                📥 Import Excel
+            </button>
+        </div>
+        <div id="importStatus" style="margin-top:12px; display:none;"></div>
+    </div>
 
     <!-- Section Nav -->
     <nav class="section-nav">
@@ -56,9 +77,10 @@
         <a href="#sec-assessments">5. Đánh giá</a>
     </nav>
 
-    <form id="syllabusForm" method="post" enctype="multipart/form-data"
+    <form id="syllabusForm" method="post"
           action="<%=request.getContextPath()%>/syllabus-manage?action=edit" accept-charset="UTF-8">
         
+        <input type="hidden" name="temp_material_file" id="temp_material_file">
         <input type="hidden" name="syllabusId" value="<%= syllabus.getSyllabusId() %>">
         <input type="hidden" name="subjectId" value="<%= syllabus.getSubjectId() %>">
         <input type="hidden" name="saveType" id="saveType" value="draft">
@@ -197,7 +219,7 @@
                             <td><input type="checkbox" name="mat_isHard_<%= i %>" <%= m.getIsHardCopy()?"checked":"" %>/></td>
                             <td><input type="checkbox" name="mat_isOnline_<%= i %>" <%= m.getIsOnline()?"checked":"" %>/></td>
                             <td><input type="text" name="mat_note" class="form-control" value="<%= m.getNote()!=null?m.getNote():"" %>"/></td>
-                            <td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow('matRow_<%= i %>')">×</button></td>
+                            <td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(this, 'mat')">×</button></td>
                         </tr>
                         <% } } %>
                     </tbody>
@@ -232,7 +254,15 @@
                             <td><input type="text" name="clo_name" class="form-control" value="<%= c.getCloName() %>" readonly style="width:70px;background:#f0f0f0;"/></td>
                             <td><input type="text" name="clo_details" class="form-control" value="<%= c.getCloDetails()!=null?c.getCloDetails():"" %>"/></td>
                             <td><input type="text" name="clo_loDetails" class="form-control" value="<%= c.getLoDetails() %>" required/></td>
-                            <td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeCLORow('cloRow_<%= i %>', <%= i+1 %>)">×</button></td>
+                            <td style="white-space:nowrap;">
+    <button type="button" class="btn-syl btn-sm btn-map-plo" style="margin-right:5px; background:#F5A623; color:#fff; border:none;" onclick="openPloModal(<%= i+1 %>, this)">
+        Map PLO<%= (c.getPloIds() != null && c.getPloIds().size() > 0) ? " (" + c.getPloIds().size() + ")" : "" %>
+    </button>
+    <button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeCLORow(this, <%= i+1 %>)">×</button>
+    <% if (c.getPloIds() != null) { for (Integer pId : c.getPloIds()) { %>
+        <input type="hidden" name="clo_plo_<%= i %>" value="<%= pId %>">
+    <% } } %>
+</td>
                         </tr>
                         <% } } %>
                     </tbody>
@@ -336,6 +366,73 @@
 </div>
 
 <script>
+    function openPloModal(cloNum, btnEl) {
+        const subjectInput = document.getElementById('subjectId') || document.querySelector('input[name="subjectId"]');
+        const subjectId = subjectInput ? subjectInput.value : '';
+        if (!subjectId) {
+            alert('Vui lòng chọn Subject trước khi map PLO!');
+            return;
+        }
+        document.getElementById('currentCloMappingNum').value = cloNum;
+        document.getElementById('ploModalTitle').textContent = 'Map PLO cho CLO' + cloNum;
+        const tr = btnEl.closest('tr');
+        const existingInputs = tr.querySelectorAll('input[name^="clo_plo_"]');
+        const mappedPloIds = Array.from(existingInputs).map(inp => inp.value);
+        const container = document.getElementById('ploCheckboxContainer');
+        container.innerHTML = '<em>Đang tải danh sách PLO...</em>';
+        document.getElementById('ploModal').style.display = 'block';
+        fetch(contextPath + '/syllabus-manage?action=ajax_plos&subjectId=' + subjectId)
+            .then(res => res.json())
+            .then(data => {
+                if(!data || data.length === 0) {
+                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Curriculum)</span>';
+                    return;
+                }
+                let html = '';
+                data.forEach(c => {
+                    html += '<div style="margin-top:15px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #eee;">' +
+                            '<strong style="color:var(--primary-dark); font-size:15px;">Khung: ' + c.curriculumName + '</strong>' +
+                            '</div>';
+                    if (c.plos && c.plos.length > 0) {
+                        c.plos.forEach(p => {
+                            const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
+                            html += '<div style="margin-bottom:8px; margin-left:10px;">' +
+                                    '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
+                                    '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
+                                    '</div>';
+                        });
+                    } else {
+                        html += '<div style="margin-left:10px; color:#888;">Chưa có PLO nào</div>';
+                    }
+                });
+                container.innerHTML = html;
+            }).catch(err => {
+                container.innerHTML = '<span style="color:#d32f2f;">Lỗi khi tải PLO. Vui lòng thử lại.</span>';
+            });
+    }
+    function closePloModal() {
+        document.getElementById('ploModal').style.display = 'none';
+    }
+    function savePloMapping() {
+        const cloNum = document.getElementById('currentCloMappingNum').value;
+        const tr = document.getElementById('cloBody').children[cloNum - 1];
+        tr.querySelectorAll('input[name^="clo_plo_"]').forEach(inp => inp.remove());
+        const idx = cloNum - 1;
+        const selected = document.querySelectorAll('#ploCheckboxContainer input[type="checkbox"]:checked');
+        let countText = '';
+        if(selected.length > 0) countText = ' (' + selected.length + ')';
+        selected.forEach(cb => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'clo_plo_' + idx;
+            inp.value = cb.value;
+            tr.querySelector('td:last-child').appendChild(inp);
+        });
+        const btn = tr.querySelector('.btn-map-plo');
+        if(btn) btn.innerHTML = 'Map PLO' + countText;
+        closePloModal();
+    }
+
     let matCount = <%= materials != null ? materials.size() : 0 %>;
     let cloCount = <%= clos != null ? clos.size() : 0 %>;
     let sesCount = 0;
@@ -343,18 +440,50 @@
 
     function doSave(type) {
         document.getElementById('saveType').value = type;
-        if(type === 'draft') {
-            document.getElementById('syllabusForm').submit();
+        if (type !== 'draft' && !validateForm()) {
+            return;
+        }
+
+        const btn = document.getElementById('btnSubmitApproval');
+        if (btn) { btn.disabled = true; btn.innerHTML = 'Đang xử lý...'; }
+
+        const fileInput = document.querySelector('input[name="student_material_file"]');
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('student_material_file', fileInput.files[0]);
+            fetch('<%=request.getContextPath()%>/syllabus-manage?action=upload_temp', {
+                method: 'POST',
+                body: formData
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    document.getElementById('temp_material_file').value = data.tempPath;
+                    fileInput.disabled = true; // prevent file input from being submitted directly
+                    document.getElementById('syllabusForm').submit();
+                } else {
+                    alert('Lỗi upload file: ' + data.error);
+                    if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
+                }
+            }).catch(e => {
+                alert('Lỗi kết nối: ' + e);
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
+            });
         } else {
-            if(validateForm()) {
-                document.getElementById('syllabusForm').submit();
-            }
+            document.getElementById('syllabusForm').submit();
         }
     }
 
     function updateScale() {
         let max = document.getElementById('scoringScale').value;
         document.getElementById('minAvgMarkToPass').max = max;
+    }
+
+    function escapeHtmlAttr(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
     }
 
     // ---- Materials ----
@@ -374,7 +503,7 @@
             '<td><input type="checkbox" name="mat_isHard_' + i + '"/></td>' +
             '<td><input type="checkbox" name="mat_isOnline_' + i + '"/></td>' +
             '<td><input type="text" name="mat_note" class="form-control" placeholder="URL..."/></td>' +
-            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(\'matRow_' + i + '\')">×</button></td>';
+            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(this, \'mat\')">×</button></td>';
         document.getElementById('matBody').appendChild(row);
     }
 
@@ -388,109 +517,246 @@
             '<td><input type="text" name="clo_name" class="form-control" value="CLO' + num + '" readonly style="width:70px;background:#f0f0f0;"/></td>' +
             '<td><input type="text" name="clo_details" class="form-control" value="CLO' + num + '"/></td>' +
             '<td><input type="text" name="clo_loDetails" class="form-control" required placeholder="Mô tả LO..."/></td>' +
-            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeCLORow(\'cloRow_' + i + '\', ' + num + ')">×</button></td>';
+            '<td style="white-space:nowrap;">' +
+ '<button type="button" class="btn-syl btn-sm btn-map-plo" style="margin-right:5px; background:#F5A623; color:#fff; border:none;" onclick="openPloModal(' + num + ', this)">Map PLO</button>' +
+ '<button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeCLORow(this, ' + num + ')">×</button></td>';
         document.getElementById('cloBody').appendChild(row);
         updateCLOCheckboxes();
         checkValidationStatus();
     }
     
-    function removeCLORow(rowId, cloNum) {
-        const isUsed = document.querySelector('input[name^="ses_clo_"][name$="_' + cloNum + '"]:checked') ||
-                       document.querySelector('input[name^="asm_clo_"][name$="_' + cloNum + '"]:checked');
-        if(isUsed) {
+    function removeCLORow(btn, cloNum) {
+        const isUsed = document.querySelector(
+            '.ses-clo-cb[value="' + cloNum + '"]:checked, ' +
+            '.asm-clo-cb[value="' + cloNum + '"]:checked'
+        );
+        if (isUsed) {
             alert('Không thể xóa CLO này vì nó đang được map trong Session hoặc Assessment!');
             return;
         }
-        removeRow(rowId);
-        updateCLOCheckboxes();
+
+        const targetRow = typeof btn === 'string'
+            ? document.getElementById(btn)
+            : btn.closest('tr');
+        if (!targetRow) return;
+        targetRow.remove();
+
+        const cloRows = Array.from(document.querySelectorAll('#cloBody tr'));
+        const oldToNew = {};
+
+        cloRows.forEach((tr, index) => {
+            const nameInput = tr.querySelector('input[name="clo_name"]');
+            const match = nameInput ? nameInput.value.match(/CLO(\d+)/i) : null;
+            const oldNum = match ? parseInt(match[1], 10) : index + 1;
+            oldToNew[oldNum] = index + 1;
+        });
+
+        const mappedSelections = [];
+        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
+            const oldValues = Array.from(td.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value, 10));
+            mappedSelections.push({
+                td: td,
+                values: oldValues.map(value => oldToNew[value]).filter(Boolean)
+            });
+        });
+
+        cloRows.forEach((tr, index) => {
+            const newNum = index + 1;
+            const nameInput = tr.querySelector('input[name="clo_name"]');
+            const detailsInput = tr.querySelector('input[name="clo_details"]');
+            const oldMatch = nameInput ? nameInput.value.match(/CLO(\d+)/i) : null;
+            const oldNum = oldMatch ? parseInt(oldMatch[1], 10) : newNum;
+
+            tr.id = 'cloRow_' + index;
+            if (nameInput) nameInput.value = 'CLO' + newNum;
+            if (detailsInput && detailsInput.value === 'CLO' + oldNum) {
+                detailsInput.value = 'CLO' + newNum;
+            }
+
+            const deleteBtn = tr.querySelector('.btn-danger-syl');
+            if (deleteBtn) {
+                deleteBtn.setAttribute('onclick', 'removeCLORow(this, ' + newNum + ')');
+            }
+
+            const mapBtn = tr.querySelector('.btn-map-plo');
+            if (mapBtn) {
+                mapBtn.setAttribute('onclick', 'openPloModal(' + newNum + ', this)');
+            }
+
+            tr.querySelectorAll('input[name^="clo_plo_"]').forEach(input => {
+                input.name = 'clo_plo_' + index;
+            });
+        });
+
+        cloCount = cloRows.length;
+
+        mappedSelections.forEach(item => {
+            const prefix = item.td.id.startsWith('sesClo_') ? 'ses' : 'asm';
+            const rowIdx = item.td.id.split('_')[1];
+            item.td.innerHTML = buildCLOCheckboxes(prefix, rowIdx, item.values);
+        });
+
         checkValidationStatus();
     }
 
-    // ---- Sessions ----
-    function addSessionRow(data = {}) {
+    function addSessionRow(data = null) {
         const i = sesCount++;
         const row = document.createElement('tr');
         row.id = 'sesRow_' + i;
         row.className = 'session-row';
+
+        const topic = data ? data.topic : '';
+        const type = data ? data.type : '';
+        const itu = data ? data.itu : '';
+        const materialsValue = data ? data.materials : '';
+        const download = data ? data.download : '';
+        const tasks = data ? data.tasks : '';
+        const urls = data ? data.urls : '';
+        const selectedClos = data && Array.isArray(data.clos) ? data.clos : [];
+
         row.innerHTML =
             '<td style="text-align:center" class="ses-idx">' + (i + 1) + '</td>' +
-            '<td><input type="text" name="ses_topic" class="form-control" required value="' + (data.topic || '') + '"/></td>' +
-            '<td><input type="text" name="ses_type" class="form-control" value="' + (data.type || '') + '"/></td>' +
-            '<td id="sesClo_' + i + '">' + buildCLOCheckboxes('ses', i, data.clos || []) + '</td>' +
-            '<td><input type="text" name="ses_itu" class="form-control" value="' + (data.itu || '') + '"/></td>' +
-            '<td><input type="text" name="ses_materials" class="form-control" value="' + (data.materials || '') + '"/></td>' +
-            '<td><input type="text" name="ses_download" class="form-control" value="' + (data.download || '') + '"/></td>' +
-            '<td><input type="text" name="ses_tasks" class="form-control" value="' + (data.tasks || '') + '"/></td>' +
-            '<td><input type="text" name="ses_urls" class="form-control" value="' + (data.urls || '') + '"/></td>' +
-            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(\'sesRow_' + i + '\')">×</button></td>';
+            '<td><input type="text" name="ses_topic" class="form-control" value="' + escapeHtmlAttr(topic) + '" required/></td>' +
+            '<td><input type="text" name="ses_type" class="form-control" value="' + escapeHtmlAttr(type) + '" placeholder="Lecture, Discussion"/></td>' +
+            '<td id="sesClo_' + i + '">' + buildCLOCheckboxes('ses', i, selectedClos) + '</td>' +
+            '<td><input type="text" name="ses_itu" class="form-control" value="' + escapeHtmlAttr(itu) + '" placeholder="AI literacy..."/></td>' +
+            '<td><input type="text" name="ses_materials" class="form-control" value="' + escapeHtmlAttr(materialsValue) + '"/></td>' +
+            '<td><input type="text" name="ses_download" class="form-control" value="' + escapeHtmlAttr(download) + '"/></td>' +
+            '<td><input type="text" name="ses_tasks" class="form-control" value="' + escapeHtmlAttr(tasks) + '"/></td>' +
+            '<td><input type="text" name="ses_urls" class="form-control" value="' + escapeHtmlAttr(urls) + '"/></td>' +
+            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(this, \'ses\')">×</button></td>';
+
         document.getElementById('sesBody').appendChild(row);
         checkValidationStatus();
     }
 
-    // ---- Assessments ----
-    function addAssessmentRow(data = {}) {
+    function addAssessmentRow(data = null) {
         const i = asmCount++;
         const row = document.createElement('tr');
         row.id = 'asmRow_' + i;
+        row.className = 'assessment-row';
+
+        const category = data ? data.category : '';
+        const type = data ? data.type : '';
+        const weight = data ? data.weight : '';
+        const criteria = data ? data.criteria : '';
+        const duration = data ? data.duration : '';
+        const questionType = data ? (data.qType != null ? data.qType : (data.questionType || '')) : '';
+        const knowledgeSkill = data ? (data.knowledgeSkill != null ? data.knowledgeSkill : (data.knowledge || '')) : '';
+        const gradingGuide = data ? data.gradingGuide : '';
+        const note = data ? data.note : '';
+        const selectedClos = data && Array.isArray(data.clos) ? data.clos : [];
+
         row.innerHTML =
-            '<td style="text-align:center">' + (i + 1) + '</td>' +
-            '<td><input type="text" name="asm_category" class="form-control" required value="' + (data.category || '') + '"/></td>' +
-            '<td><select name="asm_type" class="form-control"><option value="on-going" ' + (data.type==='on-going'?'selected':'') + '>on-going</option><option value="final" ' + (data.type==='final'?'selected':'') + '>final</option></select></td>' +
-            '<td><input type="number" name="asm_weight" class="form-control asm-weight" step="0.1" min="0" max="100" value="' + (data.weight || 0) + '" onchange="updateWeightTotal()"/></td>' +
-            '<td id="asmClo_' + i + '">' + buildCLOCheckboxes('asm', i, data.clos || []) + '</td>' +
-            '<td><input type="text" name="asm_criteria" class="form-control" value="' + (data.criteria || '') + '"/></td>' +
-            '<td><input type="text" name="asm_duration" class="form-control" value="' + (data.duration || '') + '"/></td>' +
-            '<td><textarea name="asm_questionType" class="form-control" rows="2">' + (data.questionType || '') + '</textarea></td>' +
-            '<td><textarea name="asm_knowledge" class="form-control" rows="2">' + (data.knowledge || '') + '</textarea></td>' +
-            '<td><textarea name="asm_gradingGuide" class="form-control" rows="2">' + (data.gradingGuide || '') + '</textarea></td>' +
-            '<td><input type="text" name="asm_note" class="form-control" value="' + (data.note || '') + '"/></td>' +
-            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(\'asmRow_' + i + '\')">×</button></td>';
+            '<td style="text-align:center" class="asm-idx">' + (i + 1) + '</td>' +
+            '<td><input type="text" name="asm_category" class="form-control" value="' + escapeHtmlAttr(category) + '" required placeholder="Quizzes"/></td>' +
+            '<td><input type="text" name="asm_type" class="form-control" value="' + escapeHtmlAttr(type) + '" placeholder="Multiple choice"/></td>' +
+            '<td><input type="number" step="0.1" min="0" max="100" name="asm_weight" class="form-control asm-weight" oninput="updateWeightTotal()" value="' + escapeHtmlAttr(weight) + '" required style="width:70px;"/></td>' +
+            '<td id="asmClo_' + i + '">' + buildCLOCheckboxes('asm', i, selectedClos) + '</td>' +
+            '<td><input type="text" name="asm_criteria" class="form-control" value="' + escapeHtmlAttr(criteria) + '"/></td>' +
+            '<td><input type="text" name="asm_duration" class="form-control" value="' + escapeHtmlAttr(duration) + '"/></td>' +
+            '<td><input type="text" name="asm_questionType" class="form-control" value="' + escapeHtmlAttr(questionType) + '"/></td>' +
+            '<td><input type="text" name="asm_knowledgeSkill" class="form-control" value="' + escapeHtmlAttr(knowledgeSkill) + '"/></td>' +
+            '<td><input type="text" name="asm_gradingGuide" class="form-control" value="' + escapeHtmlAttr(gradingGuide) + '"/></td>' +
+            '<td><input type="text" name="asm_note" class="form-control" value="' + escapeHtmlAttr(note) + '"/></td>' +
+            '<td><button type="button" class="btn-syl btn-danger-syl btn-sm" onclick="removeRow(this, \'asm\')">×</button></td>';
+
         document.getElementById('asmBody').appendChild(row);
-        checkValidationStatus();
         updateWeightTotal();
     }
 
-    // ---- Helpers ----
-    function removeRow(rowId) {
-        const row = document.getElementById(rowId);
-        if (row) row.remove();
-        updateWeightTotal();
-        checkValidationStatus();
+    function removeRow(btn, type) {
+        const row = typeof btn === 'string' ? document.getElementById(btn) : btn.closest('tr');
+        if (!row) return;
+        row.remove();
+
+        if (type === 'mat') {
+            const rows = document.querySelectorAll('#matBody tr');
+            rows.forEach((tr, index) => {
+                tr.id = 'matRow_' + index;
+                tr.cells[0].textContent = index + 1;
+                const mainCb = tr.querySelector('input[name^="mat_isMain_"]');
+                const hardCb = tr.querySelector('input[name^="mat_isHard_"]');
+                const onlineCb = tr.querySelector('input[name^="mat_isOnline_"]');
+                if (mainCb) mainCb.name = 'mat_isMain_' + index;
+                if (hardCb) hardCb.name = 'mat_isHard_' + index;
+                if (onlineCb) onlineCb.name = 'mat_isOnline_' + index;
+            });
+            matCount = rows.length;
+        } else if (type === 'ses') {
+            const rows = document.querySelectorAll('#sesBody tr');
+            rows.forEach((tr, index) => {
+                tr.id = 'sesRow_' + index;
+                tr.cells[0].textContent = index + 1;
+                const cloCell = tr.querySelector('td[id^="sesClo_"]');
+                if (cloCell) {
+                    cloCell.id = 'sesClo_' + index;
+                    cloCell.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.name = 'ses_clo_' + index;
+                    });
+                }
+            });
+            sesCount = rows.length;
+        } else if (type === 'asm') {
+            const rows = document.querySelectorAll('#asmBody tr');
+            rows.forEach((tr, index) => {
+                tr.id = 'asmRow_' + index;
+                tr.cells[0].textContent = index + 1;
+                const cloCell = tr.querySelector('td[id^="asmClo_"]');
+                if (cloCell) {
+                    cloCell.id = 'asmClo_' + index;
+                    cloCell.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.name = 'asm_clo_' + index;
+                    });
+                }
+            });
+            asmCount = rows.length;
+        }
+
+        if (type === 'asm') {
+            updateWeightTotal();
+        } else {
+            checkValidationStatus();
+        }
     }
 
     function buildCLOCheckboxes(prefix, rowIdx, checkedIds = []) {
+        const selected = (Array.isArray(checkedIds) ? checkedIds : []).map(Number);
         let html = '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
         let found = false;
-        document.querySelectorAll('#cloBody tr').forEach((tr) => {
-            const num = parseInt(tr.querySelector('input[name="clo_name"]').value.replace('CLO',''));
-            const isChecked = checkedIds.includes(num) ? 'checked' : '';
+
+        document.querySelectorAll('#cloBody tr').forEach(tr => {
+            const nameInput = tr.querySelector('input[name="clo_name"]');
+            const match = nameInput ? nameInput.value.trim().match(/CLO(\d+)/i) : null;
+            if (!match) return;
+
+            const num = parseInt(match[1], 10);
+            const checked = selected.includes(num) ? ' checked' : '';
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" ' +
+                'class="' + prefix + '-clo-cb" ' +
+                'name="' + prefix + '_clo_' + rowIdx + '" ' +
+                'value="' + num + '"' + checked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
-        if (!found) html += '<span style="color:var(--muted);font-size:12px;">Thêm CLO trước</span>';
+
+        if (!found) {
+            html += '<span style="color:var(--muted);font-size:12px;">Thêm CLO trước</span>';
+        }
+
         html += '</div>';
         return html;
     }
 
     function updateCLOCheckboxes() {
-        const checkedMap = {};
-        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            checkedMap[cb.name] = true;
-        });
-
-        document.querySelectorAll('[id^="sesClo_"]').forEach(function (td) {
-            const idx = td.id.split('_')[1];
-            td.innerHTML = buildCLOCheckboxes('ses', idx);
-        });
-        document.querySelectorAll('[id^="asmClo_"]').forEach(function (td) {
-            const idx = td.id.split('_')[1];
-            td.innerHTML = buildCLOCheckboxes('asm', idx);
-        });
-
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            if(checkedMap[cb.name]) cb.checked = true;
+        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
+            const prefix = td.id.startsWith('sesClo_') ? 'ses' : 'asm';
+            const rowIdx = td.id.split('_')[1];
+            const selected = Array.from(td.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value, 10));
+            td.innerHTML = buildCLOCheckboxes(prefix, rowIdx, selected);
         });
     }
 
@@ -501,7 +767,7 @@
         });
         const el = document.getElementById('weightTotal');
         el.textContent = 'Tổng weight: ' + total.toFixed(1) + '%';
-        el.style.color = (Math.abs(total - 100) < 0.01) ? '#2e7d32' : '#c62828';
+        el.style.color = (Math.abs(total - 100) < 0.01) ? '#f26d21' : '#c62828';
         checkValidationStatus();
     }
 
@@ -535,7 +801,7 @@
             btn.disabled = false;
             btn.title = "Submit Syllabus for Approval";
         } else {
-            btn.disabled = true;
+            btn.disabled = false; // BA UX Fix: Always allow clicking to show errors
             btn.title = "Submit for Approval is unavailable until:\n" + titleAttr.join("\n");
         }
     }
@@ -552,6 +818,28 @@
         if (sesCountActual < 10 || sesCountActual > 60) {
             errors.push('Section 4: Phải có từ 10 đến 60 Sessions.');
         }
+
+        let cloPloMissing = false;
+        document.querySelectorAll('#cloBody tr').forEach((tr, index) => {
+            if (tr.querySelectorAll('input[name="clo_plo_' + index + '"]').length === 0) {
+                cloPloMissing = true;
+            }
+        });
+        if (cloPloMissing) {
+            errors.push('Section 3: Mỗi CLO phải được map với ít nhất 1 PLO.');
+        }
+
+        const fileInput = document.querySelector('input[name="student_material_file"]');
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const fileName = fileInput.files[0].name.toLowerCase();
+            if (!fileName.endsWith('.zip')) {
+                errors.push('Section 4: File tài liệu phải có định dạng .zip.');
+            }
+            if (fileInput.files[0].size > 100 * 1024 * 1024) {
+                errors.push('Section 4: File tài liệu không được vượt quá 100MB.');
+            }
+        }
+
 
         let sessionCloMissing = false;
         document.querySelectorAll('[id^="sesClo_"]').forEach(td => {
@@ -659,6 +947,198 @@
 
         checkValidationStatus();
     });
+
+    // =========================================================================
+    // Excel Import
+    // =========================================================================
+    document.getElementById('downloadTemplateLink').href = contextPath + '/syllabus-manage?action=download_template';
+
+    function importExcel() {
+        const fileInput = document.getElementById('excelFileInput');
+        const statusDiv = document.getElementById('importStatus');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('Vui lòng chọn file Excel (.xlsx) trước!');
+            return;
+        }
+        const file = fileInput.files[0];
+        if (!file.name.toLowerCase().endsWith('.xlsx')) {
+            alert('Chỉ hỗ trợ file .xlsx!');
+            return;
+        }
+
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = '<em style="color:var(--primary);">⏳ Đang xử lý file Excel...</em>';
+        document.getElementById('btnImportExcel').disabled = true;
+
+        const formData = new FormData();
+        formData.append('excelFile', file);
+
+        fetch(contextPath + '/syllabus-manage?action=import_excel', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('btnImportExcel').disabled = false;
+                if (!data.success) {
+                    let errHtml = '<div style="color:#c62828; padding:12px; background:#ffeaea; border-radius:6px;">';
+                    errHtml += '<strong>⚠️ Lỗi khi import:</strong><ul style="margin:8px 0 0 16px;">';
+                    data.errors.forEach(e => errHtml += '<li>' + e + '</li>');
+                    errHtml += '</ul></div>';
+                    statusDiv.innerHTML = errHtml;
+                    return;
+                }
+                fillFormFromImport(data);
+                statusDiv.innerHTML = '<div style="color:#f26d21; padding:12px; background:#fff0e6; border-radius:6px;">' +
+                    '<strong>✅ Import thành công!</strong> Dữ liệu đã được điền vào form. Vui lòng kiểm tra lại trước khi lưu.' +
+                    '</div>';
+            })
+            .catch(err => {
+                document.getElementById('btnImportExcel').disabled = false;
+                statusDiv.innerHTML = '<div style="color:#c62828;">❌ Lỗi kết nối: ' + err.message + '</div>';
+            });
+    }
+
+    function fillFormFromImport(data) {
+        // 1. General Info
+        if (data.general) {
+            const g = data.general;
+            const setVal = (name, val) => {
+                const el = document.querySelector('[name="' + name + '"]');
+                if (el && val) { el.readOnly = false; el.value = val; }
+            };
+            setVal('syllabusName', g['Syllabus Name (Tiếng Việt)']);
+            setVal('syllabusEnglish', g['Syllabus English']);
+            setVal('description', g['Description']);
+            setVal('studentTasks', g['Student Tasks']);
+            setVal('timeAllocation', g['Time Allocation']);
+            setVal('tools', g['Tools']);
+            setVal('note', g['Note']);
+            setVal('decisionNo', g['Decision No']);
+            if (g['Scoring Scale']) {
+                const scale = document.getElementById('scoringScale');
+                if (scale) scale.value = g['Scoring Scale'];
+            }
+            if (g['Min Avg Mark To Pass']) {
+                const min = document.getElementById('minAvgMarkToPass');
+                if (min) min.value = g['Min Avg Mark To Pass'];
+            }
+            if (g['Degree Level']) {
+                const dl = document.querySelector('[name="degreeLevel"]');
+                if (dl) dl.value = g['Degree Level'];
+            }
+        }
+
+        // 2. Materials - clear existing and add new
+        document.getElementById('matBody').innerHTML = '';
+        matCount = 0;
+        if (data.materials && data.materials.length > 0) {
+            data.materials.forEach(m => {
+                addMaterialRow();
+                const rows = document.querySelectorAll('#matBody tr');
+                const row = rows[rows.length - 1];
+                const inputs = row.querySelectorAll('input[type="text"]');
+                if (inputs[0]) inputs[0].value = m.description || '';
+                if (inputs[1]) inputs[1].value = m.author || '';
+                if (inputs[2]) inputs[2].value = m.publisher || '';
+                if (inputs[3]) inputs[3].value = m.publishedDate || '';
+                if (inputs[4]) inputs[4].value = m.edition || '';
+                if (inputs[5]) inputs[5].value = m.isbn || '';
+                if (inputs[6]) inputs[6].value = m.note || '';
+                const cbs = row.querySelectorAll('input[type="checkbox"]');
+                if (cbs[0] && (m.isMain === 'x' || m.isMain === 'true')) cbs[0].checked = true;
+                if (cbs[1] && (m.isHard === 'x' || m.isHard === 'true')) cbs[1].checked = true;
+                if (cbs[2] && (m.isOnline === 'x' || m.isOnline === 'true')) cbs[2].checked = true;
+            });
+        }
+
+        // 3. CLOs - clear and add
+        document.getElementById('cloBody').innerHTML = '';
+        cloCount = 0;
+        if (data.clos && data.clos.length > 0) {
+            data.clos.forEach(c => {
+                addCLORow();
+                const rows = document.querySelectorAll('#cloBody tr');
+                const row = rows[rows.length - 1];
+                const nameInput = row.querySelector('input[name="clo_name"]');
+                const detailsInput = row.querySelector('input[name="clo_details"]');
+                const loInput = row.querySelector('input[name="clo_loDetails"]');
+                if (nameInput) nameInput.value = c.cloName || '';
+                if (detailsInput) detailsInput.value = c.cloDetails || '';
+                if (loInput) loInput.value = c.loDetails || '';
+            });
+        }
+
+        // 4. Sessions - clear and add
+        document.getElementById('sesBody').innerHTML = '';
+        sesCount = 0;
+        if (data.sessions && data.sessions.length > 0) {
+            data.sessions.forEach(s => {
+                // Parse CLO references: "CLO1,CLO3" -> [1,3]
+                let cloNums = [];
+                if (s.clos) {
+                    s.clos.split(/[,;\s]+/).forEach(ref => {
+                        const match = ref.trim().match(/CLO(\d+)/i);
+                        if (match) cloNums.push(parseInt(match[1]));
+                    });
+                }
+                addSessionRow({
+                    topic: s.topic || '',
+                    type: s.type || '',
+                    itu: s.itu || '',
+                    materials: s.materials || '',
+                    download: s.download || '',
+                    tasks: s.tasks || '',
+                    urls: s.urls || '',
+                    clos: cloNums
+                });
+            });
+        }
+
+        // 5. Assessments - clear and add
+        document.getElementById('asmBody').innerHTML = '';
+        asmCount = 0;
+        if (data.assessments && data.assessments.length > 0) {
+            data.assessments.forEach(a => {
+                let cloNums = [];
+                if (a.clos) {
+                    a.clos.split(/[,;\s]+/).forEach(ref => {
+                        const match = ref.trim().match(/CLO(\d+)/i);
+                        if (match) cloNums.push(parseInt(match[1]));
+                    });
+                }
+                addAssessmentRow({
+                    category: a.category || '',
+                    type: a.type || '',
+                    weight: a.weight || '',
+                    criteria: a.criteria || '',
+                    duration: a.duration || '',
+                    qType: a.questionType || '',
+                    knowledgeSkill: a.knowledgeSkill || '',
+                    gradingGuide: a.gradingGuide || '',
+                    note: a.note || '',
+                    clos: cloNums
+                });
+            });
+        }
+
+        // Refresh validation
+        if (typeof updateWeightTotal === 'function') updateWeightTotal();
+        if (typeof checkValidationStatus === 'function') checkValidationStatus();
+    }
+
 </script>
+
+    <!-- PLO Mapping Modal -->
+    <div id="ploModal" style="display:none; position:fixed; z-index:1050; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+        <div style="background-color:#fff; margin:10% auto; padding:20px; border:1px solid #888; width:50%; border-radius:8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <h3 id="ploModalTitle" style="margin-top:0; color:#f26d21;">Map PLO cho CLO</h3>
+            <input type="hidden" id="currentCloMappingNum">
+            <div id="ploCheckboxContainer" style="margin:20px 0; max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:4px;">
+                <!-- Checkboxes go here -->
+            </div>
+            <div style="text-align:right;">
+                <button type="button" class="btn-syl btn-outline-syl" onclick="closePloModal()">Hủy</button>
+                <button type="button" class="btn-syl" style="background:#F5A623; color:#fff; border:none;" onclick="savePloMapping()">Lưu Mapping</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -9,10 +9,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import model.Curriculum;
+import model.CurriculumSubject;
+import model.CurriculumSubjectPLO;
+import model.PLO;
+import model.PO;
 
 public class CurriculumDAO extends DBContext {
 
@@ -121,6 +126,66 @@ public class CurriculumDAO extends DBContext {
         return -1;
     }
 
+    public int createCurriculumWithSubjects(Curriculum curriculum, List<CurriculumSubject> subjects) {
+        return createCurriculumWithSubjects(curriculum, subjects, null, null);
+    }
+
+    public int createCurriculumWithSubjects(Curriculum curriculum, List<CurriculumSubject> subjects,
+                                            List<PLO> plos, List<PO> pos) {
+        return createCurriculumWithSubjects(curriculum, subjects, plos, pos, null);
+    }
+
+    public int createCurriculumWithSubjects(Curriculum curriculum, List<CurriculumSubject> subjects,
+                                            List<PLO> plos, List<PO> pos,
+                                            List<CurriculumSubjectPLO> subjectPLOs) {
+        Connection con = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+
+            int curriculumId = insertCurriculum(con, curriculum);
+            if (curriculumId < 0) {
+                con.rollback();
+                return -1;
+            }
+
+            if (subjects != null && !subjects.isEmpty()) {
+                insertCurriculumSubjectDetails(con, curriculumId, subjects);
+            }
+            if (plos != null && !plos.isEmpty()) {
+                insertPLOs(con, curriculumId, plos);
+            }
+            if (pos != null && !pos.isEmpty()) {
+                insertPOs(con, curriculumId, pos);
+            }
+            if (subjectPLOs != null && !subjectPLOs.isEmpty()) {
+                insertCurriculumSubjectPLOs(con, curriculumId, subjects, plos, subjectPLOs);
+            }
+
+            con.commit();
+            return curriculumId;
+        } catch (Exception e) {
+            System.out.println("createCurriculumWithSubjects error: " + e.getMessage());
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (Exception ex) {
+                    System.out.println("createCurriculumWithSubjects rollback error: " + ex.getMessage());
+                }
+            }
+        } finally {
+            if (con != null) {
+                try {
+                    con.setAutoCommit(true);
+                    con.close();
+                } catch (Exception e) {
+                    System.out.println("createCurriculumWithSubjects close error: " + e.getMessage());
+                }
+            }
+        }
+        return -1;
+    }
+
     public List<CurriculumDTO> searchCurricula(String searchType, String keyword,
                                                int page, int pageSize) throws SQLException {
         List<CurriculumDTO> list = new ArrayList<>();
@@ -129,7 +194,7 @@ public class CurriculumDAO extends DBContext {
 
         String sql = """
                 SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
-                       tp.ProgramCode, tp.ProgramName, tp.MajorName, tp.AcademicYear
+                       tp.ProgramCode, tp.ProgramName, tp.MajorName
                 FROM dbo.[Curriculum] c
                 JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
                 """ + whereClause + """
@@ -175,7 +240,7 @@ public class CurriculumDAO extends DBContext {
     public CurriculumDTO getCurriculumById(int curriculumId) throws SQLException {
         String sql = """
                 SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
-                       tp.ProgramCode, tp.ProgramName, tp.MajorName, tp.AcademicYear
+                       tp.ProgramCode, tp.ProgramName, tp.MajorName
                 FROM dbo.[Curriculum] c
                 JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
                 WHERE c.CurriculumID = ?
@@ -254,6 +319,129 @@ public class CurriculumDAO extends DBContext {
         }
     }
 
+    private void insertCurriculumSubjectDetails(Connection con, int curriculumId, List<CurriculumSubject> subjects) throws Exception {
+        String sql = """
+                INSERT INTO dbo.[Curriculum_Subject]
+                (CurriculumID, SubjectID, SemesterNo, SubjectGroup, IsRequired, DisplayOrder)
+                VALUES (?,?,?,?,?,?)
+                """;
+
+        try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            int displayOrder = 1;
+            for (CurriculumSubject subject : subjects) {
+                if (subject == null || subject.getSubjectId() <= 0 || subject.getSemesterNo() == null) {
+                    continue;
+                }
+                ps.setInt(1, curriculumId);
+                ps.setInt(2, subject.getSubjectId());
+                ps.setInt(3, subject.getSemesterNo());
+                ps.setNull(4, Types.NVARCHAR);
+                ps.setBoolean(5, true);
+                ps.setInt(6, displayOrder++);
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        subject.setCurriculumSubjectId(keys.getInt(1));
+                    }
+                }
+                subject.setCurriculumId(curriculumId);
+            }
+        }
+    }
+
+    private void insertPLOs(Connection con, int curriculumId, List<PLO> plos) throws Exception {
+        String sql = """
+                INSERT INTO dbo.[PLO] (CurriculumID, PloCode, PloDescription)
+                VALUES (?, ?, ?)
+                """;
+
+        try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            for (PLO plo : plos) {
+                ps.setInt(1, curriculumId);
+                ps.setString(2, plo.getPloCode());
+                ps.setString(3, plo.getPloDescription());
+                ps.executeUpdate();
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        plo.setPloId(keys.getInt(1));
+                    }
+                }
+                plo.setCurriculumId(curriculumId);
+            }
+        }
+    }
+
+    private void insertPOs(Connection con, int curriculumId, List<PO> pos) throws Exception {
+        String sql = """
+                INSERT INTO dbo.[PO] (CurriculumID, PoCode, PoDescription)
+                VALUES (?, ?, ?)
+                """;
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (PO po : pos) {
+                ps.setInt(1, curriculumId);
+                ps.setString(2, po.getPoCode());
+                ps.setString(3, po.getPoDescription());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    private void insertCurriculumSubjectPLOs(Connection con, int curriculumId,
+                                            List<CurriculumSubject> subjects,
+                                            List<PLO> plos,
+                                            List<CurriculumSubjectPLO> subjectPLOs) throws Exception {
+        String sql = """
+                INSERT INTO dbo.[Curriculum_Subject_PLO]
+                (CurriculumID, CurriculumSubjectID, PloID, ContributionLevel, Description)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+
+        Map<String, Integer> subjectIdsByKey = new HashMap<>();
+        if (subjects != null) {
+            for (CurriculumSubject subject : subjects) {
+                if (subject.getClientKey() != null && !subject.getClientKey().isBlank()) {
+                    subjectIdsByKey.put(subject.getClientKey(), subject.getCurriculumSubjectId());
+                }
+            }
+        }
+
+        Map<String, Integer> ploIdsByKey = new HashMap<>();
+        if (plos != null) {
+            for (PLO plo : plos) {
+                if (plo.getClientKey() != null && !plo.getClientKey().isBlank()) {
+                    ploIdsByKey.put(plo.getClientKey(), plo.getPloId());
+                }
+            }
+        }
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (CurriculumSubjectPLO mapping : subjectPLOs) {
+                Integer curriculumSubjectId = subjectIdsByKey.get(mapping.getCurriculumSubjectClientKey());
+                Integer ploId = ploIdsByKey.get(mapping.getPloClientKey());
+                if (curriculumSubjectId == null || curriculumSubjectId <= 0 || ploId == null || ploId <= 0) {
+                    continue;
+                }
+                ps.setInt(1, curriculumId);
+                ps.setInt(2, curriculumSubjectId);
+                ps.setInt(3, ploId);
+                if (mapping.getContributionLevel() == null || mapping.getContributionLevel().isBlank()) {
+                    ps.setNull(4, Types.VARCHAR);
+                } else {
+                    ps.setString(4, mapping.getContributionLevel());
+                }
+                if (mapping.getDescription() == null || mapping.getDescription().isBlank()) {
+                    ps.setNull(5, Types.NVARCHAR);
+                } else {
+                    ps.setString(5, mapping.getDescription());
+                }
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
     private Map<Integer, List<SubjectDTO>> loadSemesterSubjects(int curriculumId) throws SQLException {
         Map<Integer, List<SubjectDTO>> map = new TreeMap<>();
         String sql = """
@@ -312,7 +500,6 @@ public class CurriculumDAO extends DBContext {
         dto.setProgramCode(rs.getString("ProgramCode"));
         dto.setProgramName(rs.getString("ProgramName"));
         dto.setMajorName(rs.getString("MajorName"));
-        dto.setAcademicYear(rs.getString("AcademicYear"));
         return dto;
     }
 

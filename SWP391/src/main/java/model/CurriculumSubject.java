@@ -8,6 +8,7 @@ public class CurriculumSubject {
     private String subjectGroup;
     private boolean required;
     private Integer displayOrder;
+    private String clientKey;
 
     public CurriculumSubject() {
     }
@@ -84,5 +85,13 @@ public class CurriculumSubject {
 
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
+    }
+
+    public String getClientKey() {
+        return clientKey;
+    }
+
+    public void setClientKey(String clientKey) {
+        this.clientKey = clientKey;
     }
 }

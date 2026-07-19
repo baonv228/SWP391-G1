@@ -33,7 +33,7 @@
 <body>
 <main class="page">
     <header class="topbar">
-        <div class="brand">Training Program Management System</div>
+        <div class="brand">Training Management System</div>
 
         <div class="top-actions" aria-label="Tài khoản">
             <a class="profile" href="<%=request.getContextPath()%>/profile" title="<%= displayName %>">
@@ -54,7 +54,7 @@
         </div>
 
         <nav class="module-grid" aria-label="Training Department dashboard">
-            <a class="module-card" href="#">
+            <a class="module-card" href="<%=request.getContextPath()%>/request-list">
                 <span class="module-icon">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M9 5h6"></path>
@@ -96,10 +96,10 @@
                         <path d="M22 10v6"></path>
                     </svg>
                 </span>
-                <span class="module-title">Training Program</span>
+                <span class="module-title">Department</span>
             </a>
 
-            <a class="module-card" href="<%=request.getContextPath()%>/report">
+            <a class="module-card" href="<%=request.getContextPath()%>/view-training-report">
                 <span class="module-icon">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M4 20h16"></path>
@@ -114,7 +114,7 @@
     </section>
 
     <footer class="footer">
-        © 2026 Training Program Management System. All rights reserved.
+        © 2026 Training Management System. All rights reserved.
     </footer>
 </main>
 </body>

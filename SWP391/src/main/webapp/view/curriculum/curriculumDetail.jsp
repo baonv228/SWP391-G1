@@ -64,6 +64,23 @@
                         </c:choose>
                     </div>
                 </div>
+                <div class="detail-row">
+                    <div class="detail-label"></div>
+                    <div class="detail-value">
+                        <div class="curriculum-action-panel" id="curriculum-combo-elective-actions">
+<!--                            <a class="btn curriculum-action-btn btn-combo" id="btn-curriculum-combo"
+                               href="${pageContext.request.contextPath}/combo?action=list&curriculumId=${curriculum.curriculumId}"
+                               style="background: linear-gradient(135deg, #f97316, #fb923c); border-color: #f97316; color: #fff;">
+                                Combo
+                            </a>
+                            <a class="btn curriculum-action-btn btn-elective" id="btn-curriculum-elective"
+                               href="${pageContext.request.contextPath}/elective?action=list&curriculumId=${curriculum.curriculumId}"
+                               style="background: linear-gradient(135deg, #f97316, #fb923c); border-color: #f97316; color: #fff;">
+                                Elective
+                            </a>-->
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <%-- Semester Breakdown --%>

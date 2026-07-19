@@ -16,12 +16,18 @@ public class CourseDao extends DBContext {
     private static final String DEFAULT_COURSE_STATUS = "WaitingForSyllabus";
 
     public List<Subject> getCourses(String subjectCode, int page, int pageSize) {
+        return getCourses(subjectCode, "", page, pageSize);
+    }
+
+    public List<Subject> getCourses(String subjectCode, String status, int page, int pageSize) {
         List<Subject> list = new ArrayList<>();
         String keyword = normalizeKeyword(subjectCode);
+        String normalizedStatus = normalizeStatus(status);
         String sql = """
                 SELECT SubjectID, CreatedBy, SubjectCode, SubjectName, Credits, Description, Status
                 FROM dbo.[Subject]
                 WHERE (? = '' OR LOWER(SubjectCode) LIKE ?)
+                  AND (? = '' OR Status = ?)
                 ORDER BY SubjectCode
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
@@ -30,8 +36,10 @@ public class CourseDao extends DBContext {
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, keyword);
             ps.setString(2, "%" + keyword + "%");
-            ps.setInt(3, Math.max(0, (page - 1) * pageSize));
-            ps.setInt(4, pageSize);
+            ps.setString(3, normalizedStatus);
+            ps.setString(4, normalizedStatus);
+            ps.setInt(5, Math.max(0, (page - 1) * pageSize));
+            ps.setInt(6, pageSize);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -45,17 +53,25 @@ public class CourseDao extends DBContext {
     }
 
     public int countCourses(String subjectCode) {
+        return countCourses(subjectCode, "");
+    }
+
+    public int countCourses(String subjectCode, String status) {
         String keyword = normalizeKeyword(subjectCode);
+        String normalizedStatus = normalizeStatus(status);
         String sql = """
                 SELECT COUNT(*)
                 FROM dbo.[Subject]
                 WHERE (? = '' OR LOWER(SubjectCode) LIKE ?)
+                  AND (? = '' OR Status = ?)
                 """;
 
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, keyword);
             ps.setString(2, "%" + keyword + "%");
+            ps.setString(3, normalizedStatus);
+            ps.setString(4, normalizedStatus);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -66,6 +82,27 @@ public class CourseDao extends DBContext {
             System.out.println("countCourses error: " + e.getMessage());
         }
         return 0;
+    }
+
+    public List<String> getCourseStatuses() {
+        List<String> statuses = new ArrayList<>();
+        String sql = """
+                SELECT DISTINCT Status
+                FROM dbo.[Subject]
+                WHERE Status IS NOT NULL AND LTRIM(RTRIM(Status)) <> ''
+                ORDER BY Status
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                statuses.add(rs.getString("Status"));
+            }
+        } catch (Exception e) {
+            System.out.println("getCourseStatuses error: " + e.getMessage());
+        }
+        return statuses;
     }
 
     public Subject getCourseById(int subjectId) {
@@ -248,6 +285,10 @@ public class CourseDao extends DBContext {
 
     private String normalizeKeyword(String value) {
         return value == null ? "" : value.trim().toLowerCase();
+    }
+
+    private String normalizeStatus(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private Subject mapSubject(ResultSet rs) throws SQLException {

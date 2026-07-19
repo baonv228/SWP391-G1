@@ -161,6 +161,29 @@ public class SyllabusDAO extends DBContext {
         return list;
     }
 
+    public List<Syllabus> getPendingApprovalSyllabuses() {
+        List<Syllabus> list = new ArrayList<>();
+        String sql = """
+                SELECT s.*, sub.SubjectCode, sub.SubjectName, u.FullName AS CreatedByName
+                FROM dbo.[Syllabus] s
+                JOIN dbo.[Subject] sub ON s.SubjectID = sub.SubjectID
+                JOIN dbo.[User] u ON s.CreatedBy = u.UserID
+                WHERE s.IsActive = 1 AND s.Status = 'Pending Approval'
+                ORDER BY s.CreatedAt DESC, s.SyllabusID DESC
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapSyllabusRow(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("getPendingApprovalSyllabuses error: " + e.getMessage());
+        }
+        return list;
+    }
+
     // =========================================================================
     // UPDATE — details only
     // =========================================================================
@@ -205,6 +228,28 @@ public class SyllabusDAO extends DBContext {
             return ps.executeUpdate() > 0;
         } catch (Exception e) { System.out.println("updateStatus error: " + e.getMessage()); }
         return false;
+    }
+
+    public boolean deleteSyllabus(int syllabusId) {
+        Connection con = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+            deleteChildren(con, syllabusId);
+            String sql = "DELETE FROM dbo.[Syllabus] WHERE SyllabusID=?";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, syllabusId);
+                ps.executeUpdate();
+            }
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            if (con != null) { try { con.rollback(); } catch (Exception ex) {} }
+            System.out.println("deleteSyllabus error: " + e.getMessage());
+            return false;
+        } finally {
+            if (con != null) { try { con.setAutoCommit(true); con.close(); } catch (Exception ex) {} }
+        }
     }
 
     // =========================================================================
@@ -260,7 +305,8 @@ public class SyllabusDAO extends DBContext {
             "DELETE FROM dbo.[Syllabus_Assessment] WHERE SyllabusID=?",
             "DELETE FROM dbo.[Syllabus_Session] WHERE SyllabusID=?",
             "DELETE FROM dbo.[CLO] WHERE SyllabusID=?",
-            "DELETE FROM dbo.[Syllabus_Material] WHERE SyllabusID=?"
+            "DELETE FROM dbo.[Syllabus_Material] WHERE SyllabusID=?",
+            "DELETE FROM dbo.[Learning_Material] WHERE SyllabusID=?"
         };
         for (String sql : deleteJunctions) {
             try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -410,32 +456,6 @@ public class SyllabusDAO extends DBContext {
                 }
             }
         } catch (Exception e) { System.out.println("getCLOs error: " + e.getMessage()); }
-
-        for (CLO c : list) {
-            String sqlPlo = """
-                SELECT p.ploId, p.ploName, p.ploDescription
-                FROM dbo.[CLO_PLO] cp
-                JOIN dbo.[ProgramLearningOutcome] p ON cp.PloID = p.ploId
-                WHERE cp.CLOID = ?
-                """;
-            try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sqlPlo)) {
-                ps.setInt(1, c.getCloId());
-                try (ResultSet rs = ps.executeQuery()) {
-                    List<PLO> mappedPlos = new ArrayList<>();
-                    List<Integer> mappedPloIds = new ArrayList<>();
-                    while (rs.next()) {
-                        PLO p = new PLO();
-                        p.setPloId(rs.getInt("ploId"));
-                        p.setPloCode(rs.getString("ploName"));
-                        p.setPloDescription(rs.getString("ploDescription"));
-                        mappedPlos.add(p);
-                        mappedPloIds.add(p.getPloId());
-                    }
-                    c.setPlos(mappedPlos);
-                    c.setPloIds(mappedPloIds);
-                }
-            } catch (Exception e) { System.out.println("getCLOs mapping error: " + e.getMessage()); }
-        }
         return list;
     }
 

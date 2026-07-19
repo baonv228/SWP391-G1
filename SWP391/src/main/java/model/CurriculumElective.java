@@ -5,21 +5,20 @@ public class CurriculumElective {
     private int curriculumId;
     private int subjectId;
     private String electiveGroupName;
-    private Integer requiredCredits;
-    private Integer requiredSubjectCount;
     private Integer displayOrder;
     private String status;
+    private String subjectCode;
+    private String subjectName;
+    private int credits;
 
     public CurriculumElective() {
     }
 
-    public CurriculumElective(int curriculumElectiveId, int curriculumId, int subjectId, String electiveGroupName, Integer requiredCredits, Integer requiredSubjectCount, Integer displayOrder, String status) {
+    public CurriculumElective(int curriculumElectiveId, int curriculumId, int subjectId, String electiveGroupName, Integer displayOrder, String status) {
         this.curriculumElectiveId = curriculumElectiveId;
         this.curriculumId = curriculumId;
         this.subjectId = subjectId;
         this.electiveGroupName = electiveGroupName;
-        this.requiredCredits = requiredCredits;
-        this.requiredSubjectCount = requiredSubjectCount;
         this.displayOrder = displayOrder;
         this.status = status;
     }
@@ -56,22 +55,6 @@ public class CurriculumElective {
         this.electiveGroupName = electiveGroupName;
     }
 
-    public Integer getRequiredCredits() {
-        return requiredCredits;
-    }
-
-    public void setRequiredCredits(Integer requiredCredits) {
-        this.requiredCredits = requiredCredits;
-    }
-
-    public Integer getRequiredSubjectCount() {
-        return requiredSubjectCount;
-    }
-
-    public void setRequiredSubjectCount(Integer requiredSubjectCount) {
-        this.requiredSubjectCount = requiredSubjectCount;
-    }
-
     public Integer getDisplayOrder() {
         return displayOrder;
     }
@@ -86,5 +69,29 @@ public class CurriculumElective {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
+    }
+
+    public String getSubjectName() {
+        return subjectName;
+    }
+
+    public void setSubjectName(String subjectName) {
+        this.subjectName = subjectName;
+    }
+
+    public int getCredits() {
+        return credits;
+    }
+
+    public void setCredits(int credits) {
+        this.credits = credits;
     }
 }

@@ -104,11 +104,12 @@ body {
 
 .search-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr minmax(170px, 220px) auto auto;
     gap: 10px;
 }
 
 input,
+select,
 button,
 .clear-button,
 .create-button {
@@ -117,7 +118,8 @@ button,
     font: inherit;
 }
 
-input {
+input,
+select {
     width: 100%;
     border: 1px solid var(--line);
     background: var(--white);
@@ -127,7 +129,8 @@ input {
     box-shadow: 0 10px 24px rgba(189, 93, 16, 0.08);
 }
 
-input:focus {
+input:focus,
+select:focus {
     border-color: var(--orange);
     box-shadow: 0 0 0 3px rgba(245, 158, 61, 0.2);
 }

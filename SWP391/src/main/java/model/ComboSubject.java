@@ -3,6 +3,7 @@ package model;
 public class ComboSubject {
     private int comboId;
     private int subjectId;
+    private Integer semesterNo;
     private String note;
     
     // Transient fields for displaying subject details
@@ -32,6 +33,14 @@ public class ComboSubject {
 
     public void setSubjectId(int subjectId) {
         this.subjectId = subjectId;
+    }
+
+    public Integer getSemesterNo() {
+        return semesterNo;
+    }
+
+    public void setSemesterNo(Integer semesterNo) {
+        this.semesterNo = semesterNo;
     }
 
     public String getNote() {
