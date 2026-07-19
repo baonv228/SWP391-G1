@@ -1,4 +1,4 @@
-﻿<%@page import="java.util.List"%>
+<%@page import="java.util.List"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="model.Syllabus"%>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
@@ -29,7 +29,6 @@
             <section class="toolbar" aria-label="Syllabus request summary">
                 <div>
                     <h2>Syllabus Requests</h2>
-                    <p>List syllabus da duoc Syllabus Designer submit va dang cho Training Department xu ly.</p>
                 </div>
 
                 <div class="request-card">
@@ -64,8 +63,16 @@
                         %>
                         <tr>
                             <td><%= index++ %></td>
-                            <td><span class="code-pill"><%= syllabus.getSubjectCode() != null ? syllabus.getSubjectCode() : "" %></span></td>
-                            <td><%= syllabus.getSubjectName() != null ? syllabus.getSubjectName() : "" %></td>
+                            <td>
+                                <a class="subject-link" href="<%=request.getContextPath()%>/process-request?syllabusId=<%= syllabus.getSyllabusId() %>">
+                                    <span class="code-pill"><%= syllabus.getSubjectCode() != null ? syllabus.getSubjectCode() : "" %></span>
+                                </a>
+                            </td>
+                            <td>
+                                <a class="subject-link" href="<%=request.getContextPath()%>/process-request?syllabusId=<%= syllabus.getSyllabusId() %>">
+                                    <%= syllabus.getSubjectName() != null ? syllabus.getSubjectName() : "" %>
+                                </a>
+                            </td>
                             <td><%= syllabus.getSyllabusTitle() != null ? syllabus.getSyllabusTitle() : "" %></td>
                             <td><%= syllabus.getVersionNo() != null ? syllabus.getVersionNo() : "" %></td>
                             <td><%= syllabus.getCreatedByName() != null ? syllabus.getCreatedByName() : "" %></td>
