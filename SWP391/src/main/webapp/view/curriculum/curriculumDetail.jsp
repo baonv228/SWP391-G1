@@ -126,9 +126,18 @@
                 </div>
             </div>
 
-            <div class="mt-4">
+            <div class="mt-4 d-flex gap-2 flex-wrap">
                 <a href="${pageContext.request.contextPath}/curriculum" class="btn btn-back" id="btn-back-curriculum">
                     <i class="bi bi-arrow-left me-1"></i>Back to Curriculum List
+                </a>
+                <a href="${pageContext.request.contextPath}/ProgramOutcomeServlet?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-po">
+                    <i class="bi bi-eye-fill"></i> View PO
+                </a>
+                <a href="${pageContext.request.contextPath}/curriculum/combo?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-combo">
+                    <i class="bi bi-stack"></i> View Combo
+                </a>
+                <a href="${pageContext.request.contextPath}/curriculum/elective?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-elective">
+                    <i class="bi bi-list-check"></i> View Elective
                 </a>
             </div>
         </c:otherwise>

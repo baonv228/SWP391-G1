@@ -29,9 +29,9 @@
         </select>
         <c:choose>
             <c:when test="${not empty sessionScope.user}">
-                <span class="text-white fw-bold me-2" style="font-size: 0.9rem;" id="header-user-greeting">
-                    Xin chào, ${not empty sessionScope.user.fullName ? sessionScope.user.fullName : sessionScope.user.email}
-                </span>
+                <a href="${pageContext.request.contextPath}/profile" class="text-white fw-bold me-3 text-decoration-none" style="font-size: 0.9rem;" id="header-user-greeting" title="Xem hồ sơ & Sơ đồ cây đào tạo">
+                    <i class="bi bi-person-circle"></i> Xin chào, ${not empty sessionScope.user.fullName ? sessionScope.user.fullName : sessionScope.user.email}
+                </a>
                 <a href="${pageContext.request.contextPath}/logout" class="btn btn-sm btn-danger fw-bold px-3 py-1" style="font-size: 0.8rem; border-radius: 6px;" id="btn-logout">
                     Đăng xuất
                 </a>

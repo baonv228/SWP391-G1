@@ -119,7 +119,16 @@ label span {
     font-weight: 900;
 }
 
+.field-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 900;
+}
+
 input,
+select,
 textarea {
     width: 100%;
     border: 1px solid var(--line);
@@ -142,9 +151,89 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
     border-color: var(--orange);
     box-shadow: 0 0 0 3px rgba(245, 158, 61, 0.2);
+}
+
+select[multiple] {
+    min-height: 150px;
+}
+
+.prerequisite-builder {
+    padding: 16px;
+    border: 1px dashed rgba(189, 93, 16, 0.36);
+    border-radius: 14px;
+    background: rgba(255, 240, 220, 0.42);
+}
+
+.prerequisite-search-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+}
+
+.add-prerequisite-button {
+    min-height: 44px;
+    border-radius: 10px;
+    border: 1px solid var(--orange);
+    background: var(--orange);
+    color: var(--white);
+    padding: 0 18px;
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 12px 28px rgba(189, 93, 16, 0.18);
+}
+
+.add-prerequisite-button:hover {
+    background: var(--orange-dark);
+}
+
+.selected-prerequisites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 34px;
+    margin-top: 12px;
+}
+
+.selected-prerequisite {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px 7px 12px;
+    border: 1px solid rgba(189, 93, 16, 0.28);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--orange-dark);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.selected-prerequisite button {
+    border: 0;
+    border-radius: 999px;
+    background: var(--orange-soft);
+    color: #9d1616;
+    padding: 5px 9px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.selected-prerequisite button:hover {
+    background: #ffe2d0;
+}
+
+small {
+    display: block;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 .span-2 {
@@ -221,8 +310,13 @@ textarea:focus {
         flex-direction: column;
     }
 
+    .prerequisite-search-row {
+        grid-template-columns: 1fr;
+    }
+
     .submit-button,
-    .cancel-button {
+    .cancel-button,
+    .add-prerequisite-button {
         width: 100%;
     }
 }

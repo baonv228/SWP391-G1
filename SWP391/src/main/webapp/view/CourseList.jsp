@@ -1,4 +1,5 @@
 <%@page import="java.util.List"%>
+<%@page import="java.util.Map"%>
 <%@page import="model.Subject"%>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
@@ -9,6 +10,7 @@
     Integer totalPages = (Integer) request.getAttribute("totalPages");
     Integer totalItems = (Integer) request.getAttribute("totalItems");
     Boolean canCreateCourse = (Boolean) request.getAttribute("canCreateCourse");
+    Map<Integer, List<String>> prerequisiteMap = (Map<Integer, List<String>>) request.getAttribute("prerequisiteMap");
 
     if (subjectCode == null) {
         subjectCode = "";
@@ -24,6 +26,9 @@
     }
     if (canCreateCourse == null) {
         canCreateCourse = false;
+    }
+    if (prerequisiteMap == null) {
+        prerequisiteMap = java.util.Collections.emptyMap();
     }
 %>
 <!DOCTYPE html>
@@ -96,6 +101,7 @@
                             <th>Subject Code</th>
                             <th>Subject Name</th>
                             <th>Credits</th>
+                            <th>Môn điều kiện</th>
                             <th>Status</th>
                             <th>Detail</th>
                         </tr>
@@ -114,6 +120,19 @@
                             <td><span class="code-pill"><%= course.getSubjectCode() != null ? course.getSubjectCode() : "" %></span></td>
                             <td><%= course.getSubjectName() != null ? course.getSubjectName() : "" %></td>
                             <td><%= course.getCredits() %></td>
+                            <td>
+                                <%
+                                    List<String> prerequisites = prerequisiteMap.get(course.getSubjectId());
+                                    if (prerequisites == null || prerequisites.isEmpty()) {
+                                %>
+                                <span class="no-prerequisite">None</span>
+                                <% } else {
+                                    for (String prerequisiteCode : prerequisites) {
+                                %>
+                                <span class="prerequisite-pill"><%= prerequisiteCode %></span>
+                                <%  }
+                                } %>
+                            </td>
                             <td><span class="status"><%= course.getStatus() != null ? course.getStatus() : "" %></span></td>
                             <td>
                                 <a class="detail-link" href="<%=request.getContextPath()%>/course?action=detail&id=<%= course.getSubjectId() %>&subjectCode=<%= java.net.URLEncoder.encode(subjectCode, "UTF-8") %>&page=<%= currentPage %>">chi tiết</a>

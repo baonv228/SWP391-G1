@@ -12,8 +12,8 @@ public class DBContext {
     private static final String portNumber = "1433";
     private static final String instance = ""; // Bo trong neu khong dung instance dac biet
     private static final String dbName = "TPMS_DB";
-    private static final String userID = "sa";       // username SQL Server cua ban
-    private static final String password = "123";   // mat khau SQL Server cua ban
+    private static final String userID = "duy";       // username SQL Server cua ban
+    private static final String password = "12345";   // mat khau SQL Server cua ban
 
     // Ket noi co so du lieu
     public static Connection getConnection() throws SQLException {

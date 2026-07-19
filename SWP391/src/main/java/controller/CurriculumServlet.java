@@ -17,7 +17,7 @@ import model.Subject;
 import model.TrainingProgram;
 import model.User;
 
-@WebServlet(name = "CurriculumServlet", urlPatterns = {"/curriculum"})
+@WebServlet(name = "CurriculumServlet", urlPatterns = {"/curriculum-manage"})
 public class CurriculumServlet extends HttpServlet {
 
     private final CurriculumDAO curriculumDAO = new CurriculumDAO();
@@ -67,7 +67,7 @@ public class CurriculumServlet extends HttpServlet {
         if ("create".equals(action)) {
             processCreate(request, response, user);
         } else {
-            response.sendRedirect(request.getContextPath() + "/curriculum?action=list");
+            response.sendRedirect(request.getContextPath() + "/curriculum-manage?action=list");
         }
     }
 
@@ -106,7 +106,7 @@ public class CurriculumServlet extends HttpServlet {
 
         int id = curriculumDAO.createCurriculum(curriculum, subjectIds);
         if (id > 0) {
-            response.sendRedirect(request.getContextPath() + "/curriculum?action=list&success=1");
+            response.sendRedirect(request.getContextPath() + "/curriculum-manage?action=list&success=1");
         } else {
             request.setAttribute("error", "Khong the tao Curriculum.");
             request.setAttribute("curriculum", curriculum);

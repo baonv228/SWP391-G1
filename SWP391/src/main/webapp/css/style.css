@@ -5,14 +5,14 @@
 
 /* ---- Variables ---- */
 :root {
-    --fpt-orange:       #F5A623;
-    --fpt-orange-dark:  #d4891a;
+    --fpt-orange:       #f37021;
+    --fpt-orange-dark:  #d95f12;
     --fpt-green:        #28a745;
     --fpt-green-dark:   #1e7e34;
     --fpt-blue:         #007bff;
     --fpt-teal:         #17a589;
     --header-height:    64px;
-    --table-header-bg:  #F5A623;
+    --table-header-bg:  #f37021;
     --table-row-even:   #ffffff;
     --table-row-odd:    #fafafa;
     --text-primary:     #1a1a1a;
@@ -812,6 +812,15 @@ a:hover { color: var(--fpt-blue); text-decoration: underline; }
     font-size: .82rem;
     color: var(--fpt-green-dark);
     font-weight: 500;
+}
+
+/* Upload Material page — form & list side by side */
+.upload-material-row > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+}
+.upload-material-row .teacher-card {
+    flex: 1;
 }
 
 /* Upload submit button */

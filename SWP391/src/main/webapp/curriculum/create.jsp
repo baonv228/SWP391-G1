@@ -10,7 +10,7 @@
     boolean canManage = user != null && user.getRole() != null
             && "Training Department".equalsIgnoreCase(user.getRole().getRoleName());
     if (!canManage) {
-        response.sendRedirect(request.getContextPath() + "/curriculum?action=list");
+        response.sendRedirect(request.getContextPath() + "/curriculum-manage?action=list");
         return;
     }
 %>
@@ -30,7 +30,7 @@
             <div style="color: var(--muted); margin-top: 6px;">Tao curriculum cho training program da co.</div>
         </div>
         <div>
-            <a class="btn-train btn-outline-train" href="<%=request.getContextPath()%>/curriculum?action=list">Back to list</a>
+            <a class="btn-train btn-outline-train" href="<%=request.getContextPath()%>/curriculum-manage?action=list">Back to list</a>
         </div>
     </div>
 
@@ -39,7 +39,7 @@
     <% } %>
 
     <div class="train-card">
-        <form method="post" action="<%=request.getContextPath()%>/curriculum">
+        <form method="post" action="<%=request.getContextPath()%>/curriculum-manage">
             <input type="hidden" name="action" value="create"/>
             <div class="form-row">
                 <div class="form-group">
@@ -120,7 +120,7 @@
             </div>
 
             <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
-                <a class="btn-train btn-outline-train" href="<%=request.getContextPath()%>/curriculum?action=list">Cancel</a>
+                <a class="btn-train btn-outline-train" href="<%=request.getContextPath()%>/curriculum-manage?action=list">Cancel</a>
                 <button class="btn-train btn-primary-train" type="submit">Create</button>
             </div>
         </form>

@@ -3,21 +3,19 @@ package model;
 public class Combo {
     private int comboId;
     private int curriculumId;
+    private String comboCode;
     private String comboName;
     private String description;
-    private String status;
-    private Integer displayOrder;
 
     public Combo() {
     }
 
-    public Combo(int comboId, int curriculumId, String comboName, String description, String status, Integer displayOrder) {
+    public Combo(int comboId, int curriculumId, String comboCode, String comboName, String description) {
         this.comboId = comboId;
         this.curriculumId = curriculumId;
+        this.comboCode = comboCode;
         this.comboName = comboName;
         this.description = description;
-        this.status = status;
-        this.displayOrder = displayOrder;
     }
 
     public int getComboId() {
@@ -36,6 +34,14 @@ public class Combo {
         this.curriculumId = curriculumId;
     }
 
+    public String getComboCode() {
+        return comboCode;
+    }
+
+    public void setComboCode(String comboCode) {
+        this.comboCode = comboCode;
+    }
+
     public String getComboName() {
         return comboName;
     }
@@ -52,19 +58,14 @@ public class Combo {
         this.description = description;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Integer getDisplayOrder() {
-        return displayOrder;
-    }
-
-    public void setDisplayOrder(Integer displayOrder) {
-        this.displayOrder = displayOrder;
+    @Override
+    public String toString() {
+        return "Combo{" +
+                "comboId=" + comboId +
+                ", curriculumId=" + curriculumId +
+                ", comboCode='" + comboCode + '\'' +
+                ", comboName='" + comboName + '\'' +
+                ", description='" + description + '\'' +
+                '}';
     }
 }
