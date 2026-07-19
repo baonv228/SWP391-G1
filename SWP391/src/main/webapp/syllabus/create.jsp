@@ -762,7 +762,7 @@ function removeRow(btn, type) {
             btn.disabled = false;
             btn.title = "Submit Syllabus for Approval";
         } else {
-            btn.disabled = true;
+            btn.disabled = false; // BA UX Fix: Always allow clicking to show errors
             btn.title = "Submit for Approval is unavailable until:\n" + titleAttr.join("\n");
         }
     }
