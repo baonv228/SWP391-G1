@@ -145,9 +145,10 @@
         <a href="#sec-assessments">5. Đánh giá</a>
     </nav>
 
-    <form id="syllabusForm" method="post" enctype="multipart/form-data"
+    <form id="syllabusForm" method="post" 
           action="<%=request.getContextPath()%>/syllabus-manage?action=edit" accept-charset="UTF-8">
         
+        <input type="hidden" name="temp_material_file" id="temp_material_file">
         <input type="hidden" name="syllabusId" value="<%= syllabus.getSyllabusId() %>">
         <input type="hidden" name="subjectId" value="<%= syllabus.getSubjectId() %>">
         <input type="hidden" name="saveType" id="saveType" value="draft">
@@ -507,12 +508,35 @@
 
     function doSave(type) {
         document.getElementById('saveType').value = type;
-        if(type === 'draft') {
-            document.getElementById('syllabusForm').submit();
+        if (type !== 'draft' && !validateForm()) {
+            return;
+        }
+
+        const btn = document.getElementById('btnSubmitApproval');
+        if (btn) { btn.disabled = true; btn.innerHTML = 'Đang xử lý...'; }
+
+        const fileInput = document.querySelector('input[name="student_material_file"]');
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('student_material_file', fileInput.files[0]);
+            fetch('<%=request.getContextPath()%>/syllabus-manage?action=upload_temp', {
+                method: 'POST',
+                body: formData
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    document.getElementById('temp_material_file').value = data.tempPath;
+                    fileInput.disabled = true; // prevent file input from being submitted directly
+                    document.getElementById('syllabusForm').submit();
+                } else {
+                    alert('Lỗi upload file: ' + data.error);
+                    if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
+                }
+            }).catch(e => {
+                alert('Lỗi kết nối: ' + e);
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
+            });
         } else {
-            if(validateForm()) {
-                document.getElementById('syllabusForm').submit();
-            }
+            document.getElementById('syllabusForm').submit();
         }
     }
 
@@ -802,7 +826,7 @@ function removeRow(btn, type) {
             btn.disabled = false;
             btn.title = "Submit Syllabus for Approval";
         } else {
-            btn.disabled = true;
+            btn.disabled = false; // BA UX Fix: Always allow clicking to show errors
             btn.title = "Submit for Approval is unavailable until:\n" + titleAttr.join("\n");
         }
     }
@@ -819,6 +843,18 @@ function removeRow(btn, type) {
         if (sesCountActual < 10 || sesCountActual > 60) {
             errors.push('Section 4: Phải có từ 10 đến 60 Sessions.');
         }
+
+        const fileInput = document.querySelector('input[name="student_material_file"]');
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const fileName = fileInput.files[0].name.toLowerCase();
+            if (!fileName.endsWith('.zip')) {
+                errors.push('Section 4: File tài liệu phải có định dạng .zip.');
+            }
+            if (fileInput.files[0].size > 100 * 1024 * 1024) {
+                errors.push('Section 4: File tài liệu không được vượt quá 100MB.');
+            }
+        }
+
 
         let sessionCloMissing = false;
         document.querySelectorAll('[id^="sesClo_"]').forEach(td => {

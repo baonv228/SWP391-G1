@@ -83,16 +83,17 @@ public class ExcelTemplateGenerator {
             s2.setColumnWidth(2, 5000);
             s2.setColumnWidth(3, 4000);
 
-            String[][] sesRows = {
-                {"1", "Course Introduction & Overview", "Lecture", "CLO1", "", "Slide 1", "Yes", "Read syllabus", ""},
-                {"2", "Software Development Life Cycle", "Lecture, Discussion", "CLO1,CLO2", "", "Slide 2", "", "Read chapter 1", ""},
-                {"3", "Requirement Analysis", "Lecture, Workshop", "CLO2", "AI literacy", "Slide 3", "Yes", "Practice exercises", ""},
-            };
-            for (int i = 0; i < sesRows.length; i++) {
+            for (int i = 0; i < 20; i++) {
                 Row row = s2.createRow(i + 1);
-                for (int j = 0; j < sesRows[i].length; j++) {
-                    row.createCell(j).setCellValue(sesRows[i][j]);
-                }
+                row.createCell(0).setCellValue(String.valueOf(i + 1));
+                row.createCell(1).setCellValue("Topic " + (i + 1) + ": Web Development Concepts");
+                row.createCell(2).setCellValue("Lecture, Lab");
+                row.createCell(3).setCellValue("CLO" + ((i % 5) + 1)); // Cycle CLO1 -> CLO5
+                row.createCell(4).setCellValue(i % 4 == 0 ? "AI literacy" : "");
+                row.createCell(5).setCellValue("Slide " + (i + 1));
+                row.createCell(6).setCellValue("Yes");
+                row.createCell(7).setCellValue("Read chapter " + (i + 1));
+                row.createCell(8).setCellValue("");
             }
 
             // ================================================================

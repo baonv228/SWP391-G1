@@ -47,6 +47,7 @@ public class SyllabusServlet extends HttpServlet {
             case "create":
                 showCreateForm(request, response);
                 break;
+            case "view":
             case "edit":
                 showEditForm(request, response);
                 break;
@@ -87,6 +88,9 @@ public class SyllabusServlet extends HttpServlet {
                 break;
             case "import_excel":
                 handleImportExcel(request, response);
+                break;
+            case "upload_temp":
+                handleUploadTemp(request, response);
                 break;
             default:
                 response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
@@ -296,31 +300,23 @@ public class SyllabusServlet extends HttpServlet {
     }
 
     private void handleFileUpload(HttpServletRequest request, int syllabusId, int userId) throws IOException, ServletException {
-        Part filePart = request.getPart("student_material_file");
-        if (filePart != null && filePart.getSize() > 0) {
-            // Validate: chỉ cho phép .zip
-            String submittedName = filePart.getSubmittedFileName();
-            if (submittedName == null || !submittedName.toLowerCase().endsWith(".zip")) {
-                System.out.println("Rejected upload: not a .zip file -> " + submittedName);
-                return;
+        String tempPath = request.getParameter("temp_material_file");
+        if (tempPath != null && !tempPath.trim().isEmpty()) {
+            File tempFile = new File(tempPath.trim());
+            if (tempFile.exists()) {
+                String uploadDir = getUploadBasePath() + File.separator + "syllabus" + File.separator + syllabusId;
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+                String fileName = "material.zip";
+                File finalFile = new File(dir, fileName);
+                
+                try {
+                    java.nio.file.Files.copy(tempFile.toPath(), finalFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    syllabusDAO.saveMaterialFile(syllabusId, userId, "syllabus/" + syllabusId + "/" + fileName);
+                } catch (Exception e) {
+                    System.out.println("Error moving temp file: " + e.getMessage());
+                }
             }
-
-            String uploadDir = getUploadBasePath() + File.separator + "syllabus" + File.separator + syllabusId;
-            File dir = new File(uploadDir);
-            if (!dir.exists()) dir.mkdirs();
-
-            String fileName = "material.zip";
-            String filePath = dir.getAbsolutePath() + File.separator + fileName;
-
-            // Write file
-            try (var input = filePart.getInputStream();
-                 var output = new java.io.FileOutputStream(filePath)) {
-                input.transferTo(output);
-            }
-
-            // Save path to DB (relative for portability)
-            String dbPath = "syllabus/" + syllabusId + "/" + fileName;
-            syllabusDAO.saveMaterialFile(syllabusId, userId, dbPath);
         }
     }
 
@@ -578,6 +574,36 @@ public class SyllabusServlet extends HttpServlet {
             System.out.println("Template generation error: " + e.getMessage());
             response.sendError(500, "Lỗi tạo file template.");
         }
+    }
+
+    private void handleUploadTemp(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        Map<String, Object> result = new HashMap<>();
+        Gson gson = new Gson();
+        try {
+            jakarta.servlet.http.Part filePart = request.getPart("student_material_file");
+            if (filePart != null && filePart.getSize() > 0) {
+                String tempDir = getUploadBasePath() + File.separator + "temp";
+                File dir = new File(tempDir);
+                if (!dir.exists()) dir.mkdirs();
+                String fileName = System.currentTimeMillis() + "_material.zip";
+                String filePath = dir.getAbsolutePath() + File.separator + fileName;
+                try (InputStream input = filePart.getInputStream();
+                     java.io.FileOutputStream output = new java.io.FileOutputStream(filePath)) {
+                    input.transferTo(output);
+                }
+                result.put("success", true);
+                result.put("tempPath", filePath);
+            } else {
+                result.put("success", false);
+                result.put("error", "No file uploaded");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("error", e.getMessage());
+        }
+        response.getWriter().write(gson.toJson(result));
     }
 
     private void handleImportExcel(HttpServletRequest request, HttpServletResponse response)
