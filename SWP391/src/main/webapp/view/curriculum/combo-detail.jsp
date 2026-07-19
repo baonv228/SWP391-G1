@@ -10,12 +10,6 @@
 
     <div class="detail-section mb-4" id="combo-info-card">
         <div class="row align-items-center mb-3">
-            <div class="col-md-2 text-md-end fw-bold text-secondary">Combo Code:</div>
-            <div class="col-md-10">
-                <input type="text" class="form-control bg-light" value="${fn:escapeXml(combo.comboCode)}" readonly />
-            </div>
-        </div>
-        <div class="row align-items-center mb-3">
             <div class="col-md-2 text-md-end fw-bold text-secondary">Combo Name:</div>
             <div class="col-md-10">
                 <input type="text" class="form-control bg-light" value="${fn:escapeXml(combo.comboName)}" readonly />
@@ -44,7 +38,7 @@
                     <th style="width: 10%">No.</th>
                     <th style="width: 20%">Subject Code</th>
                     <th style="width: 40%">Subject Name</th>
-                    <th style="width: 30%">Note</th>
+                    <th style="width: 30%">Semester</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,7 +58,12 @@
                                     </a>
                                 </td>
                                 <td class="fw-semibold">${fn:escapeXml(cs.subjectName)}</td>
-                                <td style="white-space: pre-wrap;">${fn:escapeXml(cs.note)}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${not empty cs.semesterNo}">Semester ${cs.semesterNo}</c:when>
+                                        <c:otherwise><span class="text-muted">N/A</span></c:otherwise>
+                                    </c:choose>
+                                </td>
                             </tr>
                         </c:forEach>
                     </c:otherwise>

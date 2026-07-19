@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.List;
 import model.Combo;
 
-@WebServlet(name = "ComboServlet", urlPatterns = {"/curriculum/combo"})
+@WebServlet(name = "CurriculumComboServlet", urlPatterns = {"/curriculum/combo"})
 public class ComboServlet extends HttpServlet {
 
     private final ComboDAO comboDAO = new ComboDAO();

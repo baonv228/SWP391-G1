@@ -380,7 +380,7 @@
 
                 <a class="guest-btn"
                    href="<%=request.getContextPath()%>/curriculum">
-                    View Curricula and Syllabi
+                    View Curriculum and Syllabus
                 </a>
 
                 <a class="guest-btn"

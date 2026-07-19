@@ -412,6 +412,14 @@ a:hover { color: var(--fpt-blue); text-decoration: underline; }
 /* ---- Semester Block (Curriculum Detail) ---- */
 .semester-block { margin-bottom: 24px; }
 
+.curriculum-semester-table {
+    table-layout: fixed;
+}
+
+.curriculum-semester-table td {
+    overflow-wrap: anywhere;
+}
+
 .semester-header {
     background-color: var(--fpt-orange);
     color: #fff;

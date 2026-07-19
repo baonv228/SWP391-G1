@@ -60,7 +60,7 @@
             <thead>
                 <tr>
                     <th style="width: 15%">Curriculum PO ID</th>
-                    <th style="width: 15%">PO Name</th>
+                    <th style="width: 15%">PO Code</th>
                     <th style="width: 55%">PO Description</th>
                     <c:if test="${canManagePO}">
                         <th style="width: 15%">Action</th>
@@ -85,7 +85,7 @@
                                         <button type="button" class="btn btn-sm btn-link text-warning p-0 me-2 fw-semibold" onclick="openEditModal(${po.poId}, '${fn:escapeXml(po.poName)}', '${fn:escapeXml(po.poDescription)}')" style="text-decoration: none;" id="btn-edit-po-${po.poId}">
                                             <i class="bi bi-pencil-square me-1"></i>Edit
                                         </button>
-                                        <a href="${pageContext.request.contextPath}/ProgramOutcomeServlet?action=delete&poId=${po.poId}&curriculumId=${curriculumId}" class="btn btn-sm btn-link text-danger p-0 fw-semibold" onclick="return confirm('Are you sure you want to delete this Program Outcome?');" style="text-decoration: none;" id="btn-delete-po-${po.poId}">
+                                        <a href="${pageContext.request.contextPath}/curriculum/po?action=delete&amp;poId=${po.poId}&amp;curriculumId=${curriculumId}" class="btn btn-sm btn-link text-danger p-0 fw-semibold" onclick="return confirm('Are you sure you want to delete this Program Outcome?');" style="text-decoration: none;" id="btn-delete-po-${po.poId}">
                                             <i class="bi bi-trash me-1"></i>Delete
                                         </a>
                                     </td>
@@ -184,12 +184,12 @@
                     <h5 class="modal-title" id="addPOModalLabel"><i class="bi bi-plus-lg me-2"></i>Add Program Outcome</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="${pageContext.request.contextPath}/ProgramOutcomeServlet" method="post" id="form-add-po">
+                <form action="${pageContext.request.contextPath}/curriculum/po" method="post" id="form-add-po">
                     <input type="hidden" name="action" value="create" />
                     <input type="hidden" name="curriculumId" value="${curriculumId}" />
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="add_poName" class="form-label fw-bold">PO Name <span class="text-danger">*</span></label>
+                            <label for="add_poName" class="form-label fw-bold">PO Code <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="add_poName" name="poName" placeholder="e.g. PO1" maxlength="50" required />
                         </div>
                         <div class="mb-3">
@@ -214,13 +214,13 @@
                     <h5 class="modal-title" id="editPOModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Program Outcome</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="${pageContext.request.contextPath}/ProgramOutcomeServlet" method="post" id="form-edit-po">
+                <form action="${pageContext.request.contextPath}/curriculum/po" method="post" id="form-edit-po">
                     <input type="hidden" name="action" value="update" />
                     <input type="hidden" name="curriculumId" value="${curriculumId}" />
                     <input type="hidden" id="edit_poId" name="poId" value="${editingPO.poId}" />
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="edit_poName" class="form-label fw-bold">PO Name <span class="text-danger">*</span></label>
+                            <label for="edit_poName" class="form-label fw-bold">PO Code <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="edit_poName" name="poName" value="${fn:escapeXml(editingPO.poName)}" placeholder="e.g. PO1" maxlength="50" required />
                         </div>
                         <div class="mb-3">

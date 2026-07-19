@@ -17,7 +17,7 @@ import model.Elective;
 import model.Subject;
 import model.User;
 
-@WebServlet(name = "ElectiveServlet", urlPatterns = {"/curriculum/elective"})
+@WebServlet(name = "CurriculumElectiveServlet", urlPatterns = {"/curriculum/elective"})
 public class ElectiveServlet extends HttpServlet {
 
     private static final String TRAINING_DEPARTMENT_ROLE = "Training Department";
