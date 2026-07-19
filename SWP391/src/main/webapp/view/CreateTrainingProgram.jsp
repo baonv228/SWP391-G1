@@ -1,4 +1,4 @@
-<%@page import="model.TrainingProgram"%>
+﻿<%@page import="model.TrainingProgram"%>
 <%@page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String error = (String) request.getAttribute("error");
@@ -14,20 +14,20 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Create Training Program</title>
+        <title>Create Department</title>
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/CreateTrainingProgram.css" />
     </head>
     <body>
         <main class="create-page">
             <header class="page-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=list">Back to list</a>
-                <h1>Training Program Management System</h1>
+                <h1>Department Management System</h1>
             </header>
 
             <section class="create-shell">
                 <div class="section-title">
-                    <span>Training Program</span>
-                    <strong>Create Training Program</strong>
+                    <span>Department</span>
+                    <strong>Create Department</strong>
                 </div>
 
                 <% if (error != null) { %>
@@ -40,27 +40,27 @@
                     <section class="tab-panel active">
                         <div class="form-grid">
                             <label>
-                                <span>Tên ngành</span>
-                                <input name="majorName" value="<%= program.getMajorName() != null ? program.getMajorName() : "" %>" placeholder="Kỹ thuật phần mềm" required />
+                                <span>Major Name</span>
+                                <input name="majorName" value="<%= program.getMajorName() != null ? program.getMajorName() : "" %>" placeholder="Software Engineering" required />
                             </label>
                             <label>
-                                <span>Mã ngành</span>
+                                <span>Major Code</span>
                                 <input name="programCode" value="<%= program.getProgramCode() != null ? program.getProgramCode() : "" %>" placeholder="SE" maxlength="50" required />
                             </label>
                             <label class="span-2">
-                                <span>Tên chương trình</span>
+                                <span>Program Name</span>
                                 <input name="programName" value="<%= program.getProgramName() != null ? program.getProgramName() : "" %>" placeholder="Software Engineering" required />
                             </label>
                             <label class="span-2">
-                                <span>Mục đích</span>
-                                <textarea name="description" rows="5" placeholder="Mô tả mục đích của chương trình đào tạo" required><%= program.getDescription() != null ? program.getDescription() : "" %></textarea>
+                                <span>Purpose</span>
+                                <textarea name="description" rows="5" placeholder="Describe the department purpose" required><%= program.getDescription() != null ? program.getDescription() : "" %></textarea>
                             </label>
                         </div>
                     </section>
 
                     <div class="form-actions">
                         <a class="ghost-button" href="<%=request.getContextPath()%>/training-program?action=list">Cancel</a>
-                        <button class="submit-button" type="submit">Create Training Program</button>
+                        <button class="submit-button" type="submit">Create Department</button>
                     </div>
                 </form>
             </section>
@@ -73,7 +73,7 @@
                     form.reportValidity();
                     return false;
                 }
-                return confirm("Bạn có chắc chắn muốn tạo Training Program này không?");
+                return confirm("Are you sure you want to create this Department?");
             }
         </script>
     </body>

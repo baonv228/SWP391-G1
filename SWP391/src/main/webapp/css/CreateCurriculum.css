@@ -1,6 +1,6 @@
 :root {
     --orange: #f59e3d;
-    --orange-dark: #b85d0c;
+    --orange-dark: #C76B12;
     --orange-soft: #fff1df;
     --line: #e7b678;
     --cream: #fffaf3;
@@ -8,7 +8,7 @@
     --muted: #7b6a5c;
     --white: #ffffff;
     --row: #fff7ee;
-    --danger: #b42318;
+    --danger: #C76B12;
 }
 
 * {
@@ -40,14 +40,14 @@ body {
 
 .page-header h1 {
     margin: 0;
-    color: #c40000;
+    color: #C76B12;
     font-size: clamp(28px, 4vw, 42px);
     font-weight: 900;
 }
 
 .page-header p {
     margin: 12px 0 0;
-    color: var(--ink);
+    color: #C76B12;
     font-size: 20px;
     font-weight: 800;
     text-align: left;
@@ -67,9 +67,9 @@ body {
     width: min(980px, 100%);
     margin: 0 auto 16px;
     padding: 12px 14px;
-    border: 1px solid rgba(180, 35, 24, 0.32);
+    border: 1px solid rgba(199, 107, 18, 0.32);
     border-radius: 10px;
-    background: #fff1f0;
+    background: var(--orange-soft);
     color: var(--danger);
     font-weight: 800;
 }
@@ -390,22 +390,22 @@ tbody tr:nth-child(even) {
 }
 
 .primary-button {
-    border: 1px solid var(--orange-dark);
-    background: var(--orange);
+    border: 1px solid #C76B12;
+    background: #C76B12;
     color: var(--white);
 }
 
 .secondary-button,
 .outline-button {
-    border: 1px solid rgba(184, 93, 12, 0.42);
+    border: 1px solid rgba(199, 107, 18, 0.42);
     background: var(--white);
-    color: var(--orange-dark);
+    color: #C76B12;
 }
 
 .remove-button {
     min-height: 34px;
-    border: 1px solid rgba(180, 35, 24, 0.28);
-    background: #fff1f0;
+    border: 1px solid rgba(199, 107, 18, 0.28);
+    background: var(--orange-soft);
     color: var(--danger);
 }
 
@@ -454,7 +454,7 @@ tbody tr:nth-child(even) {
 }
 
 .primary-button:hover {
-    background: var(--orange-dark);
+    background: #a9550e;
 }
 
 .secondary-button:hover,
