@@ -142,10 +142,11 @@
         <a href="#sec-assessments">5. Đánh giá</a>
     </nav>
 
-    <form id="syllabusForm" method="post" enctype="multipart/form-data"
+    <form id="syllabusForm" method="post"
           action="<%=request.getContextPath()%>/syllabus-manage?action=create" accept-charset="UTF-8" onsubmit="return validateForm()">
         
         <input type="hidden" name="saveType" id="saveType" value="draft">
+        <input type="hidden" name="temp_material_file" id="temp_material_file">
 
         <!-- ================================================================ -->
         <!-- SECTION 1: Syllabus Details                                      -->
@@ -464,12 +465,46 @@
 
     function doSave(type) {
         document.getElementById('saveType').value = type;
-        if(type === 'draft') {
-            document.getElementById('syllabusForm').submit();
-        } else {
-            if(validateForm()) {
-                document.getElementById('syllabusForm').submit();
+        const subjectVal = document.getElementById('subjectId').value;
+        if (!subjectVal || subjectVal === '') {
+            const validationAlert = document.getElementById('validationAlert');
+            if (validationAlert) {
+                validationAlert.innerHTML = 'Section 1: Vui lòng chọn Subject trước khi lưu.';
+                validationAlert.style.display = 'block';
             }
+            window.scrollTo(0, 0);
+            return;
+        }
+
+        if (type !== 'draft' && !validateForm()) {
+            return;
+        }
+
+        const btn = document.getElementById('btnSubmitApproval');
+        if (btn) { btn.disabled = true; btn.innerHTML = 'Đang xử lý...'; }
+
+        const fileInput = document.querySelector('input[name="student_material_file"]');
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('student_material_file', fileInput.files[0]);
+            fetch('<%=request.getContextPath()%>/syllabus-manage?action=upload_temp', {
+                method: 'POST',
+                body: formData
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    document.getElementById('temp_material_file').value = data.tempPath;
+                    fileInput.disabled = true; // Ngăn chặn browser submit cái này
+                    document.getElementById('syllabusForm').submit();
+                } else {
+                    alert('Lỗi upload file: ' + data.error);
+                    if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
+                }
+            }).catch(e => {
+                alert('Lỗi kết nối: ' + e);
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
+            });
+        } else {
+            document.getElementById('syllabusForm').submit();
         }
     }
 
@@ -779,6 +814,21 @@ function removeRow(btn, type) {
         if (sesCountActual < 10 || sesCountActual > 60) {
             errors.push('Section 4: Phải có từ 10 đến 60 Sessions.');
         }
+
+        // Student Material Package (ZIP) is required
+        const fileInput = document.querySelector('input[name="student_material_file"]');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            errors.push('Section 4: Vui lòng tải lên file Student Material Package (.zip).');
+        } else {
+            const fileName = fileInput.files[0].name.toLowerCase();
+            if (!fileName.endsWith('.zip')) {
+                errors.push('Section 4: File tài liệu phải có định dạng .zip.');
+            }
+            if (fileInput.files[0].size > 100 * 1024 * 1024) {
+                errors.push('Section 4: File tài liệu không được vượt quá 100MB.');
+            }
+        }
+
 
         // Each CLO must have at least 1 PLO mapped
         let cloPloMissing = false;
