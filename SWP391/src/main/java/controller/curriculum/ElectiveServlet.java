@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.List;
 import model.Elective;
 
-@WebServlet(name = "ElectiveServlet", urlPatterns = {"/curriculum/elective"})
+@WebServlet(name = "CurriculumElectiveServlet", urlPatterns = {"/curriculum/elective"})
 public class ElectiveServlet extends HttpServlet {
 
     private final ElectiveDAO electiveDAO = new ElectiveDAO();

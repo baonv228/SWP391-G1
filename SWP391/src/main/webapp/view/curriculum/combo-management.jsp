@@ -44,30 +44,37 @@
         <table class="fpt-table" id="combo-table">
             <thead>
                 <tr>
-                    <th style="width: 15%">Combo ID</th>
-                    <th style="width: 20%">Combo Code</th>
-                    <th style="width: 30%">Combo Name</th>
+                    <th style="width: 10%">Combo ID</th>
+                    <th style="width: 25%">Combo Name</th>
                     <th style="width: 35%">Description</th>
+                    <th style="width: 15%">Status</th>
+                    <th style="width: 15%">Display Order</th>
                 </tr>
             </thead>
             <tbody>
                 <c:choose>
                     <c:when test="${empty comboList}">
                         <tr>
-                            <td colspan="4" class="text-center py-4 text-muted">No Combos defined for this Curriculum.</td>
+                            <td colspan="5" class="text-center py-4 text-muted">No Combos defined for this Curriculum.</td>
                         </tr>
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="combo" items="${comboList}" varStatus="status">
                             <tr class="${status.index % 2 == 0 ? 'row-even' : 'row-odd'}" id="combo-row-${combo.comboId}">
                                 <td>${combo.comboId}</td>
-                                <td class="fw-bold">${fn:escapeXml(combo.comboCode)}</td>
-                                <td>
+                                <td class="fw-bold">
                                     <a href="${pageContext.request.contextPath}/curriculum/combo/detail?action=detail&comboId=${combo.comboId}" class="link-detail" id="link-combo-${combo.comboId}">
                                         ${fn:escapeXml(combo.comboName)}
                                     </a>
                                 </td>
                                 <td>${fn:escapeXml(combo.description)}</td>
+                                <td>${fn:escapeXml(combo.status)}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${not empty combo.displayOrder}">${combo.displayOrder}</c:when>
+                                        <c:otherwise><span class="text-muted">N/A</span></c:otherwise>
+                                    </c:choose>
+                                </td>
                             </tr>
                         </c:forEach>
                     </c:otherwise>

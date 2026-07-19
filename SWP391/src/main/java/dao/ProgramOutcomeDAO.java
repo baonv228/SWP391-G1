@@ -12,17 +12,22 @@ public class ProgramOutcomeDAO extends DBContext {
 
     public List<ProgramOutcome> getPOByCurriculum(int curriculumId) {
         List<ProgramOutcome> list = new ArrayList<>();
-        String sql = "SELECT poId, curriculumId, poName, poDescription FROM dbo.ProgramOutcome WHERE curriculumId = ? ORDER BY poId ASC";
+        String sql = """
+                SELECT PoID, CurriculumID, PoCode, PoDescription
+                FROM dbo.[PO]
+                WHERE CurriculumID = ?
+                ORDER BY PoCode
+                """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, curriculumId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     ProgramOutcome po = new ProgramOutcome();
-                    po.setPoId(rs.getInt("poId"));
-                    po.setCurriculumId(rs.getInt("curriculumId"));
-                    po.setPoName(rs.getString("poName"));
-                    po.setPoDescription(rs.getString("poDescription"));
+                    po.setPoId(rs.getInt("PoID"));
+                    po.setCurriculumId(rs.getInt("CurriculumID"));
+                    po.setPoName(rs.getString("PoCode"));
+                    po.setPoDescription(rs.getString("PoDescription"));
                     list.add(po);
                 }
             }
@@ -33,17 +38,21 @@ public class ProgramOutcomeDAO extends DBContext {
     }
 
     public ProgramOutcome getPOById(int poId) {
-        String sql = "SELECT poId, curriculumId, poName, poDescription FROM dbo.ProgramOutcome WHERE poId = ?";
+        String sql = """
+                SELECT PoID, CurriculumID, PoCode, PoDescription
+                FROM dbo.[PO]
+                WHERE PoID = ?
+                """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, poId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     ProgramOutcome po = new ProgramOutcome();
-                    po.setPoId(rs.getInt("poId"));
-                    po.setCurriculumId(rs.getInt("curriculumId"));
-                    po.setPoName(rs.getString("poName"));
-                    po.setPoDescription(rs.getString("poDescription"));
+                    po.setPoId(rs.getInt("PoID"));
+                    po.setCurriculumId(rs.getInt("CurriculumID"));
+                    po.setPoName(rs.getString("PoCode"));
+                    po.setPoDescription(rs.getString("PoDescription"));
                     return po;
                 }
             }
@@ -54,7 +63,7 @@ public class ProgramOutcomeDAO extends DBContext {
     }
 
     public boolean insertPO(ProgramOutcome po) {
-        String sql = "INSERT INTO dbo.ProgramOutcome (curriculumId, poName, poDescription) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO dbo.[PO] (CurriculumID, PoCode, PoDescription) VALUES (?, ?, ?)";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, po.getCurriculumId());
@@ -68,7 +77,7 @@ public class ProgramOutcomeDAO extends DBContext {
     }
 
     public boolean updatePO(ProgramOutcome po) {
-        String sql = "UPDATE dbo.ProgramOutcome SET poName = ?, poDescription = ? WHERE poId = ?";
+        String sql = "UPDATE dbo.[PO] SET PoCode = ?, PoDescription = ? WHERE PoID = ?";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, po.getPoName());
@@ -82,7 +91,7 @@ public class ProgramOutcomeDAO extends DBContext {
     }
 
     public boolean deletePO(int poId) {
-        String sql = "DELETE FROM dbo.ProgramOutcome WHERE poId = ?";
+        String sql = "DELETE FROM dbo.[PO] WHERE PoID = ?";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, poId);

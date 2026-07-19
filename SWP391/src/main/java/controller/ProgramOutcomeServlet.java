@@ -19,7 +19,7 @@ import model.ProgramOutcome;
 import model.ProgramLearningOutcome;
 import model.User;
 
-@WebServlet(name = "ProgramOutcomeServlet", urlPatterns = {"/ProgramOutcomeServlet", "/po-management"})
+@WebServlet(name = "ProgramOutcomeServlet", urlPatterns = {"/curriculum/po", "/ProgramOutcomeServlet", "/po-management"})
 public class ProgramOutcomeServlet extends HttpServlet {
 
     private final ProgramOutcomeDAO poDAO = new ProgramOutcomeDAO();
@@ -122,7 +122,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
         int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
         ProgramOutcome po = poDAO.getPOById(poId);
         if (po == null) {
-            response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+            redirectToList(request, response, curriculumId);
             return;
         }
 
@@ -155,7 +155,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
 
         if (curriculumId <= 0 || poName.isEmpty()) {
             request.getSession().setAttribute("errorMessage", "PO Name cannot be empty.");
-            response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+            redirectToList(request, response, curriculumId);
             return;
         }
 
@@ -171,7 +171,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
             request.getSession().setAttribute("successMessage", "Program Outcome added successfully.");
         }
 
-        response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+        redirectToList(request, response, curriculumId);
     }
 
     private void processUpdate(HttpServletRequest request, HttpServletResponse response)
@@ -183,7 +183,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
 
         if (poId <= 0 || curriculumId <= 0 || poName.isEmpty()) {
             request.getSession().setAttribute("errorMessage", "PO Name cannot be empty.");
-            response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+            redirectToList(request, response, curriculumId);
             return;
         }
 
@@ -200,7 +200,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
             request.getSession().setAttribute("successMessage", "Program Outcome updated successfully.");
         }
 
-        response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+        redirectToList(request, response, curriculumId);
     }
 
     private void processDelete(HttpServletRequest request, HttpServletResponse response)
@@ -209,7 +209,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
         int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
 
         if (poId <= 0 || curriculumId <= 0) {
-            response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+            redirectToList(request, response, curriculumId);
             return;
         }
 
@@ -220,7 +220,13 @@ public class ProgramOutcomeServlet extends HttpServlet {
             request.getSession().setAttribute("successMessage", "Program Outcome deleted successfully.");
         }
 
-        response.sendRedirect(request.getContextPath() + "/ProgramOutcomeServlet?action=list&curriculumId=" + curriculumId);
+        redirectToList(request, response, curriculumId);
+    }
+
+    private void redirectToList(HttpServletRequest request, HttpServletResponse response, int curriculumId)
+            throws IOException {
+        response.sendRedirect(request.getContextPath()
+                + "/curriculum/po?action=list&curriculumId=" + curriculumId);
     }
 
     private boolean canManagePO(HttpServletRequest request) {
