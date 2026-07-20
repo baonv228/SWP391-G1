@@ -1,4 +1,4 @@
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+    <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String error = (String) request.getAttribute("error");
     String success = request.getParameter("success");
@@ -153,6 +153,58 @@
 
         .btn-login:hover {
             background: var(--orange-dark);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            height: 1px;
+            flex: 1;
+            background: var(--border);
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #dadce0;
+            border-radius: 10px;
+            background: #fff;
+            color: #3c4043;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background-color 150ms ease, box-shadow 150ms ease;
+        }
+
+        .btn-google:hover {
+            background: #f8f9fa;
+            box-shadow: 0 1px 2px rgba(60, 64, 67, 0.25);
+        }
+
+        .btn-google:focus-visible {
+            outline: 3px solid rgba(26, 115, 232, 0.28);
+            outline-offset: 2px;
+        }
+
+        .google-mark {
+            color: #4285f4;
+            font-family: Arial, sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            line-height: 1;
         }
 
         .actions {
@@ -347,6 +399,7 @@
             }, 1200);
         }
     </script>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 
 <body>
@@ -434,6 +487,12 @@
         <button type="submit" class="btn-login">
             Đăng nhập
         </button>
+
+        <div class="divider">hoặc</div>
+        <a class="btn-google" href="<%=request.getContextPath()%>/login/google">
+            <span class="google-mark" aria-hidden="true">G</span>
+            Tiếp tục với Google
+        </a>
 
         <div class="actions">
             <a href="<%=request.getContextPath()%>/forgot-password">

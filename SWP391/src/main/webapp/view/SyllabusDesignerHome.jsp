@@ -81,6 +81,7 @@
             opacity: 0.9;
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body class="syllabus-page">
 <div class="syl-container">
