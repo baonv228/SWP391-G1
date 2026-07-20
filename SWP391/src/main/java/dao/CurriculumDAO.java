@@ -270,6 +270,21 @@ public class CurriculumDAO extends DBContext {
         return dto;
     }
 
+    public boolean updateCurriculumStatus(int curriculumId, String status) throws SQLException {
+        String sql = """
+                UPDATE dbo.[Curriculum]
+                SET Status = ?
+                WHERE CurriculumID = ?
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, curriculumId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     private int insertCurriculum(Connection con, Curriculum curriculum) throws Exception {
         String sql = """
                 INSERT INTO dbo.[Curriculum]

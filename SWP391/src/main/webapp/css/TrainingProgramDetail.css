@@ -1,6 +1,6 @@
 :root {
     --orange: #f59e3d;
-    --orange-dark: #b85d0c;
+    --orange-dark: #bd5d10;
     --orange-soft: #fff1df;
     --orange-line: #e7b678;
     --cream: #fffaf3;
@@ -156,28 +156,6 @@ body {
     color: var(--orange-dark);
     font-size: 13px;
     font-weight: 900;
-}
-
-.po-list {
-    display: grid;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.po-list li {
-    display: grid;
-    grid-template-columns: 92px 1fr;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid rgba(184, 93, 12, 0.22);
-    border-radius: 8px;
-    background: rgba(255, 241, 223, 0.6);
-}
-
-.po-list strong {
-    color: var(--orange-dark);
 }
 
 .empty-inline {
