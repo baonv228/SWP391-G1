@@ -432,11 +432,11 @@
                                     <td>${s.studentMaterials}</td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${not empty s.sDownload}">
+                                            <c:when test="${not empty s.studentDownload}">
                                                 <a href="javascript:void(0)"
-                                                   onclick="downloadSessionMaterial('${s.sDownload}')"
+                                                   onclick="downloadSessionMaterial('${s.studentDownload}')"
                                                    class="text-decoration-none fw-bold" style="color: #f3722c;">
-                                                    <i class="bi bi-file-earmark-arrow-down-fill me-1"></i>${s.sDownload}
+                                                    <i class="bi bi-file-earmark-arrow-down-fill me-1"></i>${s.studentDownload}
                                                 </a>
                                             </c:when>
                                             <c:otherwise>—</c:otherwise>
