@@ -8,6 +8,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import model.CurriculumElective;
+import model.Elective;
 
 public class ElectiveDAO extends DBContext {
 
@@ -35,6 +36,49 @@ public class ElectiveDAO extends DBContext {
             System.out.println("getElectivesByCurriculumId error: " + e.getMessage());
         }
         return electives;
+    }
+
+    /** Backward-compatible projection for legacy curriculum pages. */
+    public List<Elective> getElectiveByCurriculum(int curriculumId) {
+        List<Elective> result = new ArrayList<>();
+        for (CurriculumElective item : getElectivesByCurriculumId(curriculumId)) {
+            result.add(toLegacyElective(item));
+        }
+        return result;
+    }
+
+    public Elective getElectiveById(int electiveId) {
+        String sql = """
+                SELECT ce.CurriculumElectiveID, ce.CurriculumID, ce.SubjectID,
+                       ce.ElectiveGroupName, ce.DisplayOrder, ce.Status,
+                       s.SubjectCode, s.SubjectName, s.Credits
+                FROM dbo.[Curriculum_Elective] ce
+                JOIN dbo.[Subject] s ON ce.SubjectID = s.SubjectID
+                WHERE ce.CurriculumElectiveID = ?
+                """;
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, electiveId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return toLegacyElective(mapElective(rs));
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getElectiveById error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private Elective toLegacyElective(CurriculumElective item) {
+        Elective elective = new Elective();
+        elective.setElectiveId(item.getCurriculumElectiveId());
+        elective.setCurriculumId(item.getCurriculumId());
+        elective.setElectiveCode(item.getSubjectCode());
+        elective.setElectiveName(item.getElectiveGroupName() == null
+                ? item.getSubjectName() : item.getElectiveGroupName());
+        elective.setNote(item.getStatus());
+        return elective;
     }
 
     public boolean existsElectiveSubject(int curriculumId, int subjectId) {

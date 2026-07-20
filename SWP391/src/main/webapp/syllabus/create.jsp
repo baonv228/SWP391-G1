@@ -11,88 +11,8 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Tạo Syllabus — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=3"/>
-    <script>
-    function openPloModal(cloNum, btnEl) {
-        const subjectInput = document.getElementById('subjectId') || document.querySelector('input[name="subjectId"]');
-        const subjectId = subjectInput ? subjectInput.value : '';
-        if (!subjectId) {
-            alert('Vui lòng chọn Subject trước khi map PLO!');
-            return;
-        }
-        document.getElementById('currentCloMappingNum').value = cloNum;
-        document.getElementById('ploModalTitle').textContent = 'Map PLO cho CLO' + cloNum;
-        const tr = btnEl.closest('tr');
-        const existingInputs = tr.querySelectorAll('input[name^="clo_plo_"]');
-        const mappedPloIds = Array.from(existingInputs).map(inp => inp.value);
-        const container = document.getElementById('ploCheckboxContainer');
-        container.innerHTML = '<em>Đang tải danh sách PLO...</em>';
-        document.getElementById('ploModal').style.display = 'block';
-        fetch(contextPath + '/syllabus-manage?action=ajax_plos&subjectId=' + subjectId)
-            .then(res => res.json())
-            .then(data => {
-                if(!data || data.length === 0) {
-                    container.innerHTML = '<span style="color:#d32f2f;">Không tìm thấy PLO nào cho môn học này! (Vui lòng kiểm tra Curriculum)</span>';
-                    return;
-                }
-                let html = '';
-                data.forEach(c => {
-                    html += '<div style="margin-top:15px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #eee;">' +
-                            '<strong style="color:var(--primary-dark); font-size:15px;">Khung: ' + c.curriculumName + '</strong>' +
-                            '</div>';
-                    if (c.plos && c.plos.length > 0) {
-                        c.plos.forEach(p => {
-                            const checked = mappedPloIds.includes(p.ploId.toString()) ? 'checked' : '';
-                            html += '<div style="margin-bottom:8px; margin-left:10px;">' +
-                                    '<label style="cursor:pointer;"><input type="checkbox" class="plo-cb" value="'+p.ploId+'" '+checked+'> ' +
-                                    '<strong>' + p.ploCode + '</strong>: ' + p.ploDescription + '</label>' +
-                                    '</div>';
-                        });
-                    } else {
-                        html += '<div style="margin-left:10px; color:#888;">Chưa có PLO nào</div>';
-                    }
-                });
-                container.innerHTML = html;
-            }).catch(err => {
-                container.innerHTML = '<span style="color:#d32f2f;">Lỗi khi tải PLO. Vui lòng thử lại.</span>';
-            });
-    }
-    function closePloModal() {
-        document.getElementById('ploModal').style.display = 'none';
-    }
-    function savePloMapping() {
-        const cloNum = document.getElementById('currentCloMappingNum').value;
-        const tr = document.getElementById('cloBody').children[cloNum - 1];
-        tr.querySelectorAll('input[name^="clo_plo_"]').forEach(inp => inp.remove());
-        const idx = cloNum - 1;
-        const selected = document.querySelectorAll('#ploCheckboxContainer input[type="checkbox"]:checked');
-        let countText = '';
-        if(selected.length > 0) countText = ' (' + selected.length + ')';
-        selected.forEach(cb => {
-            const inp = document.createElement('input');
-            inp.type = 'hidden';
-            inp.name = 'clo_plo_' + idx;
-            inp.value = cb.value;
-            tr.querySelector('td:last-child').appendChild(inp);
-        });
-        const btn = tr.querySelector('.btn-map-plo');
-        if(btn) btn.innerHTML = 'Map PLO' + countText;
-        closePloModal();
-    }
-
-        const contextPath = '<%=request.getContextPath()%>';
-        function fetchInitData() {
-            const subjectId = document.getElementById("subjectId").value;
-            if(!subjectId) return;
-            fetch(contextPath + "/syllabus-manage?action=ajax_init&subjectId=" + subjectId)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById("syllabusTitle").value = data.syllabusTitle || "";
-                    document.getElementById("versionNo").value = data.versionNo || "1.0";
-                    document.getElementById("preRequisiteText").value = data.preRequisiteText || "";
-                });
-        }
-    </script>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body class="syllabus-page">
 <div class="syl-container">
@@ -142,11 +62,10 @@
         <a href="#sec-assessments">5. Đánh giá</a>
     </nav>
 
-    <form id="syllabusForm" method="post"
+    <form id="syllabusForm" method="post" enctype="multipart/form-data"
           action="<%=request.getContextPath()%>/syllabus-manage?action=create" accept-charset="UTF-8" onsubmit="return validateForm()">
         
         <input type="hidden" name="saveType" id="saveType" value="draft">
-        <input type="hidden" name="temp_material_file" id="temp_material_file">
 
         <!-- ================================================================ -->
         <!-- SECTION 1: Syllabus Details                                      -->
@@ -465,46 +384,12 @@
 
     function doSave(type) {
         document.getElementById('saveType').value = type;
-        const subjectVal = document.getElementById('subjectId').value;
-        if (!subjectVal || subjectVal === '') {
-            const validationAlert = document.getElementById('validationAlert');
-            if (validationAlert) {
-                validationAlert.innerHTML = 'Section 1: Vui lòng chọn Subject trước khi lưu.';
-                validationAlert.style.display = 'block';
-            }
-            window.scrollTo(0, 0);
-            return;
-        }
-
-        if (type !== 'draft' && !validateForm()) {
-            return;
-        }
-
-        const btn = document.getElementById('btnSubmitApproval');
-        if (btn) { btn.disabled = true; btn.innerHTML = 'Đang xử lý...'; }
-
-        const fileInput = document.querySelector('input[name="student_material_file"]');
-        if (fileInput && fileInput.files && fileInput.files.length > 0) {
-            const formData = new FormData();
-            formData.append('student_material_file', fileInput.files[0]);
-            fetch('<%=request.getContextPath()%>/syllabus-manage?action=upload_temp', {
-                method: 'POST',
-                body: formData
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    document.getElementById('temp_material_file').value = data.tempPath;
-                    fileInput.disabled = true; // Ngăn chặn browser submit cái này
-                    document.getElementById('syllabusForm').submit();
-                } else {
-                    alert('Lỗi upload file: ' + data.error);
-                    if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
-                }
-            }).catch(e => {
-                alert('Lỗi kết nối: ' + e);
-                if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
-            });
-        } else {
+        if(type === 'draft') {
             document.getElementById('syllabusForm').submit();
+        } else {
+            if(validateForm()) {
+                document.getElementById('syllabusForm').submit();
+            }
         }
     }
 
@@ -687,7 +572,7 @@ function removeRow(btn, type) {
                     tdClo.id = 'sesClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -703,7 +588,7 @@ function removeRow(btn, type) {
                     tdClo.id = 'asmClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -724,7 +609,7 @@ function removeRow(btn, type) {
             const num = match ? parseInt(match[1]) : 0;
             const isChecked = checkedIds.includes(num) ? 'checked' : '';
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
@@ -797,7 +682,7 @@ function removeRow(btn, type) {
             btn.disabled = false;
             btn.title = "Submit Syllabus for Approval";
         } else {
-            btn.disabled = false; // BA UX Fix: Always allow clicking to show errors
+            btn.disabled = true;
             btn.title = "Submit for Approval is unavailable until:\n" + titleAttr.join("\n");
         }
     }
@@ -814,30 +699,6 @@ function removeRow(btn, type) {
         if (sesCountActual < 10 || sesCountActual > 60) {
             errors.push('Section 4: Phải có từ 10 đến 60 Sessions.');
         }
-
-        // Student Material Package (ZIP) is required
-        const fileInput = document.querySelector('input[name="student_material_file"]');
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-            errors.push('Section 4: Vui lòng tải lên file Student Material Package (.zip).');
-        } else {
-            const fileName = fileInput.files[0].name.toLowerCase();
-            if (!fileName.endsWith('.zip')) {
-                errors.push('Section 4: File tài liệu phải có định dạng .zip.');
-            }
-            if (fileInput.files[0].size > 100 * 1024 * 1024) {
-                errors.push('Section 4: File tài liệu không được vượt quá 100MB.');
-            }
-        }
-
-
-        // Each CLO must have at least 1 PLO mapped
-        let cloPloMissing = false;
-        document.querySelectorAll('#cloBody tr').forEach((tr, index) => {
-            if (tr.querySelectorAll('input[name="clo_plo_' + index + '"]').length === 0) {
-                cloPloMissing = true;
-            }
-        });
-        if (cloPloMissing) errors.push('Section 3: Mỗi CLO phải được map với ít nhất 1 PLO.');
 
         // Each session must have at least 1 CLO
         let sessionCloMissing = false;

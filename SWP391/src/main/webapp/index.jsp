@@ -312,6 +312,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 
 <body>
@@ -380,7 +381,7 @@
 
                 <a class="guest-btn"
                    href="<%=request.getContextPath()%>/curriculum">
-                    View Curricula and Syllabi
+                    View Curriculum and Syllabus
                 </a>
 
                 <a class="guest-btn"

@@ -5,6 +5,7 @@ import dto.PaginationDTO;
 public class PaginationUtil {
 
     public static final int DEFAULT_PAGE_SIZE = 10;
+    public static final int TEACHER_PAGE_SIZE = 8;
 
     /**
      * Builds a PaginationDTO from total records and current page.

@@ -6,9 +6,16 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import model.Role;
 import model.User;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import service.UserService;
 
 @WebServlet(name = "AdminUserServlet", urlPatterns = {"/admin/users"})
@@ -19,7 +26,11 @@ public class AdminUserServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+        if ("export".equalsIgnoreCase(request.getParameter("action"))) {
+            exportUsers(response);
+            return;
+        }
+
         List<User> users = userService.getAllUsers();
         List<Role> roles = userService.getAllRoles();
 
@@ -45,6 +56,55 @@ public class AdminUserServlet extends HttpServlet {
         }
 
         request.getRequestDispatcher("/view/admin_users.jsp").forward(request, response);
+    }
+
+    private void exportUsers(HttpServletResponse response) throws IOException {
+        List<User> users = userService.getAllUsers();
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=tpms-user-accounts.xlsx");
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("User Accounts");
+            String[] headers = {"ID", "Full Name", "Email", "Role", "Status", "Created At"};
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+            for (int column = 0; column < headers.length; column++) {
+                Cell cell = headerRow.createCell(column);
+                cell.setCellValue(headers[column]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            int rowIndex = 1;
+            for (User user : users) {
+                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(user.getUserId());
+                row.createCell(1).setCellValue(excelSafe(user.getFullName()));
+                row.createCell(2).setCellValue(excelSafe(user.getEmail()));
+                row.createCell(3).setCellValue(excelSafe(user.getRole() == null ? "" : user.getRole().getRoleName()));
+                row.createCell(4).setCellValue(excelSafe(user.getStatus()));
+                String createdAt = user.getCreatedAt() == null ? "" : user.getCreatedAt()
+                        .toInstant().atZone(ZoneId.systemDefault()).format(dateFormat);
+                row.createCell(5).setCellValue(createdAt);
+            }
+
+            for (int column = 0; column < headers.length; column++) {
+                sheet.autoSizeColumn(column);
+            }
+            workbook.write(response.getOutputStream());
+        }
+    }
+
+    private String excelSafe(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.startsWith("=") || value.startsWith("+") || value.startsWith("-") || value.startsWith("@")
+                ? "'" + value : value;
     }
 
     @Override

@@ -22,10 +22,44 @@ public class MaterialDAO {
                 "MaterialType, Visibility, Status, UploadedAt " +
                 "FROM Learning_Material " +
                 "WHERE SyllabusID = ? AND Status = 'Active' " +
-                "ORDER BY UploadedAt";
+                "ORDER BY UploadedAt DESC, MaterialID DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, syllabusId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        }
+        return list;
+    }
+
+    public int countMaterialsBySyllabusId(int syllabusId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Learning_Material " +
+                "WHERE SyllabusID = ? AND Status = 'Active'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, syllabusId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    public List<MaterialDTO> getMaterialsBySyllabusId(int syllabusId, int page, int pageSize) throws SQLException {
+        int offset = (page - 1) * pageSize;
+        List<MaterialDTO> list = new ArrayList<>();
+        String sql = "SELECT MaterialID, SyllabusID, MaterialName, FilePath, " +
+                "MaterialType, Visibility, Status, UploadedAt " +
+                "FROM Learning_Material " +
+                "WHERE SyllabusID = ? AND Status = 'Active' " +
+                "ORDER BY UploadedAt DESC, MaterialID DESC " +
+                "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, syllabusId);
+            ps.setInt(2, offset);
+            ps.setInt(3, pageSize);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
             }

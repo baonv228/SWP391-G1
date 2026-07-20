@@ -309,7 +309,7 @@ public class SyllabusServlet extends HttpServlet {
                 if (!dir.exists()) dir.mkdirs();
                 String fileName = "material.zip";
                 File finalFile = new File(dir, fileName);
-                
+
                 try {
                     java.nio.file.Files.copy(tempFile.toPath(), finalFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                     syllabusDAO.saveMaterialFile(syllabusId, userId, "syllabus/" + syllabusId + "/" + fileName);
