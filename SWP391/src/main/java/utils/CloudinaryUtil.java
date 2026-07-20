@@ -11,9 +11,9 @@ import java.util.Map;
 public class CloudinaryUtil {
 
     // Cloudinary Credentials (fill keys when provided)
-    private static final String CLOUD_NAME = "dev4uz63q";
-    private static final String API_KEY = "339134588376349";
-    private static final String API_SECRET = "x1Xi2yY6DGvrKLJImSTnGLpzPhw";
+    private static final String CLOUD_NAME = "utnlrrp5";
+    private static final String API_KEY = "888491846349974";
+    private static final String API_SECRET = "rexoJ8l8BIrMNpUmcG2vJdb2ATw";
 
     private static Cloudinary cloudinary = null;
 
