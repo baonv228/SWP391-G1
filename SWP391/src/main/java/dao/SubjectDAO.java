@@ -312,7 +312,7 @@ public class SubjectDAO extends DBContext {
 
         return dto;
     }
-}
+
     /**
      * Get prerequisite text for a subject (e.g., "PRJ301, SWE201c")
      */

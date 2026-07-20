@@ -26,7 +26,7 @@ import java.util.List;
 @WebServlet(name = "TeacherCourseListServlet", urlPatterns = {"/teacher/courses"})
 public class CourseListServlet extends HttpServlet {
 
-    private static final int PAGE_SIZE = 15;
+    private static final int PAGE_SIZE = PaginationUtil.TEACHER_PAGE_SIZE;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -56,7 +56,7 @@ public class CourseListServlet extends HttpServlet {
         try {
             SyllabusDAO syllabusDAO = new SyllabusDAO();
             int total = syllabusDAO.countSyllabi(searchType, keyword);
-            PaginationDTO pagination = PaginationUtil.buildPagination(page, PAGE_SIZE, total);
+            PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
             List<SyllabusDTO> courses = syllabusDAO.searchSyllabi(searchType, keyword, page, PAGE_SIZE);
 
             request.setAttribute("courses", courses);

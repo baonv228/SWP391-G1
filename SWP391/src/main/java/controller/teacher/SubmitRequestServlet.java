@@ -28,7 +28,7 @@ import java.util.List;
 @WebServlet(name = "SubmitRequestServlet", urlPatterns = {"/teacher/submit-request"})
 public class SubmitRequestServlet extends HttpServlet {
 
-    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_SIZE = PaginationUtil.TEACHER_PAGE_SIZE;
 
     // ----------------------------------------------------------------
     //  GET — Show form + history
@@ -52,7 +52,7 @@ public class SubmitRequestServlet extends HttpServlet {
             // My submission history with pagination
             int page = ValidationUtil.parsePageNumber(request.getParameter("page"));
             int total = requestDAO.countRequestsByUser(teacher.getUserId());
-            PaginationDTO pagination = PaginationUtil.buildPagination(page, PAGE_SIZE, total);
+            PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
             List<SyllabusRequestDTO> myRequests =
                     requestDAO.getRequestsByUser(teacher.getUserId(), page, PAGE_SIZE);
 

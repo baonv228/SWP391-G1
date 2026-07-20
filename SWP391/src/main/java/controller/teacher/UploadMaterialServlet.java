@@ -3,6 +3,7 @@ package controller.teacher;
 import dao.MaterialDAO;
 import dao.SyllabusDAO;
 import dto.MaterialDTO;
+import dto.PaginationDTO;
 import dto.SyllabusDTO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import model.User;
 import utils.AuthUtil;
+import utils.PaginationUtil;
 import utils.ValidationUtil;
 
 import java.io.*;
@@ -38,6 +40,7 @@ import java.util.List;
 public class UploadMaterialServlet extends HttpServlet {
 
     private static final String UPLOAD_DIR_PARAM = "upload.dir";
+    private static final int PAGE_SIZE = PaginationUtil.TEACHER_PAGE_SIZE;
 
     // ----------------------------------------------------------------
     //  GET — Show upload form
@@ -60,12 +63,18 @@ public class UploadMaterialServlet extends HttpServlet {
                 request.setAttribute("selectedSyllabusId", Integer.parseInt(syllabusIdParam));
             }
 
-            // Show existing materials for selected syllabus
+            // Show existing materials for selected syllabus (newest first, paged)
             if (ValidationUtil.isValidId(syllabusIdParam)) {
+                int syllabusId = Integer.parseInt(syllabusIdParam);
+                int page = ValidationUtil.parsePageNumber(request.getParameter("page"));
                 MaterialDAO materialDAO = new MaterialDAO();
+                int total = materialDAO.countMaterialsBySyllabusId(syllabusId);
+                PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
                 List<MaterialDTO> existing = materialDAO.getMaterialsBySyllabusId(
-                        Integer.parseInt(syllabusIdParam));
+                        syllabusId, pagination.getCurrentPage(), PAGE_SIZE);
                 request.setAttribute("existingMaterials", existing);
+                request.setAttribute("materialPagination", pagination);
+                request.setAttribute("totalMaterials", total);
             }
 
             request.getRequestDispatcher("/views/teacher/uploadMaterial.jsp")
@@ -129,23 +138,21 @@ public class UploadMaterialServlet extends HttpServlet {
             return;
         }
 
-        // ── Save file to disk ─────────────────────────────────────────
-        // Directory structure: {uploadRoot}/syllabusId/filename
+        // ── Save/Upload file ─────────────────────────────────────────
         File uploadsRoot = getUploadsRoot();
         File syllabusDir = new File(uploadsRoot, String.valueOf(syllabusId));
-        if (!syllabusDir.exists()) syllabusDir.mkdirs();
+        String relativeFallbackPrefix = "/materials/" + syllabusId + "/";
 
-        // Prevent filename collisions: prefix with timestamp
-        String safeFileName = System.currentTimeMillis() + "_" +
-                originalFileName.replaceAll("[^a-zA-Z0-9._\\-]", "_");
-        File destFile = new File(syllabusDir, safeFileName);
-
+        String finalFileUrl;
         try (InputStream in = filePart.getInputStream()) {
-            Files.copy(in, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            finalFileUrl = utils.CloudinaryUtil.uploadFile(in, originalFileName, syllabusDir, relativeFallbackPrefix);
+        } catch (Exception e) {
+            getServletContext().log("File save/upload error", e);
+            request.setAttribute("error", "Error uploading file: " + e.getMessage());
+            request.setAttribute("selectedSyllabusId", syllabusId);
+            doGet(request, response);
+            return;
         }
-
-        // DB relative path (forward slashes for URL compatibility)
-        String relPath = "/materials/" + syllabusId + "/" + safeFileName;
 
         // ── Insert DB record ─────────────────────────────────────────
         try {
@@ -154,7 +161,7 @@ public class UploadMaterialServlet extends HttpServlet {
                     syllabusId,
                     teacher.getUserId(),
                     materialName,
-                    relPath,
+                    finalFileUrl,
                     extension,
                     visibility != null ? visibility : "Public"
             );
@@ -169,8 +176,12 @@ public class UploadMaterialServlet extends HttpServlet {
             }
         } catch (SQLException e) {
             getServletContext().log("DB error inserting material", e);
-            // Remove file if DB insert failed
-            destFile.delete();
+            // Remove local file if DB insert failed and it was stored locally
+            if (finalFileUrl.startsWith("/materials/")) {
+                String localFilename = finalFileUrl.substring(finalFileUrl.lastIndexOf('/') + 1);
+                File stored = new File(syllabusDir, localFilename);
+                if (stored.exists()) stored.delete();
+            }
             request.setAttribute("error", "Database error while saving material.");
             request.setAttribute("selectedSyllabusId", syllabusId);
             doGet(request, response);

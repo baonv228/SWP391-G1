@@ -1,129 +1,15 @@
 package dao;
 
-import dto.SyllabusDTO;
-import model.*;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import model.*;
+import dto.SyllabusDTO;
 
 public class SyllabusDAO extends DBContext {
 
-    // =========================================================
-    // SEARCH SYLLABI
-    // =========================================================
-    public List<SyllabusDTO> searchSyllabi(String searchType, String keyword,
-                                           int page, int pageSize) throws SQLException {
-        List<SyllabusDTO> list = new ArrayList<>();
-        int offset = (page - 1) * pageSize;
-
-        String whereClause = buildWhereClause(searchType, keyword);
-
-        String sql = """
-                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
-                       sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
-                       sy.LearningOutcome, sy.AssessmentMethod,
-                       sy.CreatedAt, sy.ApprovedAt,
-                       su.SubjectCode, su.SubjectName, su.Credits
-                FROM dbo.[Syllabus] sy
-                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
-                """ + whereClause + """
-                ORDER BY sy.SyllabusID
-                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-                """;
-
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            int idx = setSearchParams(ps, searchType, keyword, 1);
-            ps.setInt(idx++, offset);
-            ps.setInt(idx, pageSize);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
-                }
-            }
-        }
-
-        return list;
-    }
-
-    public int countSyllabi(String searchType, String keyword) throws SQLException {
-        String whereClause = buildWhereClause(searchType, keyword);
-
-        String sql = """
-                SELECT COUNT(*)
-                FROM dbo.[Syllabus] sy
-                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
-                """ + whereClause;
-
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            setSearchParams(ps, searchType, keyword, 1);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-        }
-
-        return 0;
-    }
-
-    // =========================================================
-    // DETAIL
-    // =========================================================
-    public SyllabusDTO getSyllabusById(int syllabusId) throws SQLException {
-        String sql = """
-                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
-                       sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
-                       sy.LearningOutcome, sy.AssessmentMethod,
-                       sy.CreatedAt, sy.ApprovedAt,
-                       su.SubjectCode, su.SubjectName, su.Credits
-                FROM dbo.[Syllabus] sy
-                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
-                WHERE sy.SyllabusID = ?
-                """;
-
-        SyllabusDTO dto = null;
-
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, syllabusId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    dto = mapRow(rs);
-                }
-            }
-        }
-
-        if (dto != null) {
-            dto.setLearningOutcomes(parseLearningOutcomes(dto.getLearningOutcome()));
-
-            MaterialDAO materialDAO = new MaterialDAO();
-            dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
-        }
-
-        return dto;
-    }
-
-    // =========================================================
-    // CREATE FULL SYLLABUS
-    // =========================================================
-    public int createFullSyllabus(Syllabus syllabus,
-                                  List<SyllabusMaterial> materials,
-                                  List<CLO> clos,
-                                  List<SyllabusSession> sessions,
-                                  List<SyllabusAssessment> assessments) {
-
-        Connection con = null;
     // =========================================================================
     // CREATE DRAFT — Section 1 only (partial save)
     // =========================================================================
@@ -334,17 +220,6 @@ public class SyllabusDAO extends DBContext {
             con = getConnection();
             con.setAutoCommit(false);
 
-            int syllabusId = insertSyllabus(con, syllabus);
-
-            if (syllabusId < 0) {
-                con.rollback();
-                return -1;
-            }
-
-            if (materials != null && !materials.isEmpty()) {
-                insertMaterials(con, syllabusId, materials);
-            }
-
             // Delete existing children in reverse FK order
             deleteChildren(con, syllabusId);
 
@@ -355,13 +230,6 @@ public class SyllabusDAO extends DBContext {
             Map<Integer, Integer> cloOrderToId = new HashMap<>();
             if (clos != null && !clos.isEmpty()) cloOrderToId = insertCLOs(con, syllabusId, clos);
 
-            if (sessions != null && !sessions.isEmpty()) {
-                insertSessions(con, syllabusId, sessions, cloOrderToId);
-            }
-
-            if (assessments != null && !assessments.isEmpty()) {
-                insertAssessments(con, syllabusId, assessments, cloOrderToId);
-            }
             // Insert sessions + junction
             if (sessions != null && !sessions.isEmpty()) insertSessions(con, syllabusId, sessions, cloOrderToId);
 
@@ -376,96 +244,6 @@ public class SyllabusDAO extends DBContext {
         } catch (Exception e) {
             System.out.println("saveAllChildren error: " + e.getMessage());
             e.printStackTrace();
-
-            if (con != null) {
-                try {
-                    con.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-            return -1;
-
-        } finally {
-            if (con != null) {
-                try {
-                    con.setAutoCommit(true);
-                    con.close();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private int insertSyllabus(Connection con, Syllabus s) throws SQLException {
-        String sql = """
-                INSERT INTO dbo.[Syllabus]
-                (SubjectID, CreatedBy, VersionNo, SyllabusTitle, Description,
-                 LearningOutcome, AssessmentMethod, Status, IsCurrentVersion,
-                 SyllabusName, SyllabusEnglish, DegreeLevel, TimeAllocation,
-                 PreRequisiteText, StudentTasks, Tools, ScoringScale,
-                 DecisionNo, Note, MinAvgMarkToPass, IsActive)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
-
-        try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, s.getSubjectId());
-            ps.setInt(2, s.getCreatedBy());
-            ps.setString(3, s.getVersionNo());
-            ps.setString(4, s.getSyllabusTitle());
-            ps.setString(5, s.getDescription());
-            ps.setString(6, s.getLearningOutcome());
-            ps.setString(7, s.getAssessmentMethod());
-            ps.setString(8, s.getStatus());
-            ps.setBoolean(9, s.isCurrentVersion());
-            ps.setString(10, s.getSyllabusName());
-            ps.setString(11, s.getSyllabusEnglish());
-            ps.setString(12, s.getDegreeLevel());
-            ps.setString(13, s.getTimeAllocation());
-            ps.setString(14, s.getPreRequisiteText());
-            ps.setString(15, s.getStudentTasks());
-            ps.setString(16, s.getTools());
-
-            if (s.getScoringScale() != null) {
-                ps.setInt(17, s.getScoringScale());
-            } else {
-                ps.setNull(17, Types.INTEGER);
-            }
-
-            ps.setString(18, s.getDecisionNo());
-            ps.setString(19, s.getNote());
-
-            if (s.getMinAvgMarkToPass() != null) {
-                ps.setDouble(20, s.getMinAvgMarkToPass());
-            } else {
-                ps.setNull(20, Types.DECIMAL);
-            }
-
-            ps.setBoolean(21, s.getIsActive());
-
-            ps.executeUpdate();
-
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) {
-                    return keys.getInt(1);
-                }
-            }
-        }
-
-        return -1;
-    }
-
-    private void insertMaterials(Connection con, int syllabusId,
-                                 List<SyllabusMaterial> materials) throws SQLException {
-        String sql = """
-                INSERT INTO dbo.[Syllabus_Material]
-                (SyllabusID, MaterialDescription, Author, Publisher, PublishedDate,
-                 Edition, ISBN, IsMainMaterial, IsHardCopy, IsOnline, Note, DisplayOrder)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
-
             if (con != null) try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             return false;
         } finally {
@@ -504,7 +282,6 @@ public class SyllabusDAO extends DBContext {
                 ps.setString(11, m.getNote()); ps.setInt(12, m.getDisplayOrder());
                 ps.addBatch();
             }
-
             ps.executeBatch();
         }
     }
@@ -517,14 +294,12 @@ public class SyllabusDAO extends DBContext {
                 ps.setInt(1, syllabusId); ps.setString(2, c.getCloName());
                 ps.setString(3, c.getCloDetails()); ps.setString(4, c.getLoDetails());
                 ps.setInt(5, c.getDisplayOrder());
-
                 ps.executeUpdate();
                 try (ResultSet keys = ps.getGeneratedKeys()) {
                     if (keys.next()) orderToId.put(c.getDisplayOrder(), keys.getInt(1));
                 }
             }
         }
-
         return orderToId;
     }
 
@@ -580,159 +355,6 @@ public class SyllabusDAO extends DBContext {
         }
     }
 
-                if (a.getCloIds() != null) {
-                    for (Integer cloOrder : a.getCloIds()) {
-                        Integer cloId = cloOrderToId.get(cloOrder);
-
-                        if (cloId != null) {
-                            psJunction.setInt(1, assessmentId);
-                            psJunction.setInt(2, cloId);
-                            psJunction.addBatch();
-                        }
-                    }
-                }
-            }
-
-            psJunction.executeBatch();
-        }
-    }
-
-    // =========================================================
-    // READ SYLLABUS BY CREATOR
-    // =========================================================
-    public List<Syllabus> getSyllabusesByCreator(int userId) {
-        List<Syllabus> list = new ArrayList<>();
-
-        String sql = """
-                SELECT s.SyllabusID, s.SubjectID, s.CreatedBy, s.VersionNo,
-                       s.SyllabusTitle, s.SyllabusName, s.Status, s.IsCurrentVersion,
-                       s.CreatedAt, s.IsActive,
-                       sub.SubjectCode, sub.SubjectName
-                FROM dbo.[Syllabus] s
-                JOIN dbo.[Subject] sub ON s.SubjectID = sub.SubjectID
-                WHERE s.CreatedBy = ? AND s.IsActive = 1
-                ORDER BY s.CreatedAt DESC
-                """;
-
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, userId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Syllabus s = new Syllabus();
-
-                    s.setSyllabusId(rs.getInt("SyllabusID"));
-                    s.setSubjectId(rs.getInt("SubjectID"));
-                    s.setCreatedBy(rs.getInt("CreatedBy"));
-                    s.setVersionNo(rs.getString("VersionNo"));
-                    s.setSyllabusTitle(rs.getString("SyllabusTitle"));
-                    s.setSyllabusName(rs.getString("SyllabusName"));
-                    s.setStatus(rs.getString("Status"));
-                    s.setCurrentVersion(rs.getBoolean("IsCurrentVersion"));
-                    s.setCreatedAt(rs.getTimestamp("CreatedAt"));
-                    s.setIsActive(rs.getBoolean("IsActive"));
-                    s.setSubjectCode(rs.getString("SubjectCode"));
-                    s.setSubjectName(rs.getString("SubjectName"));
-
-                    list.add(s);
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("getSyllabusesByCreator error: " + e.getMessage());
-        }
-
-        return list;
-    }
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
-    private List<String> parseLearningOutcomes(String rawText) {
-        List<String> outcomes = new ArrayList<>();
-
-        if (rawText == null || rawText.trim().isEmpty()) {
-            return outcomes;
-        }
-
-        String[] lines = rawText.split("\\r?\\n");
-
-        for (String line : lines) {
-            String trimmed = line.trim().replaceAll("^[-•*]\\s*", "");
-
-            if (!trimmed.isEmpty()) {
-                outcomes.add(trimmed);
-            }
-        }
-
-        if (outcomes.isEmpty()) {
-            outcomes.add(rawText.trim());
-        }
-
-        return outcomes;
-    }
-
-    private String buildWhereClause(String searchType, String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return "";
-        }
-
-        switch (searchType == null ? "" : searchType.toLowerCase()) {
-            case "name":
-                return " WHERE LOWER(sy.SyllabusTitle) LIKE LOWER(?) ";
-            case "subject":
-                return " WHERE LOWER(su.SubjectCode) LIKE LOWER(?) OR LOWER(su.SubjectName) LIKE LOWER(?) ";
-            case "code":
-            default:
-                return " WHERE LOWER(su.SubjectCode) LIKE LOWER(?) ";
-        }
-    }
-
-    private int setSearchParams(PreparedStatement ps, String searchType,
-                                String keyword, int startIdx) throws SQLException {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return startIdx;
-        }
-
-        String like = "%" + keyword.trim() + "%";
-
-        if ("subject".equalsIgnoreCase(searchType)) {
-            ps.setString(startIdx++, like);
-            ps.setString(startIdx++, like);
-        } else {
-            ps.setString(startIdx++, like);
-        }
-
-        return startIdx;
-    }
-
-    private SyllabusDTO mapRow(ResultSet rs) throws SQLException {
-        SyllabusDTO dto = new SyllabusDTO();
-
-        dto.setSyllabusId(rs.getInt("SyllabusID"));
-        dto.setSyllabusTitle(rs.getString("SyllabusTitle"));
-        dto.setSyllabusEnglishName(rs.getString("SyllabusTitle"));
-        dto.setVersionNo(rs.getString("VersionNo"));
-        dto.setStatus(rs.getString("Status"));
-        dto.setCurrentVersion(rs.getBoolean("IsCurrentVersion"));
-
-        int approvedBy = rs.getInt("ApprovedBy");
-        dto.setApproved(!rs.wasNull() && approvedBy > 0);
-
-        dto.setDescription(rs.getString("Description"));
-        dto.setLearningOutcome(rs.getString("LearningOutcome"));
-        dto.setAssessmentMethod(rs.getString("AssessmentMethod"));
-        dto.setCreatedAt(rs.getTimestamp("CreatedAt"));
-        dto.setApprovedAt(rs.getTimestamp("ApprovedAt"));
-        dto.setSubjectCode(rs.getString("SubjectCode"));
-        dto.setSubjectName(rs.getString("SubjectName"));
-        dto.setCredits(rs.getInt("Credits"));
-
-        return dto;
-    }
-}
     private void insertCloPloMappings(Connection con, List<CLO> clos, Map<Integer, Integer> cloOrderToId) throws SQLException {
         String sql = "INSERT INTO dbo.[CLO_PLO](CLOID, PloID) VALUES(?,?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -788,6 +410,32 @@ public class SyllabusDAO extends DBContext {
                 }
             }
         } catch (Exception e) { System.out.println("getCLOs error: " + e.getMessage()); }
+
+        for (CLO c : list) {
+            String sqlPlo = """
+                SELECT p.ploId, p.ploName, p.ploDescription
+                FROM dbo.[CLO_PLO] cp
+                JOIN dbo.[ProgramLearningOutcome] p ON cp.PloID = p.ploId
+                WHERE cp.CLOID = ?
+                """;
+            try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sqlPlo)) {
+                ps.setInt(1, c.getCloId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<PLO> mappedPlos = new ArrayList<>();
+                    List<Integer> mappedPloIds = new ArrayList<>();
+                    while (rs.next()) {
+                        PLO p = new PLO();
+                        p.setPloId(rs.getInt("ploId"));
+                        p.setPloCode(rs.getString("ploName"));
+                        p.setPloDescription(rs.getString("ploDescription"));
+                        mappedPlos.add(p);
+                        mappedPloIds.add(p.getPloId());
+                    }
+                    c.setPlos(mappedPlos);
+                    c.setPloIds(mappedPloIds);
+                }
+            } catch (Exception e) { System.out.println("getCLOs mapping error: " + e.getMessage()); }
+        }
         return list;
     }
 
@@ -856,4 +504,282 @@ public class SyllabusDAO extends DBContext {
         } catch (Exception e) { System.out.println("getLatestMaterialFilePath error: " + e.getMessage()); }
         return null;
     }
+
+    // =========================================================
+    // SEARCH SYLLABI
+    // =========================================================
+    public List<SyllabusDTO> searchSyllabi(String searchType, String keyword,
+                                           int page, int pageSize) throws SQLException {
+        List<SyllabusDTO> list = new ArrayList<>();
+        int offset = (page - 1) * pageSize;
+
+        String whereClause = buildWhereClause(searchType, keyword);
+
+        String sql = """
+                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
+                       sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
+                       sy.LearningOutcome, sy.AssessmentMethod,
+                       sy.CreatedAt, sy.ApprovedAt,
+                       su.SubjectCode, su.SubjectName, su.Credits
+                FROM dbo.[Syllabus] sy
+                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
+                """ + whereClause + """
+                ORDER BY sy.CreatedAt DESC, sy.SyllabusID DESC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            int idx = setSearchParams(ps, searchType, keyword, 1);
+            ps.setInt(idx++, offset);
+            ps.setInt(idx, pageSize);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        }
+
+        return list;
+    }
+
+    public int countSyllabi(String searchType, String keyword) throws SQLException {
+        String whereClause = buildWhereClause(searchType, keyword);
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM dbo.[Syllabus] sy
+                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
+                """ + whereClause;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            setSearchParams(ps, searchType, keyword, 1);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+
+        return 0;
+    }
+
+
+    public SyllabusDTO getSyllabusDtoById(int syllabusId) throws SQLException {
+        String sql = """
+                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
+                       sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
+                       sy.LearningOutcome, sy.AssessmentMethod,
+                       sy.CreatedAt, sy.ApprovedAt,
+                       sy.SyllabusName, sy.SyllabusEnglish, sy.DegreeLevel,
+                       sy.TimeAllocation, sy.PreRequisiteText, sy.StudentTasks,
+                       sy.Tools, sy.ScoringScale, sy.DecisionNo, sy.Note,
+                       sy.MinAvgMarkToPass, sy.IsActive,
+                       su.SubjectCode, su.SubjectName, su.Credits
+                FROM dbo.[Syllabus] sy
+                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
+                WHERE sy.SyllabusID = ?
+                """;
+
+        SyllabusDTO dto = null;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, syllabusId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    dto = mapRow(rs);
+                }
+            }
+        }
+
+        if (dto != null) {
+            dto.setLearningOutcomes(parseLearningOutcomes(dto.getLearningOutcome()));
+
+            // Load child lists
+            dto.setTextbooks(getMaterials(syllabusId));
+            dto.setClos(getCLOs(syllabusId));
+            dto.setAssessments(getAssessments(syllabusId));
+
+            // Load Syllabus_Session and map to SessionDTO list
+            List<SyllabusSession> dbSessions = getSessions(syllabusId);
+            List<SyllabusDTO.SessionDTO> mappedSessions = new ArrayList<>();
+            for (SyllabusSession s : dbSessions) {
+                SyllabusDTO.SessionDTO sDto = new SyllabusDTO.SessionDTO();
+                sDto.setSessionNo(s.getSessionNumber());
+                sDto.setTopic(s.getTopic());
+                sDto.setLearningTeachingType(s.getLearningTeachingType());
+                sDto.setLo(s.getItu()); 
+                sDto.setItu(s.getItu());
+                sDto.setStudentMaterials(s.getStudentMaterials());
+                sDto.setSDownload(s.getSDownload());
+                sDto.setStudentTasks(s.getStudentTasks());
+                sDto.setUrls(s.getUrls());
+                mappedSessions.add(sDto);
+            }
+            dto.setSessions(mappedSessions);
+
+            MaterialDAO materialDAO = new MaterialDAO();
+            dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
+        }
+
+        return dto;
+    }
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+    private List<String> parseLearningOutcomes(String rawText) {
+        List<String> outcomes = new ArrayList<>();
+
+        if (rawText == null || rawText.trim().isEmpty()) {
+            return outcomes;
+        }
+
+        String[] lines = rawText.split("\\r?\\n");
+
+        for (String line : lines) {
+            String trimmed = line.trim().replaceAll("^[-•*]\\s*", "");
+
+            if (!trimmed.isEmpty()) {
+                outcomes.add(trimmed);
+            }
+        }
+
+        if (outcomes.isEmpty()) {
+            outcomes.add(rawText.trim());
+        }
+
+        return outcomes;
+    }
+
+    private String buildWhereClause(String searchType, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return "";
+        }
+
+        switch (searchType == null ? "" : searchType.toLowerCase()) {
+            case "name":
+                return " WHERE LOWER(sy.SyllabusTitle) LIKE LOWER(?) ";
+            case "subject":
+                return " WHERE LOWER(su.SubjectCode) LIKE LOWER(?) OR LOWER(su.SubjectName) LIKE LOWER(?) ";
+            case "code":
+            default:
+                return " WHERE LOWER(su.SubjectCode) LIKE LOWER(?) ";
+        }
+    }
+
+    private int setSearchParams(PreparedStatement ps, String searchType,
+                                String keyword, int startIdx) throws SQLException {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return startIdx;
+        }
+
+        String like = "%" + keyword.trim() + "%";
+
+        if ("subject".equalsIgnoreCase(searchType)) {
+            ps.setString(startIdx++, like);
+            ps.setString(startIdx++, like);
+        } else {
+            ps.setString(startIdx++, like);
+        }
+
+        return startIdx;
+    }
+
+    private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+        int columns = metaData.getColumnCount();
+        for (int i = 1; i <= columns; i++) {
+            if (columnName.equalsIgnoreCase(metaData.getColumnLabel(i)) 
+                    || columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private SyllabusDTO mapRow(ResultSet rs) throws SQLException {
+        SyllabusDTO dto = new SyllabusDTO();
+
+        dto.setSyllabusId(rs.getInt("SyllabusID"));
+        dto.setSyllabusTitle(rs.getString("SyllabusTitle"));
+        
+        if (hasColumn(rs, "SyllabusEnglish") && rs.getString("SyllabusEnglish") != null) {
+            dto.setSyllabusEnglishName(rs.getString("SyllabusEnglish"));
+        } else {
+            dto.setSyllabusEnglishName(rs.getString("SyllabusTitle"));
+        }
+        
+        dto.setVersionNo(rs.getString("VersionNo"));
+        dto.setStatus(rs.getString("Status"));
+        dto.setCurrentVersion(rs.getBoolean("IsCurrentVersion"));
+
+        int approvedBy = rs.getInt("ApprovedBy");
+        dto.setApproved(!rs.wasNull() && approvedBy > 0);
+
+        dto.setDescription(rs.getString("Description"));
+        dto.setLearningOutcome(rs.getString("LearningOutcome"));
+        dto.setAssessmentMethod(rs.getString("AssessmentMethod"));
+        dto.setCreatedAt(rs.getTimestamp("CreatedAt"));
+        dto.setApprovedAt(rs.getTimestamp("ApprovedAt"));
+        dto.setSubjectCode(rs.getString("SubjectCode"));
+        dto.setSubjectName(rs.getString("SubjectName"));
+        dto.setCredits(rs.getInt("Credits"));
+
+        if (hasColumn(rs, "SyllabusName")) {
+            dto.setSyllabusName(rs.getString("SyllabusName"));
+        }
+        if (hasColumn(rs, "SyllabusEnglish")) {
+            dto.setSyllabusEnglish(rs.getString("SyllabusEnglish"));
+        }
+        if (hasColumn(rs, "DegreeLevel")) {
+            dto.setDegreeLevel(rs.getString("DegreeLevel"));
+        }
+        if (hasColumn(rs, "TimeAllocation")) {
+            dto.setTimeAllocation(rs.getString("TimeAllocation"));
+        }
+        if (hasColumn(rs, "PreRequisiteText")) {
+            dto.setPreRequisiteText(rs.getString("PreRequisiteText"));
+        }
+        if (hasColumn(rs, "StudentTasks")) {
+            dto.setStudentTasks(rs.getString("StudentTasks"));
+        }
+        if (hasColumn(rs, "Tools")) {
+            dto.setTools(rs.getString("Tools"));
+        }
+        if (hasColumn(rs, "DecisionNo")) {
+            dto.setDecisionNo(rs.getString("DecisionNo"));
+        }
+        if (hasColumn(rs, "Note")) {
+            dto.setNote(rs.getString("Note"));
+        }
+        if (hasColumn(rs, "IsActive")) {
+            dto.setIsActive(rs.getBoolean("IsActive"));
+        }
+
+        if (hasColumn(rs, "ScoringScale")) {
+            int scoringScale = rs.getInt("ScoringScale");
+            if (!rs.wasNull()) {
+                dto.setScoringScale(scoringScale);
+            }
+        }
+        
+        if (hasColumn(rs, "MinAvgMarkToPass")) {
+            double minAvgMarkToPass = rs.getDouble("MinAvgMarkToPass");
+            if (!rs.wasNull()) {
+                dto.setMinAvgMarkToPass(minAvgMarkToPass);
+            }
+        }
+
+        return dto;
+    }
+
 }
