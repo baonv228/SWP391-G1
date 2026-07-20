@@ -114,12 +114,17 @@ public class SyllabusDAO extends DBContext {
         s.setSyllabusId(rs.getInt("SyllabusID"));
         s.setSubjectId(rs.getInt("SubjectID"));
         s.setCreatedBy(rs.getInt("CreatedBy"));
+        int approvedBy = rs.getInt("ApprovedBy");
+        s.setApprovedBy(rs.wasNull() ? null : approvedBy);
         s.setVersionNo(rs.getString("VersionNo"));
         s.setSyllabusTitle(rs.getString("SyllabusTitle"));
         s.setDescription(rs.getString("Description"));
+        s.setLearningOutcome(rs.getString("LearningOutcome"));
+        s.setAssessmentMethod(rs.getString("AssessmentMethod"));
         s.setStatus(rs.getString("Status"));
         s.setCurrentVersion(rs.getBoolean("IsCurrentVersion"));
         s.setCreatedAt(rs.getTimestamp("CreatedAt"));
+        s.setApprovedAt(rs.getTimestamp("ApprovedAt"));
         s.setSyllabusName(rs.getString("SyllabusName"));
         s.setSyllabusEnglish(rs.getString("SyllabusEnglish"));
         s.setDegreeLevel(rs.getString("DegreeLevel"));
@@ -231,12 +236,75 @@ public class SyllabusDAO extends DBContext {
         return false;
     }
 
+    public boolean approveSyllabus(int syllabusId, int reviewerId) {
+        String sql = """
+                UPDATE dbo.[Syllabus]
+                SET Status = 'Approved', ApprovedBy = ?, ApprovedAt = GETDATE(), IsCurrentVersion = 1
+                WHERE SyllabusID = ?
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, reviewerId);
+            ps.setInt(2, syllabusId);
+            boolean updated = ps.executeUpdate() > 0;
+            updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
+            return updated;
+        } catch (Exception e) {
+            System.out.println("approveSyllabus error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public boolean rejectSyllabus(int syllabusId, int reviewerId, String reason) {
+        String sql = """
+                UPDATE dbo.[Syllabus]
+                SET Status = 'Rejected', ApprovedBy = NULL, ApprovedAt = NULL, Note = ?
+                WHERE SyllabusID = ?
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setInt(2, syllabusId);
+            boolean updated = ps.executeUpdate() > 0;
+            updateLatestApprovalRequest(syllabusId, reviewerId, "Rejected", reason);
+            return updated;
+        } catch (Exception e) {
+            System.out.println("rejectSyllabus error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private void updateLatestApprovalRequest(int syllabusId, int reviewerId, String status, String reviewNote) {
+        String sql = """
+                UPDATE dbo.[Syllabus_Approval_Request]
+                SET Status = ?, ReviewedBy = ?, ReviewedAt = GETDATE(), ReviewNote = ?
+                WHERE RequestID = (
+                    SELECT TOP 1 RequestID
+                    FROM dbo.[Syllabus_Approval_Request]
+                    WHERE SyllabusID = ? AND Status IN ('Pending', 'Pending Approval')
+                    ORDER BY RequestedAt DESC, RequestID DESC
+                )
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, reviewerId);
+            ps.setString(3, reviewNote);
+            ps.setInt(4, syllabusId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("updateLatestApprovalRequest warning: " + e.getMessage());
+        }
+    }
+
     public boolean deleteSyllabus(int syllabusId) {
         Connection con = null;
         try {
             con = getConnection();
             con.setAutoCommit(false);
             deleteChildren(con, syllabusId);
+            String sqlMat = "DELETE FROM dbo.[Learning_Material] WHERE SyllabusID=?";
+            try (PreparedStatement ps = con.prepareStatement(sqlMat)) {
+                ps.setInt(1, syllabusId);
+                ps.executeUpdate();
+            }
             String sql = "DELETE FROM dbo.[Syllabus] WHERE SyllabusID=?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setInt(1, syllabusId);
@@ -306,8 +374,7 @@ public class SyllabusDAO extends DBContext {
             "DELETE FROM dbo.[Syllabus_Assessment] WHERE SyllabusID=?",
             "DELETE FROM dbo.[Syllabus_Session] WHERE SyllabusID=?",
             "DELETE FROM dbo.[CLO] WHERE SyllabusID=?",
-            "DELETE FROM dbo.[Syllabus_Material] WHERE SyllabusID=?",
-            "DELETE FROM dbo.[Learning_Material] WHERE SyllabusID=?"
+            "DELETE FROM dbo.[Syllabus_Material] WHERE SyllabusID=?"
         };
         for (String sql : deleteJunctions) {
             try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -458,6 +525,18 @@ public class SyllabusDAO extends DBContext {
                     list.add(c);
                 }
             }
+            // Fetch PLO mappings after RS is closed to avoid MARS issue
+            String sqlMap = "SELECT PloID FROM dbo.[CLO_PLO] WHERE CLOID=?";
+            try (PreparedStatement psM = con.prepareStatement(sqlMap)) {
+                for (CLO c : list) {
+                    psM.setInt(1, c.getCloId());
+                    try (ResultSet rsM = psM.executeQuery()) {
+                        List<Integer> ploIds = new ArrayList<>();
+                        while (rsM.next()) ploIds.add(rsM.getInt(1));
+                        c.setPloIds(ploIds);
+                    }
+                }
+            }
         } catch (Exception e) { System.out.println("getCLOs error: " + e.getMessage()); }
         return list;
     }
@@ -478,6 +557,18 @@ public class SyllabusDAO extends DBContext {
                     s.setSDownload(rs.getString("SDownload")); s.setStudentTasks(rs.getString("StudentTasks"));
                     s.setUrls(rs.getString("URLs")); s.setDisplayOrder(rs.getInt("DisplayOrder"));
                     list.add(s);
+                }
+            }
+            // Fetch CLO mappings after RS is closed
+            String sqlMap = "SELECT CLOID FROM dbo.[Session_CLO] WHERE SessionID=?";
+            try (PreparedStatement psM = con.prepareStatement(sqlMap)) {
+                for (SyllabusSession s : list) {
+                    psM.setInt(1, s.getSessionId());
+                    try (ResultSet rsM = psM.executeQuery()) {
+                        List<Integer> cloIds = new ArrayList<>();
+                        while (rsM.next()) cloIds.add(rsM.getInt(1));
+                        s.setCloIds(cloIds);
+                    }
                 }
             }
         } catch (Exception e) { System.out.println("getSessions error: " + e.getMessage()); }
@@ -502,6 +593,18 @@ public class SyllabusDAO extends DBContext {
                     a.setGradingGuide(rs.getString("GradingGuide")); a.setNote(rs.getString("Note"));
                     a.setDisplayOrder(rs.getInt("DisplayOrder"));
                     list.add(a);
+                }
+            }
+            // Fetch CLO mappings after RS is closed
+            String sqlMap = "SELECT CLOID FROM dbo.[Assessment_CLO] WHERE AssessmentID=?";
+            try (PreparedStatement psM = con.prepareStatement(sqlMap)) {
+                for (SyllabusAssessment a : list) {
+                    psM.setInt(1, a.getAssessmentId());
+                    try (ResultSet rsM = psM.executeQuery()) {
+                        List<Integer> cloIds = new ArrayList<>();
+                        while (rsM.next()) cloIds.add(rsM.getInt(1));
+                        a.setCloIds(cloIds);
+                    }
                 }
             }
         } catch (Exception e) { System.out.println("getAssessments error: " + e.getMessage()); }

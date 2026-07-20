@@ -897,12 +897,21 @@
         });
 
         // Load sessions and assessments from data
-        <% if(sessions != null) {
+        <% 
+            java.util.Map<Integer, Integer> cloIdToOrder = new java.util.HashMap<>();
+            if (clos != null) {
+                for (CLO c : clos) {
+                    cloIdToOrder.put(c.getCloId(), c.getDisplayOrder());
+                }
+            }
+        
+            if(sessions != null) {
             for(SyllabusSession s : sessions) { 
                 String cloArr = "[";
                 if(s.getCloIds() != null) {
                     for(int i=0; i<s.getCloIds().size(); i++) {
-                        cloArr += s.getCloIds().get(i);
+                        Integer order = cloIdToOrder.get(s.getCloIds().get(i));
+                        if(order != null) cloArr += order;
                         if(i < s.getCloIds().size()-1) cloArr += ",";
                     }
                 }
@@ -925,7 +934,8 @@
                 String cloArr = "[";
                 if(a.getCloIds() != null) {
                     for(int i=0; i<a.getCloIds().size(); i++) {
-                        cloArr += a.getCloIds().get(i);
+                        Integer order = cloIdToOrder.get(a.getCloIds().get(i));
+                        if(order != null) cloArr += order;
                         if(i < a.getCloIds().size()-1) cloArr += ",";
                     }
                 }
@@ -1139,6 +1149,40 @@
                 <button type="button" class="btn-syl" style="background:#F5A623; color:#fff; border:none;" onclick="savePloMapping()">Lưu Mapping</button>
             </div>
         </div>
+        </div>
     </div>
+    
+    <% if (!"Draft".equals(syllabus.getStatus())) { %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lock inputs
+            document.querySelectorAll('input, textarea, select').forEach(function(el) {
+                el.readOnly = true;
+                if (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio' || el.type === 'file') {
+                    el.disabled = true;
+                }
+            });
+            
+            // Hide add/remove/submit buttons
+            document.querySelectorAll('button').forEach(function(btn) {
+                const t = btn.innerText.toLowerCase();
+                if (t.includes('lưu') || t.includes('submit') || t.includes('thêm') || t.includes('×') || t.includes('import') || t.includes('map plo') || t.includes('cập nhật')) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // Hide file upload custom button if any
+            const excelInput = document.getElementById('excelFileInput');
+            if (excelInput && excelInput.parentElement) excelInput.parentElement.style.display = 'none';
+            
+            // Hide Submit container
+            const btnContainer = document.getElementById('btnSubmitApproval');
+            if (btnContainer && btnContainer.parentElement) {
+                btnContainer.parentElement.style.display = 'none';
+            }
+        });
+    </script>
+    <% } %>
+
 </body>
 </html>

@@ -22,7 +22,7 @@
     <body>
         <main class="elective-create-page">
             <header class="elective-create-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/elective?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Back to Elective List</a>
+                <a class="back-link" href="<%=request.getContextPath()%>/curriculum/elective?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Back to Elective List</a>
                 <h1>Add Elective Course</h1>
                 <p><%= curriculum.getProgramCode() %> - <%= curriculum.getCurriculumName() %></p>
             </header>
@@ -31,7 +31,7 @@
             <div class="alert-error"><%= error %></div>
             <% } %>
 
-            <form id="createElectiveForm" class="elective-create-shell" method="post" action="<%=request.getContextPath()%>/elective">
+            <form id="createElectiveForm" class="elective-create-shell" method="post" action="<%=request.getContextPath()%>/curriculum/elective">
                 <input type="hidden" name="action" value="create" />
                 <input type="hidden" name="curriculumId" value="<%= curriculum.getCurriculumId() %>" />
 
@@ -90,7 +90,7 @@
 
                 <div class="form-actions">
                     <button type="submit" class="primary-button">Add to Elective List</button>
-                    <a class="outline-button" href="<%=request.getContextPath()%>/elective?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Cancel</a>
+                    <a class="outline-button" href="<%=request.getContextPath()%>/curriculum/elective?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Cancel</a>
                 </div>
             </form>
         </main>
