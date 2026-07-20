@@ -100,6 +100,7 @@ public class SyllabusDAO extends DBContext {
                 WHERE s.SyllabusID = ?
                 """;
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapSyllabusRow(rs);
@@ -490,6 +491,7 @@ public class SyllabusDAO extends DBContext {
         List<SyllabusMaterial> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[Syllabus_Material] WHERE SyllabusID=? ORDER BY DisplayOrder";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -512,6 +514,7 @@ public class SyllabusDAO extends DBContext {
         List<CLO> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[CLO] WHERE SyllabusID=? ORDER BY DisplayOrder";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -542,6 +545,7 @@ public class SyllabusDAO extends DBContext {
         List<SyllabusSession> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[Syllabus_Session] WHERE SyllabusID=? ORDER BY SessionNumber";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -575,6 +579,7 @@ public class SyllabusDAO extends DBContext {
         List<SyllabusAssessment> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[Syllabus_Assessment] WHERE SyllabusID=? ORDER BY DisplayOrder";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -714,6 +719,7 @@ public class SyllabusDAO extends DBContext {
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -742,7 +748,7 @@ public class SyllabusDAO extends DBContext {
                 sDto.setLo(s.getItu()); 
                 sDto.setItu(s.getItu());
                 sDto.setStudentMaterials(s.getStudentMaterials());
-                sDto.setSDownload(s.getSDownload());
+                sDto.setStudentDownload(s.getSDownload());
                 sDto.setStudentTasks(s.getStudentTasks());
                 sDto.setUrls(s.getUrls());
                 mappedSessions.add(sDto);
@@ -750,7 +756,12 @@ public class SyllabusDAO extends DBContext {
             dto.setSessions(mappedSessions);
 
             MaterialDAO materialDAO = new MaterialDAO();
-            dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
+            try {
+                dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
+            } catch (SQLException e) {
+                System.err.println("getSyllabusDtoById materials error: " + e.getMessage());
+                dto.setMaterials(new ArrayList<>());
+            }
         }
 
         return dto;

@@ -74,7 +74,7 @@ public class ComboDAO extends DBContext {
         String sql = """
                 SELECT s.SubjectID, s.CreatedBy, s.SubjectCode, s.SubjectName,
                        s.Credits, s.Description, s.Status
-                FROM dbo.[ComboSubject] cs
+                FROM dbo.[Combo_Subject] cs
                 JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
                 WHERE cs.ComboID = ?
                 ORDER BY COALESCE(cs.DisplayOrder, cs.ComboSubjectID), s.SubjectCode
@@ -164,7 +164,7 @@ public class ComboDAO extends DBContext {
         }
 
         String sql = """
-                INSERT INTO dbo.[ComboSubject] (ComboID, SubjectID, SemesterNo, DisplayOrder)
+                INSERT INTO dbo.[Combo_Subject] (ComboID, SubjectID, SemesterNo, DisplayOrder)
                 VALUES (?, ?, ?, ?)
                 """;
 

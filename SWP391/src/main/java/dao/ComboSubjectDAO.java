@@ -15,7 +15,7 @@ public class ComboSubjectDAO extends DBContext {
         String sql = """
                 SELECT cs.ComboID, cs.SubjectID, cs.SemesterNo,
                        s.SubjectCode, s.SubjectName
-                FROM dbo.[ComboSubject] cs
+                FROM dbo.[Combo_Subject] cs
                 JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
                 WHERE cs.ComboID = ?
                 ORDER BY COALESCE(cs.DisplayOrder, cs.ComboSubjectID), s.SubjectCode

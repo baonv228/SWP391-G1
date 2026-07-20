@@ -51,7 +51,7 @@ public class SyllabusDTO {
         private String lo;
         private String itu;
         private String studentMaterials;
-        private String sDownload;
+        private String studentDownload;
         private String studentTasks;
         private String urls;
 
@@ -69,8 +69,8 @@ public class SyllabusDTO {
         public void setItu(String itu) { this.itu = itu; }
         public String getStudentMaterials() { return studentMaterials; }
         public void setStudentMaterials(String v) { this.studentMaterials = v; }
-        public String getSDownload() { return sDownload; }
-        public void setSDownload(String sDownload) { this.sDownload = sDownload; }
+        public String getStudentDownload() { return studentDownload; }
+        public void setStudentDownload(String studentDownload) { this.studentDownload = studentDownload; }
         public String getStudentTasks() { return studentTasks; }
         public void setStudentTasks(String v) { this.studentTasks = v; }
         public String getUrls() { return urls; }

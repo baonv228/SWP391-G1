@@ -148,7 +148,7 @@
                                 <td><%= h(sessionItem.getLearningTeachingType()) %></td>
                                 <td><%= h(sessionItem.getItu()) %></td>
                                 <td><%= h(sessionItem.getStudentMaterials()) %></td>
-                                <td><%= h(sessionItem.getSDownload()) %></td>
+                                <td><%= h(sessionItem.getStudentDownload()) %></td>
                                 <td><%= h(sessionItem.getStudentTasks()) %></td>
                                 <td><%= h(sessionItem.getUrls()) %></td>
                             </tr>

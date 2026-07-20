@@ -25,6 +25,7 @@ public class MaterialDAO {
                 "ORDER BY UploadedAt DESC, MaterialID DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
