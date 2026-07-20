@@ -92,7 +92,8 @@ public class PLODAO extends DBContext {
                     int currId = rs.getInt("CurriculumID");
                     map.put("curriculumId", currId);
                     map.put("curriculumName", rs.getString("CurriculumName"));
-                    map.put("plos", getPLOsByCurriculumId(currId));
+                    // Only get PLOs assigned to this subject, NOT all PLOs in curriculum
+                    map.put("plos", getPLOsForSubjectInCurriculum(subjectId, currId));
                     result.add(map);
                 }
             }
@@ -100,6 +101,41 @@ public class PLODAO extends DBContext {
             System.out.println("getCurriculaWithPLOsForSubject error: " + e.getMessage());
         }
         return result;
+    }
+
+    /**
+     * Get only the PLOs that a specific Subject is responsible for within a Curriculum.
+     * Uses the Curriculum_Subject_PLO junction table.
+     */
+    public List<PLO> getPLOsForSubjectInCurriculum(int subjectId, int curriculumId) {
+        List<PLO> list = new ArrayList<>();
+        String sql = """
+                SELECT p.PloID, p.CurriculumID, p.PloCode, p.PloDescription, csp.ContributionLevel
+                FROM dbo.[PLO] p
+                JOIN dbo.[Curriculum_Subject_PLO] csp ON p.PloID = csp.PloID AND p.CurriculumID = csp.CurriculumID
+                JOIN dbo.[Curriculum_Subject] cs ON csp.CurriculumSubjectID = cs.CurriculumSubjectID
+                WHERE cs.SubjectID = ? AND cs.CurriculumID = ?
+                ORDER BY p.PloCode
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            ps.setInt(2, curriculumId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PLO p = new PLO();
+                    p.setPloId(rs.getInt("PloID"));
+                    p.setCurriculumId(rs.getInt("CurriculumID"));
+                    p.setPloCode(rs.getString("PloCode"));
+                    p.setPloDescription(rs.getString("PloDescription"));
+                    list.add(p);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getPLOsForSubjectInCurriculum error: " + e.getMessage());
+        }
+        return list;
     }
 
     /**

@@ -12,9 +12,9 @@
     <title>Quản lý vai trò — TPMS</title>
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
-            --primary-soft: #e0e7ff;
+            --primary: #d95f12;
+            --primary-dark: #b94f0c;
+            --primary-soft: #fff1e7;
             --ink: #0f172a;
             --muted: #475569;
             --line: #e2e8f0;

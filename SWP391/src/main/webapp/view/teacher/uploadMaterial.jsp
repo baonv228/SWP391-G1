@@ -25,11 +25,11 @@
         </div>
     </c:if>
 
-    <div class="row g-4">
+    <div class="row g-4 upload-material-row align-items-stretch">
 
         <%-- Upload Form (left) --%>
-        <div class="col-lg-5">
-            <div class="teacher-card" id="upload-form-card">
+        <div class="col-md-5">
+            <div class="teacher-card h-100" id="upload-form-card">
                 <div class="teacher-card-header">
                     <i class="bi bi-cloud-upload me-2"></i>Upload New Material
                 </div>
@@ -43,7 +43,7 @@
                             <label for="syllabusId" class="form-label fw-semibold">
                                 Syllabus <span class="text-danger">*</span>
                             </label>
-                            <select name="syllabusId" id="syllabusId" class="form-select" required>
+                            <select name="syllabusId" id="syllabusId" class="form-select" required onchange="if(this.value) { window.location.href='${pageContext.request.contextPath}/teacher/upload-material?syllabusId=' + this.value; }">
                                 <option value="">— Select Syllabus —</option>
                                 <c:forEach var="s" items="${syllabi}">
                                     <option value="${s.syllabusId}"
@@ -54,22 +54,8 @@
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="materialName" class="form-label fw-semibold">
-                                Material Name <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" name="materialName" id="materialName"
-                                   class="form-control" placeholder="e.g. Lab01 - Java Basics"
-                                   maxlength="200" required/>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="visibility" class="form-label fw-semibold">Visibility</label>
-                            <select name="visibility" id="visibility" class="form-select">
-                                <option value="Public">Public (all logged-in users)</option>
-                                <option value="Private">Private (admin/teacher only)</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="materialName" id="materialName" value="" />
+                        <input type="hidden" name="visibility" value="Public" />
 
                         <div class="mb-3">
                             <label for="materialFile" class="form-label fw-semibold">
@@ -99,8 +85,8 @@
         </div>
 
         <%-- Existing Materials (right) --%>
-        <div class="col-lg-7">
-            <div class="teacher-card" id="existing-materials-card">
+        <div class="col-md-7">
+            <div class="teacher-card h-100" id="existing-materials-card">
                 <div class="teacher-card-header">
                     <i class="bi bi-folder2-open me-2"></i>
                     Existing Materials
@@ -108,6 +94,9 @@
                         <span class="ms-2 badge bg-light text-secondary border">
                             Syllabus #${selectedSyllabusId}
                         </span>
+                        <c:if test="${totalMaterials > 0}">
+                            <span class="ms-1 badge bg-secondary">${totalMaterials}</span>
+                        </c:if>
                     </c:if>
                 </div>
                 <div class="teacher-card-body">
@@ -127,15 +116,20 @@
                                             <th>Type</th>
                                             <th>Visibility</th>
                                             <th>Uploaded</th>
+                                            <th class="text-center">Download</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <c:forEach var="mat" items="${existingMaterials}" varStatus="s">
                                             <tr class="${s.index % 2 == 0 ? 'row-even' : 'row-odd'}">
-                                                <td>${s.index + 1}</td>
+                                                <td>${materialPagination.offset + s.index + 1}</td>
                                                 <td>
                                                     <i class="bi ${mat.typeIconClass} material-type-icon me-1"></i>
-                                                    ${mat.materialName}
+                                                    <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                                       class="text-decoration-none fw-semibold" style="color: var(--fpt-orange);"
+                                                       title="Download ${fn:escapeXml(mat.materialName)}">
+                                                        ${mat.materialName}
+                                                    </a>
                                                 </td>
                                                 <td>
                                                     <span class="badge material-type-badge type-${fn:toLowerCase(mat.materialType)}">
@@ -153,11 +147,39 @@
                                                     </c:choose>
                                                 </td>
                                                 <td style="font-size:.78rem;" class="text-muted">${mat.uploadedAt}</td>
+                                                <td class="text-center">
+                                                    <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                                       class="btn btn-sm btn-upload-submit py-0 px-2"
+                                                       title="Download ${fn:escapeXml(mat.materialName)}">
+                                                        <i class="bi bi-cloud-arrow-down-fill"></i>
+                                                    </a>
+                                                </td>
                                             </tr>
                                         </c:forEach>
                                     </tbody>
                                 </table>
                             </div>
+                            <c:if test="${not empty materialPagination and materialPagination.totalPages > 1}">
+                                <nav class="mt-2">
+                                    <ul class="pagination fpt-pagination mb-0">
+                                        <c:if test="${materialPagination.hasPrevious()}">
+                                            <li class="page-item">
+                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&page=${materialPagination.previousPage}">Previous</a>
+                                            </li>
+                                        </c:if>
+                                        <c:forEach begin="1" end="${materialPagination.totalPages}" var="p">
+                                            <li class="page-item ${p == materialPagination.currentPage ? 'active' : ''}">
+                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&page=${p}">${p}</a>
+                                            </li>
+                                        </c:forEach>
+                                        <c:if test="${materialPagination.hasNext()}">
+                                            <li class="page-item">
+                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&page=${materialPagination.nextPage}">Next</a>
+                                            </li>
+                                        </c:if>
+                                    </ul>
+                                </nav>
+                            </c:if>
                         </c:otherwise>
                     </c:choose>
                 </div>
@@ -173,6 +195,7 @@ function previewFile(input) {
     const dropHint = document.querySelector('.upload-drop-hint');
     if (input.files && input.files[0]) {
         const file = input.files[0];
+        document.getElementById('materialName').value = file.name;
         const sizeStr = file.size > 1048576
             ? (file.size / 1048576).toFixed(1) + ' MB'
             : (file.size / 1024).toFixed(0) + ' KB';

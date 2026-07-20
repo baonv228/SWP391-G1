@@ -1,14 +1,17 @@
 <%@page import="java.util.List"%>
 <%@page import="model.Curriculum"%>
+<%@page import="model.PO"%>
 <%@page import="model.TrainingProgram"%>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     TrainingProgram program = (TrainingProgram) request.getAttribute("program");
     List<Curriculum> curriculums = (List<Curriculum>) request.getAttribute("curriculums");
+    List<PO> pos = (List<PO>) request.getAttribute("pos");
 
     String majorName = "";
     String programCode = "";
     String programName = "";
+    String academicYear = "";
     String description = "";
     String status = "";
 
@@ -16,6 +19,7 @@
         majorName = program.getMajorName() != null ? program.getMajorName() : "";
         programCode = program.getProgramCode() != null ? program.getProgramCode() : "";
         programName = program.getProgramName() != null ? program.getProgramName() : "";
+        academicYear = program.getAcademicYear() != null ? program.getAcademicYear() : "";
         description = program.getDescription() != null ? program.getDescription() : "";
         status = program.getStatus() != null ? program.getStatus() : "";
     }
@@ -61,6 +65,10 @@
                         <dd><%= programName %></dd>
                     </div>
                     <div>
+                        <dt>Năm học</dt>
+                        <dd><%= academicYear %></dd>
+                    </div>
+                    <div>
                         <dt>Trạng thái</dt>
                         <dd><span class="status-pill"><%= status %></span></dd>
                     </div>
@@ -69,8 +77,21 @@
                         <dd><%= description %></dd>
                     </div>
                     <div class="wide">
-                        <dt>Description</dt>
-                        <dd><%= description %></dd>
+                        <dt>PO</dt>
+                        <dd>
+                            <% if (pos == null || pos.isEmpty()) { %>
+                            <span class="empty-inline">Chưa có PO.</span>
+                            <% } else { %>
+                            <ul class="po-list">
+                                <% for (PO po : pos) {
+                                    String poCode = po.getPoCode() != null ? po.getPoCode() : "";
+                                    String poDescription = po.getPoDescription() != null ? po.getPoDescription() : "";
+                                %>
+                                <li><strong><%= poCode %></strong><span><%= poDescription %></span></li>
+                                <% } %>
+                            </ul>
+                            <% } %>
+                        </dd>
                     </div>
                 </dl>
             </section>

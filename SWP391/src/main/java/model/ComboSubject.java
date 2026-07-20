@@ -1,29 +1,22 @@
 package model;
 
 public class ComboSubject {
-    private int comboSubjectId;
     private int comboId;
     private int subjectId;
     private Integer semesterNo;
-    private Integer displayOrder;
+    private String note;
+    
+    // Transient fields for displaying subject details
+    private String subjectCode;
+    private String subjectName;
 
     public ComboSubject() {
     }
 
-    public ComboSubject(int comboSubjectId, int comboId, int subjectId, Integer semesterNo, Integer displayOrder) {
-        this.comboSubjectId = comboSubjectId;
+    public ComboSubject(int comboId, int subjectId, String note) {
         this.comboId = comboId;
         this.subjectId = subjectId;
-        this.semesterNo = semesterNo;
-        this.displayOrder = displayOrder;
-    }
-
-    public int getComboSubjectId() {
-        return comboSubjectId;
-    }
-
-    public void setComboSubjectId(int comboSubjectId) {
-        this.comboSubjectId = comboSubjectId;
+        this.note = note;
     }
 
     public int getComboId() {
@@ -50,11 +43,27 @@ public class ComboSubject {
         this.semesterNo = semesterNo;
     }
 
-    public Integer getDisplayOrder() {
-        return displayOrder;
+    public String getNote() {
+        return note;
     }
 
-    public void setDisplayOrder(Integer displayOrder) {
-        this.displayOrder = displayOrder;
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public String getSubjectCode() {
+        return subjectCode;
+    }
+
+    public void setSubjectCode(String subjectCode) {
+        this.subjectCode = subjectCode;
+    }
+
+    public String getSubjectName() {
+        return subjectName;
+    }
+
+    public void setSubjectName(String subjectName) {
+        this.subjectName = subjectName;
     }
 }
