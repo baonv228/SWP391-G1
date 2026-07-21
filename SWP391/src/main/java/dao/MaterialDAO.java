@@ -12,14 +12,18 @@ import java.util.List;
  */
 public class MaterialDAO {
 
+    private static final String MATERIAL_COLUMNS =
+            "MaterialID, SyllabusID, MaterialName, FilePath, " +
+            "MaterialType, Visibility, Status, UploadedAt, " +
+            "ISNULL(DownloadCount, 0) AS DownloadCount ";
+
     // ----------------------------------------------------------------
     //  Read
     // ----------------------------------------------------------------
 
     public List<MaterialDTO> getMaterialsBySyllabusId(int syllabusId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT MaterialID, SyllabusID, MaterialName, FilePath, " +
-                "MaterialType, Visibility, Status, UploadedAt " +
+        String sql = "SELECT " + MATERIAL_COLUMNS +
                 "FROM Learning_Material " +
                 "WHERE SyllabusID = ? AND Status = 'Active' " +
                 "ORDER BY UploadedAt DESC, MaterialID DESC";
@@ -49,8 +53,7 @@ public class MaterialDAO {
     public List<MaterialDTO> getMaterialsBySyllabusId(int syllabusId, int page, int pageSize) throws SQLException {
         int offset = (page - 1) * pageSize;
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT MaterialID, SyllabusID, MaterialName, FilePath, " +
-                "MaterialType, Visibility, Status, UploadedAt " +
+        String sql = "SELECT " + MATERIAL_COLUMNS +
                 "FROM Learning_Material " +
                 "WHERE SyllabusID = ? AND Status = 'Active' " +
                 "ORDER BY UploadedAt DESC, MaterialID DESC " +
@@ -68,8 +71,7 @@ public class MaterialDAO {
     }
 
     public MaterialDTO getMaterialById(int materialId) throws SQLException {
-        String sql = "SELECT MaterialID, SyllabusID, MaterialName, FilePath, " +
-                "MaterialType, Visibility, Status, UploadedAt " +
+        String sql = "SELECT " + MATERIAL_COLUMNS +
                 "FROM Learning_Material " +
                 "WHERE MaterialID = ? AND Status = 'Active'";
         try (Connection conn = DBContext.getConnection();
@@ -84,8 +86,7 @@ public class MaterialDAO {
 
     public List<MaterialDTO> getAllMaterialsBySyllabusId(int syllabusId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT MaterialID, SyllabusID, MaterialName, FilePath, " +
-                "MaterialType, Visibility, Status, UploadedAt " +
+        String sql = "SELECT " + MATERIAL_COLUMNS +
                 "FROM Learning_Material " +
                 "WHERE SyllabusID = ? " +
                 "ORDER BY UploadedAt";
@@ -103,7 +104,8 @@ public class MaterialDAO {
     public List<MaterialDTO> getMaterialsByUploader(int userId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
         String sql = "SELECT m.MaterialID, m.SyllabusID, m.MaterialName, m.FilePath, " +
-                "m.MaterialType, m.Visibility, m.Status, m.UploadedAt " +
+                "m.MaterialType, m.Visibility, m.Status, m.UploadedAt, " +
+                "ISNULL(m.DownloadCount, 0) AS DownloadCount " +
                 "FROM Learning_Material m " +
                 "WHERE m.UploadedBy = ? AND m.Status = 'Active' " +
                 "ORDER BY m.UploadedAt DESC";
@@ -166,6 +168,18 @@ public class MaterialDAO {
         }
     }
 
+    /** Atomically increments the download counter for an active material. */
+    public boolean incrementDownloadCount(int materialId) throws SQLException {
+        String sql = "UPDATE Learning_Material " +
+                "SET DownloadCount = ISNULL(DownloadCount, 0) + 1 " +
+                "WHERE MaterialID = ? AND Status = 'Active'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, materialId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     // ----------------------------------------------------------------
     //  Helper
     // ----------------------------------------------------------------
@@ -180,6 +194,7 @@ public class MaterialDAO {
         dto.setVisibility(rs.getString("Visibility"));
         dto.setStatus(rs.getString("Status"));
         dto.setUploadedAt(rs.getTimestamp("UploadedAt"));
+        dto.setDownloadCount(rs.getInt("DownloadCount"));
         return dto;
     }
 }

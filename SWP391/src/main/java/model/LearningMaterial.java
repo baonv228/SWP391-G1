@@ -12,6 +12,7 @@ public class LearningMaterial {
     private String visibility;
     private String status;
     private Timestamp uploadedAt;
+    private int downloadCount;
 
     public LearningMaterial() {
     }
@@ -98,5 +99,13 @@ public class LearningMaterial {
 
     public void setUploadedAt(Timestamp uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+    public int getDownloadCount() {
+        return downloadCount;
+    }
+
+    public void setDownloadCount(int downloadCount) {
+        this.downloadCount = downloadCount;
     }
 }

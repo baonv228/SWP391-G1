@@ -16,6 +16,7 @@ public class MaterialDTO {
     private String status;          // Active / Inactive
     private Timestamp uploadedAt;
     private long fileSizeBytes;     // 0 if not tracked
+    private int downloadCount;
 
     public MaterialDTO() {}
 
@@ -71,4 +72,7 @@ public class MaterialDTO {
 
     public long getFileSizeBytes() { return fileSizeBytes; }
     public void setFileSizeBytes(long fileSizeBytes) { this.fileSizeBytes = fileSizeBytes; }
+
+    public int getDownloadCount() { return downloadCount; }
+    public void setDownloadCount(int downloadCount) { this.downloadCount = downloadCount; }
 }
