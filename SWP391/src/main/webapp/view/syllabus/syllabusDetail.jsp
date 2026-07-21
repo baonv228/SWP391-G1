@@ -64,6 +64,14 @@
     border: 1px solid #e9ecef;
     vertical-align: middle;
 }
+.syllabus-table-scroll {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+.syllabus-table-scroll .table-syllabus-detail {
+    margin-bottom: 0;
+    min-width: 1450px;
+}
 .badge-main {
     background-color: #e6f4ea;
     color: #137333;
@@ -385,7 +393,8 @@
                                             </c:when>
                                             <c:otherwise>
                                                 <c:forEach var="p" items="${clo.plos}">
-                                                    <span class="badge bg-secondary text-white me-2 p-1 px-2" title="${p.ploDescription}">${p.ploName}</span>
+                                                    <span class="badge bg-secondary text-white me-2 p-1 px-2"
+                                                          title="${fn:escapeXml(p.ploDescription)}"><c:out value="${p.ploCode}"/></span>
                                                 </c:forEach>
                                             </c:otherwise>
                                         </c:choose>
@@ -453,6 +462,92 @@
                     </c:choose>
                 </tbody>
             </table>
+
+            <div class="materials-section-title">
+                ${fn:length(syllabus.constructiveQuestions)} constructive question(s)
+            </div>
+            <c:if test="${syllabus.constructiveQuestions != null and fn:length(syllabus.constructiveQuestions) gt 0}">
+                <table class="table-syllabus-detail" id="constructive-questions-table">
+                    <thead>
+                        <tr>
+                            <th style="width:55px;"></th>
+                            <th style="width:120px;">Session No</th>
+                            <th style="width:280px;">Name</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="question" items="${syllabus.constructiveQuestions}" varStatus="questionStatus">
+                            <tr>
+                                <td class="text-center">${questionStatus.index + 1}</td>
+                                <td class="text-center"><c:out value="${question.sessionNo}"/></td>
+                                <td><c:out value="${question.name}"/></td>
+                                <td><c:out value="${question.details}"/></td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </c:if>
+
+            <div class="materials-section-title">
+                ${fn:length(syllabus.assessments)} assessment(s)
+            </div>
+            <div class="syllabus-table-scroll">
+                <table class="table-syllabus-detail" id="assessments-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th style="width:65px;">Part</th>
+                            <th style="width:80px;">Weight</th>
+                            <th>Completion Criteria</th>
+                            <th>Duration</th>
+                            <th>CLO</th>
+                            <th>Question Type</th>
+                            <th>No. Question</th>
+                            <th>Knowledge and Skill</th>
+                            <th>Grading Guide</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:choose>
+                            <c:when test="${empty syllabus.assessments}">
+                                <tr>
+                                    <td colspan="12" class="text-muted text-center py-3">No assessments added yet.</td>
+                                </tr>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach var="assessment" items="${syllabus.assessments}">
+                                    <tr>
+                                        <td><c:out value="${assessment.category}"/></td>
+                                        <td><c:out value="${assessment.type}"/></td>
+                                        <td class="text-center"><c:out value="${assessment.part}"/></td>
+                                        <td class="text-center">${assessment.weight}%</td>
+                                        <td><c:out value="${assessment.completionCriteria}"/></td>
+                                        <td><c:out value="${assessment.duration}"/></td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${empty assessment.cloNames}">—</c:when>
+                                                <c:otherwise>
+                                                    <c:forEach var="cloName" items="${assessment.cloNames}" varStatus="cloStatus">
+                                                        <c:if test="${not cloStatus.first}">, </c:if><c:out value="${cloName}"/>
+                                                    </c:forEach>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td><c:out value="${assessment.questionType}"/></td>
+                                        <td class="text-center"><c:out value="${assessment.noQuestion}"/></td>
+                                        <td><c:out value="${assessment.knowledgeAndSkill}"/></td>
+                                        <td><c:out value="${assessment.gradingGuide}"/></td>
+                                        <td><c:out value="${assessment.note}"/></td>
+                                    </tr>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
+                    </tbody>
+                </table>
+            </div>
 
         </c:otherwise>
     </c:choose>

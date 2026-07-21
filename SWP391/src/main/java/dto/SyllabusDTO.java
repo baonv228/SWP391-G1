@@ -38,6 +38,7 @@ public class SyllabusDTO {
     private List<model.SyllabusMaterial> textbooks = new java.util.ArrayList<>();
     private List<model.CLO> clos = new java.util.ArrayList<>();
     private List<model.SyllabusAssessment> assessments = new java.util.ArrayList<>();
+    private List<model.ConstructiveQuestion> constructiveQuestions = new java.util.ArrayList<>();
 
     // Extra display fields
     private List<String> learningOutcomes = new java.util.ArrayList<>();
@@ -184,4 +185,7 @@ public class SyllabusDTO {
 
     public List<model.SyllabusAssessment> getAssessments() { return assessments; }
     public void setAssessments(List<model.SyllabusAssessment> v) { this.assessments = v; }
+
+    public List<model.ConstructiveQuestion> getConstructiveQuestions() { return constructiveQuestions; }
+    public void setConstructiveQuestions(List<model.ConstructiveQuestion> v) { this.constructiveQuestions = v; }
 }
