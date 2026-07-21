@@ -6,16 +6,17 @@ package model;
  */
 public class PLO {
     private int ploId;
-    private int programId;
+    private int curriculumId;
     private String ploCode;
     private String ploDescription;
+    private String clientKey;
 
     public PLO() {
     }
 
-    public PLO(int ploId, int programId, String ploCode, String ploDescription) {
+    public PLO(int ploId, int curriculumId, String ploCode, String ploDescription) {
         this.ploId = ploId;
-        this.programId = programId;
+        this.curriculumId = curriculumId;
         this.ploCode = ploCode;
         this.ploDescription = ploDescription;
     }
@@ -28,12 +29,20 @@ public class PLO {
         this.ploId = ploId;
     }
 
+    public int getCurriculumId() {
+        return curriculumId;
+    }
+
+    public void setCurriculumId(int curriculumId) {
+        this.curriculumId = curriculumId;
+    }
+
     public int getProgramId() {
-        return programId;
+        return curriculumId;
     }
 
     public void setProgramId(int programId) {
-        this.programId = programId;
+        this.curriculumId = programId;
     }
 
     public String getPloCode() {
@@ -50,5 +59,13 @@ public class PLO {
 
     public void setPloDescription(String ploDescription) {
         this.ploDescription = ploDescription;
+    }
+
+    public String getClientKey() {
+        return clientKey;
+    }
+
+    public void setClientKey(String clientKey) {
+        this.clientKey = clientKey;
     }
 }

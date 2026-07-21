@@ -63,19 +63,22 @@ public class CourseServlet extends HttpServlet {
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String subjectCode = safeTrim(request.getParameter("subjectCode"));
+        String selectedStatus = safeTrim(request.getParameter("status"));
         int page = parsePositiveInt(request.getParameter("page"), 1);
-        int totalItems = courseDao.countCourses(subjectCode);
+        int totalItems = courseDao.countCourses(subjectCode, selectedStatus);
         int totalPages = Math.max(1, (int) Math.ceil((double) totalItems / PAGE_SIZE));
 
         if (page > totalPages) {
             page = totalPages;
         }
 
-        List<Subject> courses = courseDao.getCourses(subjectCode, page, PAGE_SIZE);
+        List<Subject> courses = courseDao.getCourses(subjectCode, selectedStatus, page, PAGE_SIZE);
         Map<Integer, List<String>> prerequisiteMap = courseDao.getPrerequisiteCodesBySubjectIds(courses);
         request.setAttribute("courses", courses);
         request.setAttribute("prerequisiteMap", prerequisiteMap);
+        request.setAttribute("statusOptions", courseDao.getCourseStatuses());
         request.setAttribute("subjectCode", subjectCode);
+        request.setAttribute("selectedStatus", selectedStatus);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalItems", totalItems);

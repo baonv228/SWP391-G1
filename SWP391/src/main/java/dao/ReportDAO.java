@@ -215,6 +215,103 @@ public class ReportDAO extends DBContext {
     }
 
     // =========================================================
+    // ADMIN SYSTEM REPORTS — users / activity proxies
+    // =========================================================
+    public Map<String, Integer> countUsersByRole() throws SQLException {
+        return queryGroupBy("""
+                SELECT ISNULL(r.RoleName, 'Unknown') AS Label, COUNT(*) AS cnt
+                FROM dbo.[User] u
+                LEFT JOIN dbo.[Role] r ON u.RoleID = r.RoleID
+                GROUP BY r.RoleName
+                ORDER BY r.RoleName
+                """);
+    }
+
+    public Map<String, Integer> countUsersByStatus() throws SQLException {
+        return queryGroupBy("""
+                SELECT ISNULL(Status, 'Unknown') AS Label, COUNT(*) AS cnt
+                FROM dbo.[User]
+                GROUP BY Status
+                ORDER BY Status
+                """);
+    }
+
+    /**
+     * Account-creation activity proxy (User.CreatedAt).
+     * Empty from/to means no bound on that side.
+     */
+    public Map<String, Integer> countUsersCreatedByDay(String fromDate, String toDate) throws SQLException {
+        Map<String, Integer> map = new LinkedHashMap<>();
+        StringBuilder sql = new StringBuilder("""
+                SELECT CONVERT(varchar(10), CreatedAt, 23) AS DayLabel, COUNT(*) AS cnt
+                FROM dbo.[User]
+                WHERE 1 = 1
+                """);
+        if (fromDate != null && !fromDate.isBlank()) {
+            sql.append(" AND CAST(CreatedAt AS date) >= ? ");
+        }
+        if (toDate != null && !toDate.isBlank()) {
+            sql.append(" AND CAST(CreatedAt AS date) <= ? ");
+        }
+        sql.append(" GROUP BY CONVERT(varchar(10), CreatedAt, 23) ORDER BY DayLabel ");
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            if (fromDate != null && !fromDate.isBlank()) {
+                ps.setString(idx++, fromDate.trim());
+            }
+            if (toDate != null && !toDate.isBlank()) {
+                ps.setString(idx, toDate.trim());
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getString(1), rs.getInt(2));
+                }
+            }
+        }
+        return map;
+    }
+
+    public int countUsersCreatedInRange(String fromDate, String toDate) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM dbo.[User] WHERE 1 = 1 ");
+        if (fromDate != null && !fromDate.isBlank()) {
+            sql.append(" AND CAST(CreatedAt AS date) >= ? ");
+        }
+        if (toDate != null && !toDate.isBlank()) {
+            sql.append(" AND CAST(CreatedAt AS date) <= ? ");
+        }
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            if (fromDate != null && !fromDate.isBlank()) {
+                ps.setString(idx++, fromDate.trim());
+            }
+            if (toDate != null && !toDate.isBlank()) {
+                ps.setString(idx, toDate.trim());
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    public Map<String, Integer> getAdminSummary() throws SQLException {
+        Map<String, Integer> summary = getTotalSummary();
+        try (Connection con = getConnection();
+             Statement st = con.createStatement()) {
+            addCount(st, summary, "Total Programs",
+                    "SELECT COUNT(*) FROM Training_Program");
+            addCount(st, summary, "Deactivated Users",
+                    "SELECT COUNT(*) FROM dbo.[User] WHERE Status <> 'Active'");
+        } catch (SQLException e) {
+            // Training_Program may be missing on partial DBs — keep base summary
+            System.out.println("getAdminSummary extra counts: " + e.getMessage());
+        }
+        return summary;
+    }
+
+    // =========================================================
     // HELPERS
     // =========================================================
     private Map<String, Integer> queryGroupBy(String sql) throws SQLException {

@@ -64,6 +64,7 @@
                         </c:choose>
                     </div>
                 </div>
+               
             </div>
 
             <%-- Semester Breakdown --%>
@@ -74,7 +75,16 @@
                         <div class="semester-block" id="semester-block-${entry.key}">
                             <div class="semester-header">Semester ${entry.key}</div>
                             <div class="table-responsive">
-                                <table class="fpt-table" id="semester-${entry.key}-table">
+                                <table class="fpt-table curriculum-semester-table"
+                                       id="semester-${entry.key}-table"
+                                       style="table-layout: fixed;">
+                                    <colgroup>
+                                        <col style="width: 16.5%;">
+                                        <col style="width: 38%;">
+                                        <col style="width: 11%;">
+                                        <col style="width: 13%;">
+                                        <col style="width: 21.5%;">
+                                    </colgroup>
                                     <thead>
                                         <tr>
                                             <th>Subject Code</th>
@@ -89,10 +99,18 @@
                                             <tr class="${subStatus.index % 2 == 0 ? 'row-even' : 'row-odd'}"
                                                 id="semester-${entry.key}-subject-${sub.subjectId}">
                                                 <td>
-                                                    <a href="${pageContext.request.contextPath}/learning-path?subjectCode=${sub.subjectCode}"
-                                                       class="link-detail" id="link-lp-${sub.subjectCode}">
-                                                        ${sub.subjectCode}
-                                                    </a>
+                                                    <c:choose>
+                                                        <c:when test="${sub.syllabusId > 0}">
+                                                            <a href="${pageContext.request.contextPath}/syllabus/detail?syllabusId=${sub.syllabusId}"
+                                                               class="link-detail" id="link-syllabus-${sub.subjectCode}">
+                                                                ${sub.subjectCode}
+                                                            </a>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="text-muted">${sub.subjectCode}</span>
+                                                            <span class="badge bg-light text-secondary border ms-1">No syllabus</span>
+                                                        </c:otherwise>
+                                                    </c:choose>
                                                 </td>
                                                 <td>${sub.subjectName}</td>
                                                 <td>${sub.credits}</td>
@@ -126,9 +144,18 @@
                 </div>
             </div>
 
-            <div class="mt-4">
+            <div class="mt-4 d-flex gap-2 flex-wrap">
                 <a href="${pageContext.request.contextPath}/curriculum" class="btn btn-back" id="btn-back-curriculum">
                     <i class="bi bi-arrow-left me-1"></i>Back to Curriculum List
+                </a>
+                <a href="${pageContext.request.contextPath}/curriculum/po?action=list&amp;curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-po">
+                    <i class="bi bi-eye-fill"></i> View PO
+                </a>
+                <a href="${pageContext.request.contextPath}/combo?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-combo">
+                    <i class="bi bi-stack"></i> View Combo
+                </a>
+                <a href="${pageContext.request.contextPath}/curriculum/elective?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-elective">
+                    <i class="bi bi-list-check"></i> View Elective
                 </a>
             </div>
         </c:otherwise>

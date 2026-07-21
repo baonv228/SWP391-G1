@@ -28,6 +28,7 @@ import service.UserService;
 public class GoogleLoginServlet extends HttpServlet {
 
     private static final String SESSION_STATE = "google_oauth_state";
+    private static final String SESSION_REDIRECT_URI = "google_oauth_redirect_uri";
     private final UserService userService = new UserService();
 
     @Override
@@ -40,18 +41,23 @@ public class GoogleLoginServlet extends HttpServlet {
         }
     }
 
-    // Buoc 1: tao state chong CSRF va chuyen huong sang Google
+    // Buoc 1: tao state chong CSRF va chuyen huong sang Google (chon tai khoan)
     private void handleStart(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String state = UUID.randomUUID().toString();
-        request.getSession(true).setAttribute(SESSION_STATE, state);
+        String redirectUri = GoogleOAuthConfig.buildRedirectUri(request);
 
-        String authUrl = new GoogleAuthorizationCodeRequestUrl(
+        HttpSession session = request.getSession(true);
+        session.setAttribute(SESSION_STATE, state);
+        session.setAttribute(SESSION_REDIRECT_URI, redirectUri);
+
+        // Dùng set("prompt", ...) thay vì setPrompt() vì một số bản google-api-client không có method đó
+        GoogleAuthorizationCodeRequestUrl authRequest = new GoogleAuthorizationCodeRequestUrl(
                 GoogleOAuthConfig.CLIENT_ID,
-                GoogleOAuthConfig.REDIRECT_URI,
-                Arrays.asList(GoogleOAuthConfig.SCOPES.split(" ")))
-                .setState(state)
-                .build();
-        response.sendRedirect(authUrl);
+                redirectUri,
+                Arrays.asList(GoogleOAuthConfig.SCOPES.split(" ")));
+        authRequest.setState(state);
+        authRequest.set("prompt", GoogleOAuthConfig.PROMPT);
+        response.sendRedirect(authRequest.build());
     }
 
     // Buoc 2: xu ly callback tu Google
@@ -73,6 +79,12 @@ public class GoogleLoginServlet extends HttpServlet {
         }
         session.removeAttribute(SESSION_STATE);
 
+        String redirectUri = (String) session.getAttribute(SESSION_REDIRECT_URI);
+        session.removeAttribute(SESSION_REDIRECT_URI);
+        if (redirectUri == null || redirectUri.isBlank()) {
+            redirectUri = GoogleOAuthConfig.buildRedirectUri(request);
+        }
+
         String code = request.getParameter("code");
         if (code == null || code.isBlank()) {
             redirectLoginError(request, response, "Không nhận được mã xác thực từ Google.");
@@ -87,7 +99,7 @@ public class GoogleLoginServlet extends HttpServlet {
                     GoogleOAuthConfig.CLIENT_ID,
                     GoogleOAuthConfig.CLIENT_SECRET,
                     code,
-                    GoogleOAuthConfig.REDIRECT_URI)
+                    redirectUri)
                     .execute();
 
             // Lay email + ten tu id_token
@@ -108,8 +120,15 @@ public class GoogleLoginServlet extends HttpServlet {
                 return;
             }
 
-            request.getSession(true).setAttribute("user", user);
-            response.sendRedirect(request.getContextPath() + "/index.jsp?loginSuccess=1");
+            HttpSession loginSession = request.getSession(true);
+            loginSession.setAttribute("user", user);
+            loginSession.setAttribute("roleId", user.getRoleId());
+            if (user.getRole() != null) {
+                loginSession.setAttribute("roleName", user.getRole().getRoleName());
+            }
+
+            // Vao he thong theo vai tro (giong dang nhap thuong)
+            response.sendRedirect(request.getContextPath() + "/home");
         } catch (Exception e) {
             System.out.println("GoogleLogin callback error: " + e.getMessage());
             redirectLoginError(request, response, "Đăng nhập bằng Google thất bại. Vui lòng thử lại.");

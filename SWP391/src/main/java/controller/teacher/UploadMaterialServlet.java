@@ -77,12 +77,12 @@ public class UploadMaterialServlet extends HttpServlet {
                 request.setAttribute("totalMaterials", total);
             }
 
-            request.getRequestDispatcher("/views/teacher/uploadMaterial.jsp")
+            request.getRequestDispatcher("/view/teacher/uploadMaterial.jsp")
                     .forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("DB error in UploadMaterialServlet GET", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 

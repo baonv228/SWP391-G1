@@ -73,10 +73,10 @@ public class DownloadMaterialServlet extends HttpServlet {
         }
 
         int materialId = Integer.parseInt(materialIdParam.trim());
+        MaterialDAO dao = new MaterialDAO();
 
         // ── 3. Load material metadata from DB ─────────────────────────────
         MaterialDTO material;
-        MaterialDAO dao = new MaterialDAO();
         try {
             material = dao.getMaterialById(materialId);
         } catch (SQLException e) {
@@ -117,9 +117,9 @@ public class DownloadMaterialServlet extends HttpServlet {
             return;
         }
 
-        // ── 5. Stream the file ────────────────────────────────────────────
         recordDownload(dao, materialId);
 
+        // ── 5. Stream the file ────────────────────────────────────────────
         String contentType = resolveContentType(material.getMaterialType(), file.getName());
         response.setContentType(contentType);
         response.setContentLengthLong(file.length());
@@ -146,12 +146,11 @@ public class DownloadMaterialServlet extends HttpServlet {
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    /** Records a successful download request without blocking the download. */
     private void recordDownload(MaterialDAO dao, int materialId) {
         try {
             dao.incrementDownloadCount(materialId);
         } catch (SQLException e) {
-            getServletContext().log("Failed to update material download count: " + materialId, e);
+            getServletContext().log("Unable to update material download count for materialId=" + materialId, e);
         }
     }
 

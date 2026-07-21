@@ -8,6 +8,7 @@ public class SubjectDTO {
     private int semester;
     private String status;
     private boolean required;
+    private int syllabusId;
 
     public SubjectDTO() {}
 
@@ -34,4 +35,6 @@ public class SubjectDTO {
     public void setStatus(String status) { this.status = status; }
     public boolean isRequired() { return required; }
     public void setRequired(boolean required) { this.required = required; }
+    public int getSyllabusId() { return syllabusId; }
+    public void setSyllabusId(int syllabusId) { this.syllabusId = syllabusId; }
 }

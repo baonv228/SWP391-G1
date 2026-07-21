@@ -98,3 +98,4 @@ public class CloudinaryUtil {
         return (dot >= 0) ? fileName.substring(dot + 1) : "";
     }
 }
+    

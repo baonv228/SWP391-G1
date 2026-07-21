@@ -29,6 +29,7 @@ public class MaterialDAO {
                 "ORDER BY UploadedAt DESC, MaterialID DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
@@ -168,7 +169,6 @@ public class MaterialDAO {
         }
     }
 
-    /** Atomically increments the download counter for an active material. */
     public boolean incrementDownloadCount(int materialId) throws SQLException {
         String sql = "UPDATE Learning_Material " +
                 "SET DownloadCount = ISNULL(DownloadCount, 0) + 1 " +

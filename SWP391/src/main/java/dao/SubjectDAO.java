@@ -344,4 +344,27 @@ public class SubjectDAO extends DBContext {
         }
         return sb.toString();
     }
+
+    public List<Integer> getPrerequisiteSubjectIds(int subjectId) {
+        List<Integer> ids = new ArrayList<>();
+        String sql = """
+                SELECT RequiredSubjectID
+                FROM dbo.[Subject_Prerequisite]
+                WHERE SubjectID = ?
+                ORDER BY RequiredSubjectID
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt("RequiredSubjectID"));
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("getPrerequisiteSubjectIds error: " + e.getMessage());
+        }
+        return ids;
+    }
 }
