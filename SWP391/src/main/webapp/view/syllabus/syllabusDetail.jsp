@@ -279,10 +279,12 @@
                                     <td class="text-center">${s.index + 1}</td>
                                     <td>
                                         <i class="bi ${mat.typeIconClass} me-1" style="color: #f3722c;"></i>
-                                        <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                        <a href="javascript:void(0)"
+                                           data-file-path="${fn:escapeXml(mat.filePath)}"
+                                           onclick="downloadSessionMaterial(this.dataset.filePath)"
                                            class="text-decoration-none fw-semibold" style="color: #f3722c;"
                                            title="Download ${fn:escapeXml(mat.materialName)}">
-                                            ${mat.materialName}
+                                            <c:out value="${mat.materialName}"/>
                                         </a>
                                     </td>
                                     <td>
@@ -298,9 +300,11 @@
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
-                                    <td class="text-muted" style="font-size:.8rem;">${mat.uploadedAt}</td>
+                                    <td class="text-muted" style="font-size:.8rem;">From S-Download</td>
                                     <td class="text-center">
-                                        <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                        <a href="javascript:void(0)"
+                                           data-file-path="${fn:escapeXml(mat.filePath)}"
+                                           onclick="downloadSessionMaterial(this.dataset.filePath)"
                                            class="btn btn-sm py-0 px-2 d-inline-flex align-items-center"
                                            style="background-color: #f3722c; color: white;"
                                            title="Download ${fn:escapeXml(mat.materialName)}">
@@ -317,7 +321,7 @@
             <%-- Hidden downloads area for Download All --%>
             <div id="download-all-links" style="display:none;">
                 <c:forEach var="mat" items="${syllabus.materials}">
-                    <span data-url="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"></span>
+                    <span data-file-path="${fn:escapeXml(mat.filePath)}"></span>
                 </c:forEach>
             </div>
 
@@ -456,11 +460,14 @@
 
 <script>
 function downloadSessionMaterial(filePath) {
+    window.location.href = buildSessionMaterialUrl(filePath);
+}
+
+function buildSessionMaterialUrl(filePath) {
     const ctx = '${pageContext.request.contextPath}';
-    let url = filePath.startsWith('/materials/')
+    return filePath.startsWith('/materials/')
         ? ctx + filePath
         : ctx + '/materials/' + filePath.replace(/^\/+/, '');
-    window.location.href = url;
 }
 
 function downloadSingleMaterial(url) {
@@ -476,14 +483,14 @@ function downloadSingleMaterial(url) {
 function downloadAllMaterials() {
     const container = document.getElementById('download-all-links');
     if (!container) return;
-    const links = container.querySelectorAll('[data-url]');
+    const links = container.querySelectorAll('[data-file-path]');
     if (links.length === 0) {
         alert('No materials to download.');
         return;
     }
     links.forEach(function (el, idx) {
         setTimeout(function () {
-            downloadSingleMaterial(el.getAttribute('data-url'));
+            downloadSingleMaterial(buildSessionMaterialUrl(el.dataset.filePath));
         }, idx * 1000);
     });
 }

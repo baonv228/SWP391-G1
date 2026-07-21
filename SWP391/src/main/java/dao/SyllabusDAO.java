@@ -3,9 +3,11 @@ package dao;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import model.*;
+import dto.MaterialDTO;
 import dto.SyllabusDTO;
 
 public class SyllabusDAO extends DBContext {
@@ -754,17 +756,58 @@ public class SyllabusDAO extends DBContext {
                 mappedSessions.add(sDto);
             }
             dto.setSessions(mappedSessions);
-
-            MaterialDAO materialDAO = new MaterialDAO();
-            try {
-                dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
-            } catch (SQLException e) {
-                System.err.println("getSyllabusDtoById materials error: " + e.getMessage());
-                dto.setMaterials(new ArrayList<>());
-            }
+            dto.setMaterials(buildSessionDownloadMaterials(syllabusId, dbSessions));
         }
 
         return dto;
+    }
+
+    /**
+     * Builds the downloadable-material list shown on Syllabus Details from the
+     * S-Download column of the syllabus sessions. Repeated paths are displayed
+     * only once, while preserving their first-session order.
+     */
+    private List<MaterialDTO> buildSessionDownloadMaterials(
+            int syllabusId, List<SyllabusSession> sessions) {
+        Map<String, MaterialDTO> uniqueMaterials = new LinkedHashMap<>();
+
+        for (SyllabusSession session : sessions) {
+            String filePath = session.getSDownload();
+            if (filePath == null || filePath.trim().isEmpty()) {
+                continue;
+            }
+
+            filePath = filePath.trim();
+            String key = filePath.toLowerCase();
+            if (uniqueMaterials.containsKey(key)) {
+                continue;
+            }
+
+            MaterialDTO material = new MaterialDTO();
+            material.setSyllabusId(syllabusId);
+            material.setFilePath(filePath);
+            material.setMaterialName(extractFileName(filePath));
+            material.setMaterialType(extractFileType(filePath));
+            material.setVisibility("Public");
+            material.setStatus("Active");
+            uniqueMaterials.put(key, material);
+        }
+
+        return new ArrayList<>(uniqueMaterials.values());
+    }
+
+    private String extractFileName(String filePath) {
+        String normalized = filePath.replace('\\', '/');
+        int slash = normalized.lastIndexOf('/');
+        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+    }
+
+    private String extractFileType(String filePath) {
+        String fileName = extractFileName(filePath);
+        int dot = fileName.lastIndexOf('.');
+        return dot >= 0 && dot < fileName.length() - 1
+                ? fileName.substring(dot + 1).toUpperCase()
+                : "FILE";
     }
 
     // =========================================================
