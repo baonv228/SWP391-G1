@@ -24,6 +24,13 @@
                 <div class="stat-label">My Uploaded Materials</div>
             </div>
         </div>
+        <div class="stat-card" id="stat-downloads">
+            <div class="stat-icon stat-icon-green"><i class="bi bi-cloud-arrow-down-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-number">${myDownloadsCount}</div>
+                <div class="stat-label">Downloads On My Materials</div>
+            </div>
+        </div>
         <div class="stat-card" id="stat-requests">
             <div class="stat-icon stat-icon-orange"><i class="bi bi-file-earmark-text"></i></div>
             <div class="stat-body">

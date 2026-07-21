@@ -39,12 +39,16 @@ public class TeacherDashboardServlet extends HttpServlet {
 
             // My uploaded materials count
             List<MaterialDTO> myMaterials = materialDAO.getMaterialsByUploader(teacher.getUserId());
+            long myDownloadsCount = myMaterials.stream()
+                    .mapToLong(MaterialDTO::getDownloadCount)
+                    .sum();
             // My pending requests count
             int totalRequests = requestDAO.countRequestsByUser(teacher.getUserId());
             List<SyllabusRequestDTO> recentRequests =
                     requestDAO.getRequestsByUser(teacher.getUserId(), 1, 5);
 
             request.setAttribute("myMaterialsCount", myMaterials.size());
+            request.setAttribute("myDownloadsCount", myDownloadsCount);
             request.setAttribute("totalRequests", totalRequests);
             request.setAttribute("recentRequests", recentRequests);
             request.setAttribute("teacher", teacher);

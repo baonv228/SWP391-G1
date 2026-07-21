@@ -168,6 +168,7 @@
                                         <th>Type</th>
                                         <th>Visibility</th>
                                         <th>Uploaded At</th>
+                                        <th class="text-center">Downloads</th>
                                         <th class="text-center">Download</th>
                                     </tr>
                                 </thead>
@@ -197,6 +198,11 @@
                                             </td>
                                             <td class="text-muted" style="font-size:.82rem;">
                                                 ${mat.uploadedAt}
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-light text-secondary border">
+                                                    <i class="bi bi-cloud-arrow-down me-1"></i>${mat.downloadCount}
+                                                </span>
                                             </td>
                                             <td class="text-center">
                                                 <c:choose>

@@ -116,6 +116,7 @@
                                             <th>Type</th>
                                             <th>Visibility</th>
                                             <th>Uploaded</th>
+                                            <th class="text-center">Downloads</th>
                                             <th class="text-center">Download</th>
                                         </tr>
                                     </thead>
@@ -147,6 +148,11 @@
                                                     </c:choose>
                                                 </td>
                                                 <td style="font-size:.78rem;" class="text-muted">${mat.uploadedAt}</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-light text-secondary border">
+                                                        <i class="bi bi-cloud-arrow-down me-1"></i>${mat.downloadCount}
+                                                    </span>
+                                                </td>
                                                 <td class="text-center">
                                                     <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
                                                        class="btn btn-sm btn-upload-submit py-0 px-2"
