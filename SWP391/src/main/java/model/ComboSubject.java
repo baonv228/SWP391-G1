@@ -9,6 +9,7 @@ public class ComboSubject {
     // Transient fields for displaying subject details
     private String subjectCode;
     private String subjectName;
+    private int syllabusId;
 
     public ComboSubject() {
     }
@@ -65,5 +66,13 @@ public class ComboSubject {
 
     public void setSubjectName(String subjectName) {
         this.subjectName = subjectName;
+    }
+
+    public int getSyllabusId() {
+        return syllabusId;
+    }
+
+    public void setSyllabusId(int syllabusId) {
+        this.syllabusId = syllabusId;
     }
 }

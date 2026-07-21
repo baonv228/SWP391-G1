@@ -8,6 +8,7 @@ public class Subject {
     private int credits;
     private String description;
     private String status;
+    private int syllabusId;
 
     public Subject() {
     }
@@ -76,5 +77,13 @@ public class Subject {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public int getSyllabusId() {
+        return syllabusId;
+    }
+
+    public void setSyllabusId(int syllabusId) {
+        this.syllabusId = syllabusId;
     }
 }

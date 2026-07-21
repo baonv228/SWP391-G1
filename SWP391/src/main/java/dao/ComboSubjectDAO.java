@@ -14,9 +14,18 @@ public class ComboSubjectDAO extends DBContext {
         List<ComboSubject> list = new ArrayList<>();
         String sql = """
                 SELECT cs.ComboID, cs.SubjectID, cs.SemesterNo,
-                       s.SubjectCode, s.SubjectName
+                       s.SubjectCode, s.SubjectName,
+                       sy.SyllabusID
                 FROM dbo.[Combo_Subject] cs
                 JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
+                OUTER APPLY (
+                    SELECT TOP 1 syllabus.SyllabusID
+                    FROM dbo.[Syllabus] syllabus
+                    WHERE syllabus.SubjectID = s.SubjectID
+                      AND syllabus.IsActive = 1
+                      AND syllabus.Status IN ('Approved', 'Active')
+                    ORDER BY syllabus.IsCurrentVersion DESC, syllabus.SyllabusID DESC
+                ) sy
                 WHERE cs.ComboID = ?
                 ORDER BY COALESCE(cs.DisplayOrder, cs.ComboSubjectID), s.SubjectCode
                 """;
@@ -32,6 +41,8 @@ public class ComboSubjectDAO extends DBContext {
                     cs.setSemesterNo(rs.wasNull() ? null : semesterNo);
                     cs.setSubjectCode(rs.getString("SubjectCode"));
                     cs.setSubjectName(rs.getString("SubjectName"));
+                    int syllabusId = rs.getInt("SyllabusID");
+                    cs.setSyllabusId(rs.wasNull() ? 0 : syllabusId);
                     list.add(cs);
                 }
             }

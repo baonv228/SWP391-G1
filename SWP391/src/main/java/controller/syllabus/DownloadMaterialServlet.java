@@ -9,9 +9,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
+import utils.CloudinaryUtil;
 import utils.ValidationUtil;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -94,8 +97,11 @@ public class DownloadMaterialServlet extends HttpServlet {
 
         String filePath = material.getFilePath();
         if (filePath != null && (filePath.startsWith("http://") || filePath.startsWith("https://"))) {
+            boolean streamed = streamRemoteFile(CloudinaryUtil.toRawDeliveryUrl(filePath), material, response);
+            if (!streamed) {
+                return;
+            }
             recordDownload(dao, materialId);
-            response.sendRedirect(filePath);
             return;
         }
 
@@ -124,15 +130,7 @@ public class DownloadMaterialServlet extends HttpServlet {
         response.setContentType(contentType);
         response.setContentLengthLong(file.length());
 
-        // RFC 5987 encoded filename for non-ASCII characters
-        String encodedName = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8)
-                .replace("+", "%20");
-        response.setHeader("Content-Disposition",
-                "attachment; filename=\"" + file.getName() + "\"; filename*=UTF-8''" + encodedName);
-
-        // Disable caching for authenticated downloads
-        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
+        setDownloadHeaders(response, file.getName());
 
         try (InputStream in = new BufferedInputStream(new FileInputStream(file));
              OutputStream out = new BufferedOutputStream(response.getOutputStream())) {
@@ -151,6 +149,53 @@ public class DownloadMaterialServlet extends HttpServlet {
             dao.incrementDownloadCount(materialId);
         } catch (SQLException e) {
             getServletContext().log("Unable to update material download count for materialId=" + materialId, e);
+        }
+    }
+
+    private boolean streamRemoteFile(String fileUrl, MaterialDTO material, HttpServletResponse response)
+            throws IOException {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(fileUrl).openConnection();
+            connection.setInstanceFollowRedirects(true);
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(30000);
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) {
+                getServletContext().log("Remote material download failed: " + status + " - " + fileUrl);
+                response.sendError(HttpServletResponse.SC_BAD_GATEWAY,
+                        "Unable to download material from remote storage.");
+                return false;
+            }
+
+            String fileName = resolveDownloadFileName(material);
+            String contentType = connection.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = resolveContentType(material.getMaterialType(), fileName);
+            }
+
+            response.setContentType(contentType);
+            long contentLength = connection.getContentLengthLong();
+            if (contentLength > 0) {
+                response.setContentLengthLong(contentLength);
+            }
+            setDownloadHeaders(response, fileName);
+
+            try (InputStream in = new BufferedInputStream(connection.getInputStream());
+                 OutputStream out = new BufferedOutputStream(response.getOutputStream())) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
+            return true;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
@@ -184,6 +229,31 @@ public class DownloadMaterialServlet extends HttpServlet {
         // Default: materials/ directory inside the deployed webapp
         String webappRoot = getServletContext().getRealPath("/");
         return new File(webappRoot, "materials");
+    }
+
+    private String resolveDownloadFileName(MaterialDTO material) {
+        String materialName = material.getMaterialName();
+        if (materialName != null && !materialName.trim().isEmpty()) {
+            return materialName.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
+        }
+
+        String filePath = material.getFilePath();
+        if (filePath != null && !filePath.trim().isEmpty()) {
+            String normalized = filePath.replace('\\', '/');
+            int slash = normalized.lastIndexOf('/');
+            return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+        }
+
+        return "material-" + material.getMaterialId();
+    }
+
+    private void setDownloadHeaders(HttpServletResponse response, String fileName) {
+        String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedName);
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
     }
 
     /**

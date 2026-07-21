@@ -18,7 +18,7 @@
     -->
     <context-param>
         <param-name>upload.dir</param-name>
-        <param-value></param-value>
+        <param-value>C:/Users/Admin/Downloads/Project_SWP391/uploads/materials</param-value>
     </context-param>
 
     <!-- Error Pages -->

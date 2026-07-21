@@ -57,19 +57,21 @@ public class CloudinaryUtil {
             }
         }
 
-        // If Cloudinary is configured, upload to Cloudinary
+        String ext = getExtension(fileName).toLowerCase();
+        String resourceType = "raw";
+        if (ext.equals("mp4") || ext.equals("avi") || ext.equals("mov") || ext.equals("webm")) {
+            resourceType = "video";
+        } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("gif")) {
+            resourceType = "image";
+        }
+
+        if ("raw".equals(resourceType)) {
+            return webAppRelativeFallbackPrefix + safeFileName;
+        }
+
+        // If Cloudinary is configured, upload supported media to Cloudinary
         if (cloudinary != null) {
             try {
-                // Determine resource type: raw (for zip/docs), image, or video
-                String ext = getExtension(fileName).toLowerCase();
-                String resourceType = "raw";
-                if (ext.equals("pdf") || ext.equals("docx") || ext.equals("zip") || ext.equals("xlsx") || ext.equals("pptx")) {
-                    resourceType = "raw";
-                } else if (ext.equals("mp4") || ext.equals("avi") || ext.equals("mov") || ext.equals("webm")) {
-                    resourceType = "video";
-                } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("gif")) {
-                    resourceType = "image";
-                }
 
                 Map params = ObjectUtils.asMap(
                     "folder", "flm_materials",
@@ -91,6 +93,31 @@ public class CloudinaryUtil {
 
         // Fallback: return local relative path
         return webAppRelativeFallbackPrefix + safeFileName;
+    }
+
+    public static String toRawDeliveryUrl(String fileUrl) {
+        if (fileUrl == null || !fileUrl.contains("res.cloudinary.com") || !fileUrl.contains("/upload/")) {
+            return fileUrl;
+        }
+
+        int uploadIndex = fileUrl.indexOf("/upload/");
+        String prefix = fileUrl.substring(0, uploadIndex + "/upload/".length());
+        String deliveryPath = fileUrl.substring(uploadIndex + "/upload/".length());
+
+        if (deliveryPath.startsWith("fl_attachment/")) {
+            return prefix + deliveryPath.substring("fl_attachment/".length());
+        }
+        if (deliveryPath.startsWith("fl_attachment,")) {
+            return prefix + deliveryPath.substring("fl_attachment,".length());
+        }
+        if (deliveryPath.startsWith("fl_attachment:")) {
+            int nextSlash = deliveryPath.indexOf('/');
+            if (nextSlash >= 0 && nextSlash < deliveryPath.length() - 1) {
+                return prefix + deliveryPath.substring(nextSlash + 1);
+            }
+        }
+
+        return fileUrl;
     }
 
     private static String getExtension(String fileName) {

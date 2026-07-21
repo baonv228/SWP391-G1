@@ -13,9 +13,18 @@ public class ElectiveSubjectDAO extends DBContext {
     public List<Subject> getSubjectsByElective(int electiveId) {
         List<Subject> list = new ArrayList<>();
         String sql = """
-                SELECT s.SubjectID, s.CreatedBy, s.SubjectCode, s.SubjectName, s.Credits, s.Description, s.Status
+                SELECT s.SubjectID, s.CreatedBy, s.SubjectCode, s.SubjectName, s.Credits, s.Description, s.Status,
+                       sy.SyllabusID
                 FROM dbo.[Curriculum_Elective] ce
                 JOIN dbo.[Subject] s ON ce.SubjectID = s.SubjectID
+                OUTER APPLY (
+                    SELECT TOP 1 syllabus.SyllabusID
+                    FROM dbo.[Syllabus] syllabus
+                    WHERE syllabus.SubjectID = s.SubjectID
+                      AND syllabus.IsActive = 1
+                      AND syllabus.Status IN ('Approved', 'Active')
+                    ORDER BY syllabus.IsCurrentVersion DESC, syllabus.SyllabusID DESC
+                ) sy
                 WHERE ce.CurriculumElectiveID = ?
                 """;
         try (Connection con = getConnection();
@@ -31,6 +40,8 @@ public class ElectiveSubjectDAO extends DBContext {
                     s.setCredits(rs.getInt("Credits"));
                     s.setDescription(rs.getString("Description"));
                     s.setStatus(rs.getString("Status"));
+                    int syllabusId = rs.getInt("SyllabusID");
+                    s.setSyllabusId(rs.wasNull() ? 0 : syllabusId);
                     list.add(s);
                 }
             }

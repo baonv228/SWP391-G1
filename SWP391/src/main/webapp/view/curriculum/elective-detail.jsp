@@ -58,9 +58,17 @@
                             <tr class="${status.index % 2 == 0 ? 'row-even' : 'row-odd'}" id="elective-subj-row-${sub.subjectId}">
                                 <td>${status.index + 1}</td>
                                 <td>
-                                    <a href="${pageContext.request.contextPath}/learning-path?subjectCode=${sub.subjectCode}" class="link-detail">
-                                        ${fn:escapeXml(sub.subjectCode)}
-                                    </a>
+                                    <c:choose>
+                                        <c:when test="${sub.syllabusId > 0}">
+                                            <a href="${pageContext.request.contextPath}/syllabus/detail?syllabusId=${sub.syllabusId}" class="link-detail">
+                                                ${fn:escapeXml(sub.subjectCode)}
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="text-muted">${fn:escapeXml(sub.subjectCode)}</span>
+                                            <span class="badge bg-light text-secondary border ms-1">No syllabus</span>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </td>
                                 <td class="fw-semibold">${fn:escapeXml(sub.subjectName)}</td>
                             </tr>

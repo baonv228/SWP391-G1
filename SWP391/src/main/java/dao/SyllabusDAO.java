@@ -815,17 +815,65 @@ public class SyllabusDAO extends DBContext {
                 mappedSessions.add(sDto);
             }
             dto.setSessions(mappedSessions);
-            dto.setMaterials(buildSessionDownloadMaterials(syllabusId, dbSessions));
+            dto.setMaterials(buildLearningMaterials(syllabusId, dbSessions));
         }
 
         return dto;
     }
 
-    /**
-     * Builds the downloadable-material list shown on Syllabus Details from the
-     * S-Download column of the syllabus sessions. Repeated paths are displayed
-     * only once, while preserving their first-session order.
-     */
+    private List<MaterialDTO> buildLearningMaterials(
+            int syllabusId, List<SyllabusSession> sessions) throws SQLException {
+        Map<String, MaterialDTO> uniqueMaterials = new LinkedHashMap<>();
+
+        for (MaterialDTO uploadedMaterial : getUploadedLearningMaterials(syllabusId)) {
+            uniqueMaterials.put(materialKey(uploadedMaterial), uploadedMaterial);
+        }
+
+        for (MaterialDTO sessionMaterial : buildSessionDownloadMaterials(syllabusId, sessions)) {
+            uniqueMaterials.putIfAbsent(materialKey(sessionMaterial), sessionMaterial);
+        }
+
+        return new ArrayList<>(uniqueMaterials.values());
+    }
+
+    private List<MaterialDTO> getUploadedLearningMaterials(int syllabusId) throws SQLException {
+        List<MaterialDTO> materials = new ArrayList<>();
+        String sql = """
+                SELECT MaterialID, SyllabusID, MaterialName, FilePath,
+                       MaterialType, Visibility, Status, UploadedAt,
+                       ISNULL(DownloadCount, 0) AS DownloadCount
+                FROM dbo.[Learning_Material]
+                WHERE SyllabusID = ? AND Status = 'Active'
+                ORDER BY UploadedAt DESC, MaterialID DESC
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, syllabusId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    materials.add(mapUploadedLearningMaterial(rs));
+                }
+            }
+        }
+
+        return materials;
+    }
+
+    private MaterialDTO mapUploadedLearningMaterial(ResultSet rs) throws SQLException {
+        MaterialDTO material = new MaterialDTO();
+        material.setMaterialId(rs.getInt("MaterialID"));
+        material.setSyllabusId(rs.getInt("SyllabusID"));
+        material.setMaterialName(rs.getString("MaterialName"));
+        material.setFilePath(rs.getString("FilePath"));
+        material.setMaterialType(rs.getString("MaterialType"));
+        material.setVisibility(rs.getString("Visibility"));
+        material.setStatus(rs.getString("Status"));
+        material.setUploadedAt(rs.getTimestamp("UploadedAt"));
+        material.setDownloadCount(rs.getInt("DownloadCount"));
+        return material;
+    }
+
     private List<MaterialDTO> buildSessionDownloadMaterials(
             int syllabusId, List<SyllabusSession> sessions) {
         Map<String, MaterialDTO> uniqueMaterials = new LinkedHashMap<>();
@@ -853,6 +901,14 @@ public class SyllabusDAO extends DBContext {
         }
 
         return new ArrayList<>(uniqueMaterials.values());
+    }
+
+    private String materialKey(MaterialDTO material) {
+        String filePath = material.getFilePath();
+        if (filePath == null || filePath.trim().isEmpty()) {
+            return "id:" + material.getMaterialId();
+        }
+        return filePath.trim().toLowerCase();
     }
 
     private String extractFileName(String filePath) {

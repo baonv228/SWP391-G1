@@ -18,11 +18,14 @@ public class ComboDAO extends DBContext {
         List<Combo> combos = new ArrayList<>();
         String sql = """
                 SELECT c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder,
-                       0 AS SubjectCount,
-                       0 AS TotalCredits,
+                       COUNT(cs.SubjectID) AS SubjectCount,
+                       COALESCE(SUM(s.Credits), 0) AS TotalCredits,
                        CAST(NULL AS NVARCHAR(MAX)) AS SubjectCodes
                 FROM dbo.[Combo] c
+                LEFT JOIN dbo.[Combo_Subject] cs ON c.ComboID = cs.ComboID
+                LEFT JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
                 WHERE c.CurriculumID = ?
+                GROUP BY c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder
                 ORDER BY COALESCE(c.DisplayOrder, c.ComboID), c.ComboID
                 """;
 
@@ -48,11 +51,14 @@ public class ComboDAO extends DBContext {
     public Combo getComboById(int comboId) {
         String sql = """
                 SELECT c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder,
-                       0 AS SubjectCount,
-                       0 AS TotalCredits,
+                       COUNT(cs.SubjectID) AS SubjectCount,
+                       COALESCE(SUM(s.Credits), 0) AS TotalCredits,
                        CAST(NULL AS NVARCHAR(MAX)) AS SubjectCodes
                 FROM dbo.[Combo] c
+                LEFT JOIN dbo.[Combo_Subject] cs ON c.ComboID = cs.ComboID
+                LEFT JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
                 WHERE c.ComboID = ?
+                GROUP BY c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder
                 """;
 
         try (Connection con = getConnection();
