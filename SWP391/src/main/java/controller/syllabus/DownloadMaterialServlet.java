@@ -76,8 +76,8 @@ public class DownloadMaterialServlet extends HttpServlet {
 
         // ── 3. Load material metadata from DB ─────────────────────────────
         MaterialDTO material;
+        MaterialDAO dao = new MaterialDAO();
         try {
-            MaterialDAO dao = new MaterialDAO();
             material = dao.getMaterialById(materialId);
         } catch (SQLException e) {
             getServletContext().log("DB error in DownloadMaterialServlet", e);
@@ -94,6 +94,7 @@ public class DownloadMaterialServlet extends HttpServlet {
 
         String filePath = material.getFilePath();
         if (filePath != null && (filePath.startsWith("http://") || filePath.startsWith("https://"))) {
+            recordDownload(dao, materialId);
             response.sendRedirect(filePath);
             return;
         }
@@ -117,6 +118,8 @@ public class DownloadMaterialServlet extends HttpServlet {
         }
 
         // ── 5. Stream the file ────────────────────────────────────────────
+        recordDownload(dao, materialId);
+
         String contentType = resolveContentType(material.getMaterialType(), file.getName());
         response.setContentType(contentType);
         response.setContentLengthLong(file.length());
@@ -142,6 +145,15 @@ public class DownloadMaterialServlet extends HttpServlet {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
+
+    /** Records a successful download request without blocking the download. */
+    private void recordDownload(MaterialDAO dao, int materialId) {
+        try {
+            dao.incrementDownloadCount(materialId);
+        } catch (SQLException e) {
+            getServletContext().log("Failed to update material download count: " + materialId, e);
+        }
+    }
 
     /**
      * Resolves the DB filePath (e.g. "/materials/lab211/lab01.zip") to a
