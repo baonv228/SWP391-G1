@@ -132,6 +132,9 @@
 
     <%-- Mapping PO to PLO Matrix --%>
     <h3 class="section-subtitle mt-5 mb-2" id="mapping-section-title">Mapping PO to PLO</h3>
+    <form action="${pageContext.request.contextPath}/curriculum/po" method="post" id="po-plo-mapping-form">
+        <input type="hidden" name="action" value="saveMapping" />
+        <input type="hidden" name="curriculumId" value="${curriculumId}" />
     <div class="table-responsive mb-5">
         <table class="fpt-table text-center" id="mapping-matrix-table">
             <thead>
@@ -159,10 +162,19 @@
                                     <c:set var="mappedList" value="${poPloMapping[poId]}" />
                                     <td class="fw-bold text-success" style="font-size: 1.2rem;">
                                         <c:choose>
+                                            <c:when test="${canManagePO}">
+                                                <input type="checkbox" name="mapping" value="${poId}:${ploId}"
+                                                       class="form-check-input"
+                                                       ${not empty mappedList && mappedList.contains(ploId) ? 'checked' : ''} />
+                                            </c:when>
+                                            <c:otherwise>
+                                        <c:choose>
                                             <c:when test="${not empty mappedList && mappedList.contains(ploId)}">
                                                 ✓
                                             </c:when>
                                             <c:otherwise>&nbsp;</c:otherwise>
+                                        </c:choose>
+                                            </c:otherwise>
                                         </c:choose>
                                     </td>
                                 </c:forEach>
@@ -172,7 +184,15 @@
                 </c:choose>
             </tbody>
         </table>
+        <c:if test="${canManagePO and not empty poList and not empty ploList}">
+            <div class="text-end mt-3">
+                <button type="submit" class="btn text-white" style="background-color: var(--fpt-orange); font-weight:600;">
+                    <i class="bi bi-save me-1"></i>Save Mapping
+                </button>
+            </div>
+        </c:if>
     </div>
+    </form>
 </main>
 
 <%-- Add PO Modal --%>
