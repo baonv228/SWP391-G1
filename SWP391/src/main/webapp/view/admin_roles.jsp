@@ -133,6 +133,7 @@
             border-bottom: none;
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body>
     <header class="topbar">
@@ -146,6 +147,7 @@
                 <h1>Quản lý vai trò (Roles)</h1>
                 <p>Danh sách các vai trò chính thức trong hệ thống dùng để phân quyền chức năng.</p>
             </div>
+            <a class="btn-secondary" href="<%=request.getContextPath()%>/admin/roles?action=export">Export Excel</a>
         </div>
 
         <div class="table-card">

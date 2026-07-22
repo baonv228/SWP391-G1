@@ -3,9 +3,11 @@ package dao;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import model.*;
+import dto.MaterialDTO;
 import dto.SyllabusDTO;
 
 public class SyllabusDAO extends DBContext {
@@ -100,6 +102,7 @@ public class SyllabusDAO extends DBContext {
                 WHERE s.SyllabusID = ?
                 """;
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapSyllabusRow(rs);
@@ -236,19 +239,53 @@ public class SyllabusDAO extends DBContext {
     }
 
     public boolean approveSyllabus(int syllabusId, int reviewerId) {
-        String sql = """
+        String updateSyllabusSql = """
                 UPDATE dbo.[Syllabus]
                 SET Status = 'Approved', ApprovedBy = ?, ApprovedAt = GETDATE(), IsCurrentVersion = 1
                 WHERE SyllabusID = ?
                 """;
-        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, reviewerId);
-            ps.setInt(2, syllabusId);
-            boolean updated = ps.executeUpdate() > 0;
-            updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
+        String updateSubjectSql = """
+                UPDATE dbo.[Subject]
+                SET Status = 'Active'
+                WHERE SubjectID = (
+                    SELECT SubjectID
+                    FROM dbo.[Syllabus]
+                    WHERE SyllabusID = ?
+                )
+                """;
+        Connection con = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+
+            boolean updated;
+            try (PreparedStatement ps = con.prepareStatement(updateSyllabusSql)) {
+                ps.setInt(1, reviewerId);
+                ps.setInt(2, syllabusId);
+                updated = ps.executeUpdate() > 0;
+            }
+
+            if (updated) {
+                try (PreparedStatement ps = con.prepareStatement(updateSubjectSql)) {
+                    ps.setInt(1, syllabusId);
+                    ps.executeUpdate();
+                }
+            }
+
+            con.commit();
+            if (updated) {
+                updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
+            }
             return updated;
         } catch (Exception e) {
+            if (con != null) {
+                try { con.rollback(); } catch (Exception ex) {}
+            }
             System.out.println("approveSyllabus error: " + e.getMessage());
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (Exception ex) {}
+            }
         }
         return false;
     }
@@ -490,6 +527,7 @@ public class SyllabusDAO extends DBContext {
         List<SyllabusMaterial> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[Syllabus_Material] WHERE SyllabusID=? ORDER BY DisplayOrder";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -512,6 +550,7 @@ public class SyllabusDAO extends DBContext {
         List<CLO> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[CLO] WHERE SyllabusID=? ORDER BY DisplayOrder";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -523,14 +562,30 @@ public class SyllabusDAO extends DBContext {
                 }
             }
             // Fetch PLO mappings after RS is closed to avoid MARS issue
-            String sqlMap = "SELECT PloID FROM dbo.[CLO_PLO] WHERE CLOID=?";
+            String sqlMap = """
+                    SELECT p.PloID, p.CurriculumID, p.PloCode, p.PloDescription
+                    FROM dbo.[CLO_PLO] cp
+                    JOIN dbo.[PLO] p ON p.PloID = cp.PloID
+                    WHERE cp.CLOID = ?
+                    ORDER BY p.PloCode, p.PloID
+                    """;
             try (PreparedStatement psM = con.prepareStatement(sqlMap)) {
                 for (CLO c : list) {
                     psM.setInt(1, c.getCloId());
                     try (ResultSet rsM = psM.executeQuery()) {
                         List<Integer> ploIds = new ArrayList<>();
-                        while (rsM.next()) ploIds.add(rsM.getInt(1));
+                        List<PLO> plos = new ArrayList<>();
+                        while (rsM.next()) {
+                            PLO plo = new PLO();
+                            plo.setPloId(rsM.getInt("PloID"));
+                            plo.setCurriculumId(rsM.getInt("CurriculumID"));
+                            plo.setPloCode(rsM.getString("PloCode"));
+                            plo.setPloDescription(rsM.getString("PloDescription"));
+                            ploIds.add(plo.getPloId());
+                            plos.add(plo);
+                        }
                         c.setPloIds(ploIds);
+                        c.setPlos(plos);
                     }
                 }
             }
@@ -542,6 +597,7 @@ public class SyllabusDAO extends DBContext {
         List<SyllabusSession> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[Syllabus_Session] WHERE SyllabusID=? ORDER BY SessionNumber";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -575,6 +631,7 @@ public class SyllabusDAO extends DBContext {
         List<SyllabusAssessment> list = new ArrayList<>();
         String sql = "SELECT * FROM dbo.[Syllabus_Assessment] WHERE SyllabusID=? ORDER BY DisplayOrder";
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -591,18 +648,60 @@ public class SyllabusDAO extends DBContext {
                 }
             }
             // Fetch CLO mappings after RS is closed
-            String sqlMap = "SELECT CLOID FROM dbo.[Assessment_CLO] WHERE AssessmentID=?";
+            String sqlMap = """
+                    SELECT ac.CLOID, c.CLOName
+                    FROM dbo.[Assessment_CLO] ac
+                    JOIN dbo.[CLO] c ON c.CLOID = ac.CLOID
+                    WHERE ac.AssessmentID = ?
+                    ORDER BY c.DisplayOrder, c.CLOID
+                    """;
             try (PreparedStatement psM = con.prepareStatement(sqlMap)) {
                 for (SyllabusAssessment a : list) {
                     psM.setInt(1, a.getAssessmentId());
                     try (ResultSet rsM = psM.executeQuery()) {
                         List<Integer> cloIds = new ArrayList<>();
-                        while (rsM.next()) cloIds.add(rsM.getInt(1));
+                        List<String> cloNames = new ArrayList<>();
+                        while (rsM.next()) {
+                            cloIds.add(rsM.getInt("CLOID"));
+                            cloNames.add(rsM.getString("CLOName"));
+                        }
                         a.setCloIds(cloIds);
+                        a.setCloNames(cloNames);
                     }
                 }
             }
         } catch (Exception e) { System.out.println("getAssessments error: " + e.getMessage()); }
+        return list;
+    }
+
+    public List<ConstructiveQuestion> getConstructiveQuestions(int syllabusId) {
+        List<ConstructiveQuestion> list = new ArrayList<>();
+        String sql = """
+                SELECT QuestionID, SyllabusID, SessionNo, Name, Details, DisplayOrder
+                FROM dbo.[Syllabus_Constructive_Question]
+                WHERE SyllabusID = ?
+                  AND (NULLIF(LTRIM(RTRIM(Name)), '') IS NOT NULL
+                       OR NULLIF(LTRIM(RTRIM(Details)), '') IS NOT NULL)
+                ORDER BY DisplayOrder, SessionNo, QuestionID
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setQueryTimeout(10);
+            ps.setInt(1, syllabusId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ConstructiveQuestion question = new ConstructiveQuestion();
+                    question.setQuestionId(rs.getInt("QuestionID"));
+                    question.setSyllabusId(rs.getInt("SyllabusID"));
+                    question.setSessionNo(rs.getInt("SessionNo"));
+                    question.setName(rs.getString("Name"));
+                    question.setDetails(rs.getString("Details"));
+                    question.setDisplayOrder(rs.getInt("DisplayOrder"));
+                    list.add(question);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("getConstructiveQuestions error: " + e.getMessage());
+        }
         return list;
     }
 
@@ -719,6 +818,7 @@ public class SyllabusDAO extends DBContext {
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
+            ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -735,6 +835,7 @@ public class SyllabusDAO extends DBContext {
             dto.setTextbooks(getMaterials(syllabusId));
             dto.setClos(getCLOs(syllabusId));
             dto.setAssessments(getAssessments(syllabusId));
+            dto.setConstructiveQuestions(getConstructiveQuestions(syllabusId));
 
             // Load Syllabus_Session and map to SessionDTO list
             List<SyllabusSession> dbSessions = getSessions(syllabusId);
@@ -747,18 +848,64 @@ public class SyllabusDAO extends DBContext {
                 sDto.setLo(s.getItu()); 
                 sDto.setItu(s.getItu());
                 sDto.setStudentMaterials(s.getStudentMaterials());
-                sDto.setSDownload(s.getSDownload());
+                sDto.setStudentDownload(s.getSDownload());
                 sDto.setStudentTasks(s.getStudentTasks());
                 sDto.setUrls(s.getUrls());
                 mappedSessions.add(sDto);
             }
             dto.setSessions(mappedSessions);
-
-            MaterialDAO materialDAO = new MaterialDAO();
-            dto.setMaterials(materialDAO.getMaterialsBySyllabusId(syllabusId));
+            dto.setMaterials(buildSessionDownloadMaterials(syllabusId, dbSessions));
         }
 
         return dto;
+    }
+
+    /**
+     * Builds the downloadable-material list shown on Syllabus Details from the
+     * S-Download column of the syllabus sessions. Repeated paths are displayed
+     * only once, while preserving their first-session order.
+     */
+    private List<MaterialDTO> buildSessionDownloadMaterials(
+            int syllabusId, List<SyllabusSession> sessions) {
+        Map<String, MaterialDTO> uniqueMaterials = new LinkedHashMap<>();
+
+        for (SyllabusSession session : sessions) {
+            String filePath = session.getSDownload();
+            if (filePath == null || filePath.trim().isEmpty()) {
+                continue;
+            }
+
+            filePath = filePath.trim();
+            String key = filePath.toLowerCase();
+            if (uniqueMaterials.containsKey(key)) {
+                continue;
+            }
+
+            MaterialDTO material = new MaterialDTO();
+            material.setSyllabusId(syllabusId);
+            material.setFilePath(filePath);
+            material.setMaterialName(extractFileName(filePath));
+            material.setMaterialType(extractFileType(filePath));
+            material.setVisibility("Public");
+            material.setStatus("Active");
+            uniqueMaterials.put(key, material);
+        }
+
+        return new ArrayList<>(uniqueMaterials.values());
+    }
+
+    private String extractFileName(String filePath) {
+        String normalized = filePath.replace('\\', '/');
+        int slash = normalized.lastIndexOf('/');
+        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+    }
+
+    private String extractFileType(String filePath) {
+        String fileName = extractFileName(filePath);
+        int dot = fileName.lastIndexOf('.');
+        return dot >= 0 && dot < fileName.length() - 1
+                ? fileName.substring(dot + 1).toUpperCase()
+                : "FILE";
     }
 
     // =========================================================

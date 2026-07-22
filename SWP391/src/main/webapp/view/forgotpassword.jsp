@@ -149,6 +149,7 @@
             font-weight: 700;
         }
     </style>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body>
 <div class="card">
