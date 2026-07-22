@@ -304,6 +304,8 @@ public class SyllabusServlet extends HttpServlet {
         if (tempPath != null && !tempPath.trim().isEmpty()) {
             File tempFile = new File(tempPath.trim());
             if (tempFile.exists()) {
+                /*
+                // OLD LOCAL UPLOAD LOGIC
                 String uploadDir = getUploadBasePath() + File.separator + "syllabus" + File.separator + syllabusId;
                 File dir = new File(uploadDir);
                 if (!dir.exists()) dir.mkdirs();
@@ -315,6 +317,28 @@ public class SyllabusServlet extends HttpServlet {
                     syllabusDAO.saveMaterialFile(syllabusId, userId, "syllabus/" + syllabusId + "/" + fileName);
                 } catch (Exception e) {
                     System.out.println("Error moving temp file: " + e.getMessage());
+                }
+                */
+
+                // NEW CLOUDINARY UPLOAD LOGIC
+                try (InputStream input = new java.io.FileInputStream(tempFile)) {
+                    String fileUrl = utils.CloudinaryUtil.uploadFile(input, tempFile.getName());
+                    syllabusDAO.saveMaterialFile(syllabusId, userId, fileUrl);
+                    // Log success
+                    try (java.io.FileWriter fw = new java.io.FileWriter("D:\\SWPchacchanpass\\SWP391-G1\\SWP391\\upload_log.txt", true)) {
+                        fw.write("SUCCESS: " + syllabusId + " -> " + fileUrl + "\n");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error uploading to Cloudinary: " + e.getMessage());
+                    // Log error
+                    try (java.io.FileWriter fw = new java.io.FileWriter("D:\\SWPchacchanpass\\SWP391-G1\\SWP391\\upload_log.txt", true)) {
+                        fw.write("ERROR: " + syllabusId + " -> " + e.getMessage() + "\n");
+                    }
+                } finally {
+                    // Clean up temp file to save disk space
+                    if (tempFile.exists()) {
+                        tempFile.delete();
+                    }
                 }
             }
         }

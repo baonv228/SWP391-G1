@@ -11,9 +11,9 @@ import java.util.Map;
 public class CloudinaryUtil {
 
     // Cloudinary Credentials (fill keys when provided)
-    private static final String CLOUD_NAME = "dev4uz63q";
-    private static final String API_KEY = "339134588376349";
-    private static final String API_SECRET = "x1Xi2yY6DGvrKLJImSTnGLpzPhw";
+    private static final String CLOUD_NAME = "uaeubktv";
+    private static final String API_KEY = "424233371132972";
+    private static final String API_SECRET = "GGBtJp3BvW67f6Lzn_lN9DUeo4c";
 
     private static Cloudinary cloudinary = null;
 
@@ -31,66 +31,57 @@ public class CloudinaryUtil {
     }
 
     /**
-     * Uploads file to Cloudinary. Falls back to local directory saving if credentials are not configured.
+     * Uploads file to Cloudinary securely.
      *
      * @param fileStream InputStream of the file part.
      * @param fileName Original file name.
-     * @param destinationDir Local directory file object to write to as fallback.
-     * @param webAppRelativeFallbackPrefix Web app URL path prefix for fallback (e.g. "/materials/1/").
-     * @return Uploaded URL (Cloudinary secure_url or local relative fallback path).
+     * @return Uploaded URL (Cloudinary secure_url).
      * @throws Exception if saving or uploading fails.
      */
-    public static String uploadFile(InputStream fileStream, String fileName, File destinationDir, String webAppRelativeFallbackPrefix) throws Exception {
+    public static String uploadFile(InputStream fileStream, String fileName) throws Exception {
+        if (cloudinary == null) {
+            throw new Exception("Cloudinary credentials are not configured.");
+        }
+
         // Collisions prevention suffix
         String safeFileName = System.currentTimeMillis() + "_" + fileName.replaceAll("[^a-zA-Z0-9._\\-]", "_");
         
-        // Always write to local folder first (as a local backup / fallback)
-        if (!destinationDir.exists()) {
-            destinationDir.mkdirs();
-        }
-        File localFile = new File(destinationDir, safeFileName);
-        try (OutputStream out = new FileOutputStream(localFile)) {
-            byte[] buf = new byte[8192];
-            int length;
-            while ((length = fileStream.read(buf)) > 0) {
-                out.write(buf, 0, length);
-            }
-        }
-
-        // If Cloudinary is configured, upload to Cloudinary
-        if (cloudinary != null) {
-            try {
-                // Determine resource type: raw (for zip/docs), image, or video
-                String ext = getExtension(fileName).toLowerCase();
-                String resourceType = "raw";
-                if (ext.equals("pdf") || ext.equals("docx") || ext.equals("zip") || ext.equals("xlsx") || ext.equals("pptx")) {
-                    resourceType = "raw";
-                } else if (ext.equals("mp4") || ext.equals("avi") || ext.equals("mov") || ext.equals("webm")) {
-                    resourceType = "video";
-                } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("gif")) {
-                    resourceType = "image";
+        // Write to temporary local file
+        File localFile = File.createTempFile("upload_", "_" + safeFileName);
+        try {
+            try (OutputStream out = new FileOutputStream(localFile)) {
+                byte[] buf = new byte[8192];
+                int length;
+                while ((length = fileStream.read(buf)) > 0) {
+                    out.write(buf, 0, length);
                 }
+            }
 
-                Map params = ObjectUtils.asMap(
-                    "folder", "flm_materials",
-                    "resource_type", resourceType,
-                    "public_id", safeFileName
-                );
+            // Determine resource type: raw (for zip/docs), image, or video
+            String ext = getExtension(fileName).toLowerCase();
+            String resourceType = "raw";
+            if (ext.equals("pdf") || ext.equals("docx") || ext.equals("zip") || ext.equals("xlsx") || ext.equals("pptx") || ext.equals("doc") || ext.equals("ppt")) {
+                resourceType = "raw";
+            } else if (ext.equals("mp4") || ext.equals("avi") || ext.equals("mov") || ext.equals("webm")) {
+                resourceType = "video";
+            } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("gif")) {
+                resourceType = "image";
+            }
 
-                Map uploadResult = cloudinary.uploader().upload(localFile, params);
-                String cloudinaryUrl = (String) uploadResult.get("secure_url");
-                
-                // Optionally delete local temp file after uploading to Cloudinary
+            Map params = ObjectUtils.asMap(
+                "folder", "flm_materials",
+                "resource_type", resourceType,
+                "public_id", safeFileName
+            );
+
+            Map uploadResult = cloudinary.uploader().upload(localFile, params);
+            return (String) uploadResult.get("secure_url");
+        } finally {
+            // Always delete temp file to prevent disk leak
+            if (localFile.exists()) {
                 localFile.delete();
-                
-                return cloudinaryUrl;
-            } catch (Exception e) {
-                System.err.println("Cloudinary upload failed: " + e.getMessage() + ". Falling back to local storage.");
             }
         }
-
-        // Fallback: return local relative path
-        return webAppRelativeFallbackPrefix + safeFileName;
     }
 
     private static String getExtension(String fileName) {

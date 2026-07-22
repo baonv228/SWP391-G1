@@ -616,7 +616,12 @@ public class SyllabusDAO extends DBContext {
             ps.setString(3, "Student Material Package"); ps.setString(4, filePath);
             ps.setString(5, "ZIP"); ps.setString(6, "Public"); ps.setString(7, "Active");
             ps.executeUpdate();
-        } catch (Exception e) { System.out.println("saveMaterialFile error: " + e.getMessage()); }
+        } catch (Exception e) {
+            System.out.println("saveMaterialFile error: " + e.getMessage());
+            try (java.io.FileWriter fw = new java.io.FileWriter("D:\\SWPchacchanpass\\SWP391-G1\\SWP391\\db_error_log.txt", true)) {
+                fw.write("DB_ERROR: " + syllabusId + " -> " + e.getMessage() + "\n");
+            } catch (Exception ignored) {}
+        }
     }
 
     public String getLatestMaterialFilePath(int syllabusId) {
