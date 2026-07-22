@@ -618,9 +618,6 @@ public class SyllabusDAO extends DBContext {
             ps.executeUpdate();
         } catch (Exception e) {
             System.out.println("saveMaterialFile error: " + e.getMessage());
-            try (java.io.FileWriter fw = new java.io.FileWriter("D:\\SWPchacchanpass\\SWP391-G1\\SWP391\\db_error_log.txt", true)) {
-                fw.write("DB_ERROR: " + syllabusId + " -> " + e.getMessage() + "\n");
-            } catch (Exception ignored) {}
         }
     }
 
