@@ -225,6 +225,7 @@
     </style>
 </head>
 <body>
+<<<<<<< Updated upstream
     <div class="page">
         <header class="topbar">
             <div class="brand">TPMS ADMIN</div>
@@ -232,6 +233,74 @@
                 <div class="profile">
                     <span class="avatar">AD</span>
                     <span>Admin</span>
+=======
+<div class="admin-shell">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo-mark" aria-hidden="true">
+                <svg viewBox="0 0 40 40" width="36" height="36">
+                    <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="#ff7a00"/>
+                    <polygon points="20,8 31,14 31,26 20,32 9,26 9,14" fill="#fff" opacity=".9"/>
+                    <polygon points="20,14 26,17.5 26,24.5 20,28 14,24.5 14,17.5" fill="#ff7a00"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand-title">TPMS</div>
+                <div class="brand-sub">Training Program Management System</div>
+            </div>
+        </div>
+
+        <nav class="side-nav" aria-label="Menu Admin">
+            <a class="nav-item active" href="<%=ctx%>/home">
+                <span class="nav-ico">🏠</span> Trang chủ
+            </a>
+            <a class="nav-item" href="<%=ctx%>/admin/users">
+                <span class="nav-ico">👥</span> Quản lý người dùng
+            </a>
+            <a class="nav-item" href="<%=ctx%>/curriculum?action=list">
+                <span class="nav-ico">📘</span> Xem chương trình học
+            </a>
+            <a class="nav-item" href="<%=ctx%>/profile">
+                <span class="nav-ico">👤</span> Hồ sơ cá nhân
+            </a>
+            <a class="nav-item" href="<%=ctx%>/admin/roles">
+                <span class="nav-ico">⚙️</span> Quản lý vai trò
+            </a>
+            <a class="nav-item" href="<%=ctx%>/admin/reports">
+                <span class="nav-ico">📊</span> System Reports
+            </a>
+        </nav>
+    </aside>
+
+    <div class="main-wrap">
+        <header class="top-header">
+            <div class="date-chip" title="Ngày hiện tại trên máy chủ">
+                <span class="date-ico">📅</span>
+                <span id="adminDateLabel"><%= dateLabel %></span>
+            </div>
+
+            <div class="header-right">
+                <div class="user-menu" id="adminUserMenu">
+                    <button type="button" class="user-menu-toggle" id="adminUserMenuBtn"
+                            aria-haspopup="true" aria-expanded="false" aria-controls="adminUserDropdown">
+                        <div class="avatar"><%= initials %></div>
+                        <div class="user-meta">
+                            <div class="user-name"><%= displayName %></div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                        <span class="user-caret" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="user-dropdown" id="adminUserDropdown" hidden>
+                        <a class="user-dropdown-item" href="<%=ctx%>/profile">
+                            <span class="item-ico">👤</span>
+                            Chỉnh sửa hồ sơ cá nhân
+                        </a>
+                        <a class="user-dropdown-item danger" href="<%=ctx%>/logout">
+                            <span class="item-ico">⎋</span>
+                            Đăng xuất
+                        </a>
+                    </div>
+>>>>>>> Stashed changes
                 </div>
                 <a class="btn-outline" href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
             </div>
@@ -243,11 +312,54 @@
                 <p>Hệ thống Quản lý Đào tạo — Trang Quản trị hệ thống.</p>
             </div>
 
+<<<<<<< Updated upstream
             <div class="grid">
                 <a href="<%=request.getContextPath()%>/admin/users" class="card">
                     <div class="card-icon">👥</div>
                     <div class="card-title">Quản lý người dùng</div>
                     <div class="card-desc">Thêm mới, cập nhật thông tin và đặt lại mật khẩu cho giảng viên, sinh viên và nhân viên.</div>
+=======
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="stat-num"><%= totalUsers %></div>
+                            <div class="stat-label">Người dùng</div>
+                            <div class="stat-hint">Tài khoản Active</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="stat-num"><%= totalPrograms %></div>
+                            <div class="stat-label">Chương trình đào tạo</div>
+                            <div class="stat-hint">Đang quản lý</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="stat-num"><%= totalCourses %></div>
+                            <div class="stat-label">Khóa học</div>
+                            <div class="stat-hint">Subject / Course</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-art" aria-hidden="true">
+                    <div class="monitor">
+                        <div class="monitor-screen">
+                            <div class="chart-bars">
+                                <span style="height:45%"></span>
+                                <span style="height:70%"></span>
+                                <span style="height:55%"></span>
+                                <span style="height:85%"></span>
+                                <span style="height:60%"></span>
+                            </div>
+                        </div>
+                        <div class="monitor-stand"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="cards-grid" aria-label="Lối tắt quản trị">
+                <a class="dash-card" href="<%=ctx%>/admin/users">
+                    <div class="dash-ico">👥</div>
+                    <h3>Quản lý người dùng</h3>
+                    <p>Thêm mới, cập nhật thông tin và đặt lại mật khẩu cho giảng viên, sinh viên và nhân viên.</p>
+                    <span class="dash-cta">Truy cập ngay <i>→</i></span>
+>>>>>>> Stashed changes
                 </a>
 
                 <a href="<%=request.getContextPath()%>/curriculum?action=list" class="card">
@@ -274,5 +386,54 @@
             © 2026 Training Program Management System. All rights reserved.
         </footer>
     </div>
+<<<<<<< Updated upstream
+=======
+</div>
+
+<script>
+    (function () {
+        // Đồng bộ nhãn lịch với đồng hồ máy khách (ngày thực tế khi xem trang)
+        var viDays = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+        function refreshDate() {
+            var now = new Date();
+            var label = viDays[now.getDay()] + ", "
+                + String(now.getDate()).padStart(2, "0") + "/"
+                + String(now.getMonth() + 1).padStart(2, "0") + "/"
+                + now.getFullYear();
+            var el = document.getElementById("adminDateLabel");
+            if (el) el.textContent = label;
+        }
+        refreshDate();
+        setInterval(refreshDate, 60 * 1000);
+
+        var menu = document.getElementById("adminUserMenu");
+        var btn = document.getElementById("adminUserMenuBtn");
+        var dropdown = document.getElementById("adminUserDropdown");
+        if (menu && btn && dropdown) {
+            function closeMenu() {
+                dropdown.hidden = true;
+                menu.classList.remove("open");
+                btn.setAttribute("aria-expanded", "false");
+            }
+            function toggleMenu() {
+                var open = dropdown.hidden;
+                dropdown.hidden = !open;
+                menu.classList.toggle("open", open);
+                btn.setAttribute("aria-expanded", open ? "true" : "false");
+            }
+            btn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                toggleMenu();
+            });
+            document.addEventListener("click", function (e) {
+                if (!menu.contains(e.target)) closeMenu();
+            });
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") closeMenu();
+            });
+        }
+    })();
+</script>
+>>>>>>> Stashed changes
 </body>
 </html>
