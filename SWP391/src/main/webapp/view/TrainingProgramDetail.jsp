@@ -85,7 +85,7 @@
                     <tbody>
                         <% if (curriculums == null || curriculums.isEmpty()) { %>
                         <tr>
-                            <td class="empty" colspan="5">No curriculum for this department.</td>
+                            <td class="empty" colspan="5">Chưa có curriculum cho department này.</td>
                         </tr>
                         <% } else {
                             int index = 1;
