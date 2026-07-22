@@ -10,9 +10,9 @@ import java.util.Map;
 
 public class CloudinaryUtil {
 
-    private static final String CLOUD_NAME = getConfig("CLOUDINARY_CLOUD_NAME", "cloudinary.cloud_name", "uaeubktv");
-    private static final String API_KEY = getConfig("CLOUDINARY_API_KEY", "cloudinary.api_key", "424233371132972");
-    private static final String API_SECRET = getConfig("CLOUDINARY_API_SECRET", "cloudinary.api_secret", "GGBtJp3BvW67f6Lzn_lN9DUeo4c");
+    private static final String CLOUD_NAME = getConfig("CLOUDINARY_CLOUD_NAME", "cloudinary.cloud_name", "utnlrrp5");
+    private static final String API_KEY = getConfig("CLOUDINARY_API_KEY", "cloudinary.api_key", "888491846349974");
+    private static final String API_SECRET = getConfig("CLOUDINARY_API_SECRET", "cloudinary.api_secret", "rexoJ8l8BIrMNpUmcG2vJdb2ATw");
 
     private static Cloudinary cloudinary = null;
 
