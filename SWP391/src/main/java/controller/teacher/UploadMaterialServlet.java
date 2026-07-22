@@ -18,6 +18,8 @@ import utils.PaginationUtil;
 import utils.ValidationUtil;
 
 import java.io.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.sql.SQLException;
 import java.util.List;
@@ -51,6 +53,8 @@ public class UploadMaterialServlet extends HttpServlet {
             throws ServletException, IOException {
         if (!AuthUtil.requireTeacher(request, response)) return;
 
+        User teacher = AuthUtil.getLoggedInUser(request);
+
         try {
             // Pre-load all active syllabi for the dropdown
             SyllabusDAO syllabusDAO = new SyllabusDAO();
@@ -59,23 +63,22 @@ public class UploadMaterialServlet extends HttpServlet {
 
             // If syllabusId param given, pre-select it
             String syllabusIdParam = request.getParameter("syllabusId");
+            Integer selectedSyllabusId = null;
             if (ValidationUtil.isValidId(syllabusIdParam)) {
-                request.setAttribute("selectedSyllabusId", Integer.parseInt(syllabusIdParam));
+                selectedSyllabusId = Integer.parseInt(syllabusIdParam);
+                request.setAttribute("selectedSyllabusId", selectedSyllabusId);
             }
 
-            // Show existing materials for selected syllabus (newest first, paged)
-            if (ValidationUtil.isValidId(syllabusIdParam)) {
-                int syllabusId = Integer.parseInt(syllabusIdParam);
-                int page = ValidationUtil.parsePageNumber(request.getParameter("page"));
-                MaterialDAO materialDAO = new MaterialDAO();
-                int total = materialDAO.countMaterialsBySyllabusId(syllabusId);
-                PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
-                List<MaterialDTO> existing = materialDAO.getMaterialsBySyllabusId(
-                        syllabusId, pagination.getCurrentPage(), PAGE_SIZE);
-                request.setAttribute("existingMaterials", existing);
-                request.setAttribute("materialPagination", pagination);
-                request.setAttribute("totalMaterials", total);
-            }
+            // Private cloud: only show files uploaded by the current teacher.
+            int page = ValidationUtil.parsePageNumber(request.getParameter("page"));
+            MaterialDAO materialDAO = new MaterialDAO();
+            int total = materialDAO.countMaterialsByUploader(teacher.getUserId(), selectedSyllabusId);
+            PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
+            List<MaterialDTO> existing = materialDAO.getMaterialsByUploader(
+                    teacher.getUserId(), selectedSyllabusId, pagination.getCurrentPage(), PAGE_SIZE);
+            request.setAttribute("existingMaterials", existing);
+            request.setAttribute("materialPagination", pagination);
+            request.setAttribute("totalMaterials", total);
 
             request.getRequestDispatcher("/view/teacher/uploadMaterial.jsp")
                     .forward(request, response);
@@ -98,10 +101,19 @@ public class UploadMaterialServlet extends HttpServlet {
         User teacher = AuthUtil.getLoggedInUser(request);
         request.setCharacterEncoding("UTF-8");
 
+        String action = request.getParameter("action");
+        if ("update".equalsIgnoreCase(action)) {
+            updateMaterialMetadata(request, response, teacher);
+            return;
+        }
+        if ("delete".equalsIgnoreCase(action)) {
+            deleteMaterial(request, response, teacher);
+            return;
+        }
+
         // ── Validate form fields ──────────────────────────────────────
         String syllabusIdParam = request.getParameter("syllabusId");
         String materialName    = request.getParameter("materialName");
-        String visibility      = request.getParameter("visibility");
 
         if (!ValidationUtil.isValidId(syllabusIdParam)
                 || materialName == null || materialName.trim().isEmpty()) {
@@ -163,13 +175,12 @@ public class UploadMaterialServlet extends HttpServlet {
                     materialName,
                     finalFileUrl,
                     extension,
-                    visibility != null ? visibility : "Public"
+                    "Private"
             );
 
             if (newId > 0) {
-                response.sendRedirect(request.getContextPath()
-                        + "/teacher/upload-material?syllabusId=" + syllabusId
-                        + "&success=Material+uploaded+successfully");
+                redirectToCloud(request, response, syllabusIdParam,
+                        "success", "Material uploaded to your private cloud");
             } else {
                 request.setAttribute("error", "Failed to save material record. Please try again.");
                 doGet(request, response);
@@ -191,6 +202,80 @@ public class UploadMaterialServlet extends HttpServlet {
     // ----------------------------------------------------------------
     //  Helpers
     // ----------------------------------------------------------------
+
+    private void updateMaterialMetadata(HttpServletRequest request, HttpServletResponse response, User teacher)
+            throws IOException, ServletException {
+        String materialIdParam = request.getParameter("materialId");
+        String syllabusIdParam = request.getParameter("syllabusId");
+        String materialName = request.getParameter("materialName");
+
+        if (!ValidationUtil.isValidId(materialIdParam)
+                || materialName == null || materialName.trim().isEmpty()) {
+            redirectToCloud(request, response, syllabusIdParam,
+                    "error", "Material name is required");
+            return;
+        }
+
+        materialName = ValidationUtil.sanitize(materialName);
+        try {
+            MaterialDAO materialDAO = new MaterialDAO();
+            boolean updated = materialDAO.updateMaterialName(
+                    Integer.parseInt(materialIdParam.trim()),
+                    teacher.getUserId(),
+                    materialName
+            );
+            redirectToCloud(request, response, syllabusIdParam,
+                    updated ? "success" : "error",
+                    updated ? "Material updated successfully" : "Material not found or access denied");
+        } catch (SQLException e) {
+            getServletContext().log("DB error updating material", e);
+            request.setAttribute("error", "Database error while updating material.");
+            doGet(request, response);
+        }
+    }
+
+    private void deleteMaterial(HttpServletRequest request, HttpServletResponse response, User teacher)
+            throws IOException, ServletException {
+        String materialIdParam = request.getParameter("materialId");
+        String syllabusIdParam = request.getParameter("syllabusId");
+
+        if (!ValidationUtil.isValidId(materialIdParam)) {
+            redirectToCloud(request, response, syllabusIdParam,
+                    "error", "Invalid material");
+            return;
+        }
+
+        try {
+            MaterialDAO materialDAO = new MaterialDAO();
+            boolean deleted = materialDAO.deleteMaterial(
+                    Integer.parseInt(materialIdParam.trim()),
+                    teacher.getUserId()
+            );
+            redirectToCloud(request, response, syllabusIdParam,
+                    deleted ? "success" : "error",
+                    deleted ? "Material deleted successfully" : "Material not found or access denied");
+        } catch (SQLException e) {
+            getServletContext().log("DB error deleting material", e);
+            request.setAttribute("error", "Database error while deleting material.");
+            doGet(request, response);
+        }
+    }
+
+    private void redirectToCloud(HttpServletRequest request, HttpServletResponse response,
+                                 String syllabusIdParam, String messageType, String message)
+            throws IOException {
+        StringBuilder url = new StringBuilder(request.getContextPath()).append("/teacher/upload-material");
+        String separator = "?";
+        if (ValidationUtil.isValidId(syllabusIdParam)) {
+            url.append(separator).append("syllabusId=").append(syllabusIdParam.trim());
+            separator = "&";
+        }
+        url.append(separator)
+                .append(messageType)
+                .append("=")
+                .append(URLEncoder.encode(message, StandardCharsets.UTF_8));
+        response.sendRedirect(url.toString());
+    }
 
     private File getUploadsRoot() {
         String configured = getServletContext().getInitParameter(UPLOAD_DIR_PARAM);

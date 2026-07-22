@@ -19,6 +19,11 @@
             <i class="bi bi-check-circle-fill"></i>${param.success}
         </div>
     </c:if>
+    <c:if test="${not empty param.error}">
+        <div class="alert alert-danger d-flex align-items-center gap-2" id="upload-error-param-alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>${param.error}
+        </div>
+    </c:if>
     <c:if test="${not empty error}">
         <div class="alert alert-danger d-flex align-items-center gap-2" id="upload-error-alert">
             <i class="bi bi-exclamation-triangle-fill"></i>${error}
@@ -55,7 +60,7 @@
                         </div>
 
                         <input type="hidden" name="materialName" id="materialName" value="" />
-                        <input type="hidden" name="visibility" value="Public" />
+                        <input type="hidden" name="visibility" value="Private" />
 
                         <div class="mb-3">
                             <label for="materialFile" class="form-label fw-semibold">
@@ -89,21 +94,21 @@
             <div class="teacher-card h-100" id="existing-materials-card">
                 <div class="teacher-card-header">
                     <i class="bi bi-folder2-open me-2"></i>
-                    Existing Materials
+                    My Private Cloud
                     <c:if test="${not empty selectedSyllabusId}">
                         <span class="ms-2 badge bg-light text-secondary border">
-                            Syllabus #${selectedSyllabusId}
+                            Filter: Syllabus #${selectedSyllabusId}
                         </span>
-                        <c:if test="${totalMaterials > 0}">
-                            <span class="ms-1 badge bg-secondary">${totalMaterials}</span>
-                        </c:if>
+                    </c:if>
+                    <c:if test="${totalMaterials > 0}">
+                        <span class="ms-1 badge bg-secondary">${totalMaterials}</span>
                     </c:if>
                 </div>
                 <div class="teacher-card-body">
                     <c:choose>
                         <c:when test="${empty existingMaterials}">
                             <p class="text-muted text-center py-3">
-                                Select a syllabus to view its materials, or none have been uploaded yet.
+                                Your private cloud is empty. Upload a file to store it for this teacher account only.
                             </p>
                         </c:when>
                         <c:otherwise>
@@ -116,21 +121,31 @@
                                             <th>Type</th>
                                             <th>Visibility</th>
                                             <th>Uploaded</th>
-                                            <th class="text-center">Downloads</th>
-                                            <th class="text-center">Download</th>
-                                        </tr>
-                                    </thead>
+                                             <th class="text-center">Downloads</th>
+                                             <th class="text-center">Download</th>
+                                             <th class="text-center">Actions</th>
+                                         </tr>
+                                     </thead>
                                     <tbody>
                                         <c:forEach var="mat" items="${existingMaterials}" varStatus="s">
                                             <tr class="${s.index % 2 == 0 ? 'row-even' : 'row-odd'}">
                                                 <td>${materialPagination.offset + s.index + 1}</td>
                                                 <td>
-                                                    <i class="bi ${mat.typeIconClass} material-type-icon me-1"></i>
-                                                    <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
-                                                       class="text-decoration-none fw-semibold" style="color: var(--fpt-orange);"
-                                                       title="Download ${fn:escapeXml(mat.materialName)}">
-                                                        ${mat.materialName}
-                                                    </a>
+                                                    <form action="${pageContext.request.contextPath}/teacher/upload-material"
+                                                          method="post" class="d-flex align-items-center gap-2 mb-0">
+                                                        <input type="hidden" name="action" value="update"/>
+                                                        <input type="hidden" name="materialId" value="${mat.materialId}"/>
+                                                        <input type="hidden" name="syllabusId" value="${selectedSyllabusId}"/>
+                                                        <i class="bi ${mat.typeIconClass} material-type-icon"></i>
+                                                        <input type="text" name="materialName"
+                                                               class="form-control form-control-sm"
+                                                               value="${fn:escapeXml(mat.materialName)}"
+                                                               required maxlength="255"/>
+                                                        <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2"
+                                                                title="Save material name">
+                                                            <i class="bi bi-check-lg"></i>
+                                                        </button>
+                                                    </form>
                                                 </td>
                                                 <td>
                                                     <span class="badge material-type-badge type-${fn:toLowerCase(mat.materialType)}">
@@ -151,14 +166,27 @@
                                                 <td class="text-center">
                                                     <span class="badge bg-info-subtle text-info border border-info">${mat.downloadCount}</span>
                                                 </td>
-                                                <td class="text-center">
-                                                    <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
-                                                       class="btn btn-sm btn-upload-submit py-0 px-2"
-                                                       title="Download ${fn:escapeXml(mat.materialName)}">
-                                                        <i class="bi bi-cloud-arrow-down-fill"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
+                                                 <td class="text-center">
+                                                     <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                                        class="btn btn-sm btn-upload-submit py-0 px-2"
+                                                        title="Download ${fn:escapeXml(mat.materialName)}">
+                                                         <i class="bi bi-cloud-arrow-down-fill"></i>
+                                                     </a>
+                                                 </td>
+                                                 <td class="text-center">
+                                                     <form action="${pageContext.request.contextPath}/teacher/upload-material"
+                                                           method="post" class="d-inline mb-0"
+                                                           onsubmit="return confirm('Delete this material from your private cloud?');">
+                                                         <input type="hidden" name="action" value="delete"/>
+                                                         <input type="hidden" name="materialId" value="${mat.materialId}"/>
+                                                         <input type="hidden" name="syllabusId" value="${selectedSyllabusId}"/>
+                                                         <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                                 title="Delete ${fn:escapeXml(mat.materialName)}">
+                                                             <i class="bi bi-trash"></i>
+                                                         </button>
+                                                     </form>
+                                                 </td>
+                                             </tr>
                                         </c:forEach>
                                     </tbody>
                                 </table>

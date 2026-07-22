@@ -849,10 +849,6 @@ public class SyllabusDAO extends DBContext {
             int syllabusId, List<SyllabusSession> sessions) throws SQLException {
         Map<String, MaterialDTO> uniqueMaterials = new LinkedHashMap<>();
 
-        for (MaterialDTO uploadedMaterial : getUploadedLearningMaterials(syllabusId)) {
-            uniqueMaterials.put(materialKey(uploadedMaterial), uploadedMaterial);
-        }
-
         for (MaterialDTO sessionMaterial : buildSessionDownloadMaterials(syllabusId, sessions)) {
             uniqueMaterials.putIfAbsent(materialKey(sessionMaterial), sessionMaterial);
         }

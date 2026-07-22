@@ -9,6 +9,7 @@ import java.sql.Timestamp;
 public class MaterialDTO {
     private int materialId;
     private int syllabusId;
+    private int uploadedBy;
     private String materialName;
     private String filePath;        // Server-side relative path, e.g. /materials/lab211/lab01.zip
     private String materialType;    // ZIP, PDF, PPTX, etc.
@@ -51,6 +52,9 @@ public class MaterialDTO {
 
     public int getSyllabusId() { return syllabusId; }
     public void setSyllabusId(int syllabusId) { this.syllabusId = syllabusId; }
+
+    public int getUploadedBy() { return uploadedBy; }
+    public void setUploadedBy(int uploadedBy) { this.uploadedBy = uploadedBy; }
 
     public String getMaterialName() { return materialName; }
     public void setMaterialName(String materialName) { this.materialName = materialName; }

@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
+import utils.AuthUtil;
 import utils.CloudinaryUtil;
 import utils.ValidationUtil;
 
@@ -95,6 +96,11 @@ public class DownloadMaterialServlet extends HttpServlet {
             return;
         }
 
+        if (!canAccessMaterial(loggedInUser, material)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied.");
+            return;
+        }
+
         String filePath = material.getFilePath();
         if (filePath != null && (filePath.startsWith("http://") || filePath.startsWith("https://"))) {
             boolean streamed = streamRemoteFile(CloudinaryUtil.toRawDeliveryUrl(filePath), material, response);
@@ -143,6 +149,17 @@ public class DownloadMaterialServlet extends HttpServlet {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
+
+    private boolean canAccessMaterial(User user, MaterialDTO material) {
+        if (user == null || material == null) {
+            return false;
+        }
+        if (user.getRoleId() == AuthUtil.ROLE_ADMIN) {
+            return true;
+        }
+        return user.getRoleId() == AuthUtil.ROLE_TEACHER
+                && material.getUploadedBy() == user.getUserId();
+    }
 
     private void recordDownload(MaterialDAO dao, int materialId) {
         try {

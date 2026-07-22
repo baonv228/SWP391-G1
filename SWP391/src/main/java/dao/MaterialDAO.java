@@ -13,7 +13,7 @@ import java.util.List;
 public class MaterialDAO {
 
     private static final String[] MATERIAL_COLUMN_NAMES = {
-            "MaterialID", "SyllabusID", "MaterialName", "FilePath",
+            "MaterialID", "SyllabusID", "UploadedBy", "MaterialName", "FilePath",
             "MaterialType", "Visibility", "Status", "UploadedAt"
     };
 
@@ -107,12 +107,67 @@ public class MaterialDAO {
 
     /** All materials uploaded by a specific user (teacher's uploads). */
     public List<MaterialDTO> getMaterialsByUploader(int userId) throws SQLException {
+        return getMaterialsByUploader(userId, null, 1, Integer.MAX_VALUE);
+    }
+
+    public int countMaterialsByUploader(int userId, Integer syllabusId) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Learning_Material ")
+                .append("WHERE UploadedBy = ? AND Status = 'Active'");
+        if (syllabusId != null) {
+            sql.append(" AND SyllabusID = ?");
+        }
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            ps.setInt(1, userId);
+            if (syllabusId != null) {
+                ps.setInt(2, syllabusId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    public List<MaterialDTO> getMaterialsByUploader(
+            int userId, Integer syllabusId, int page, int pageSize) throws SQLException {
+        List<MaterialDTO> list = new ArrayList<>();
+        int offset = Math.max(0, page - 1) * pageSize;
+        try (Connection conn = DBContext.getConnection()) {
+            StringBuilder sql = new StringBuilder("SELECT ")
+                    .append(materialColumns(conn, "m"))
+                    .append("FROM Learning_Material m ")
+                    .append("WHERE m.UploadedBy = ? AND m.Status = 'Active' ");
+            if (syllabusId != null) {
+                sql.append("AND m.SyllabusID = ? ");
+            }
+            sql.append("ORDER BY m.UploadedAt DESC, m.MaterialID DESC ")
+                    .append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+            try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+                int paramIndex = 1;
+                ps.setInt(paramIndex++, userId);
+                if (syllabusId != null) {
+                    ps.setInt(paramIndex++, syllabusId);
+                }
+                ps.setInt(paramIndex++, offset);
+                ps.setInt(paramIndex, pageSize);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) list.add(mapRow(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    public List<MaterialDTO> getPrivateMaterialsByUploader(int userId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection()) {
             String sql = "SELECT " + materialColumns(conn, "m") +
                     "FROM Learning_Material m " +
-                    "WHERE m.UploadedBy = ? AND m.Status = 'Active' " +
-                    "ORDER BY m.UploadedAt DESC";
+                    "WHERE m.UploadedBy = ? AND m.Status = 'Active' AND m.Visibility = 'Private' " +
+                    "ORDER BY m.UploadedAt DESC, m.MaterialID DESC";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -187,6 +242,19 @@ public class MaterialDAO {
         }
     }
 
+    public boolean updateMaterialName(int materialId, int uploadedBy, String materialName) throws SQLException {
+        String sql = "UPDATE Learning_Material " +
+                "SET MaterialName = ?, Visibility = 'Private' " +
+                "WHERE MaterialID = ? AND UploadedBy = ? AND Status = 'Active'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, materialName.trim());
+            ps.setInt(2, materialId);
+            ps.setInt(3, uploadedBy);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     // ----------------------------------------------------------------
     //  Helper
     // ----------------------------------------------------------------
@@ -195,6 +263,7 @@ public class MaterialDAO {
         MaterialDTO dto = new MaterialDTO();
         dto.setMaterialId(rs.getInt("MaterialID"));
         dto.setSyllabusId(rs.getInt("SyllabusID"));
+        dto.setUploadedBy(rs.getInt("UploadedBy"));
         dto.setMaterialName(rs.getString("MaterialName"));
         dto.setFilePath(rs.getString("FilePath"));
         dto.setMaterialType(rs.getString("MaterialType"));
