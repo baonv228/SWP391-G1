@@ -71,6 +71,8 @@ public class SyllabusDTO {
         public void setStudentMaterials(String v) { this.studentMaterials = v; }
         public String getSDownload() { return sDownload; }
         public void setSDownload(String sDownload) { this.sDownload = sDownload; }
+        public String getStudentDownload() { return sDownload; }
+        public void setStudentDownload(String studentDownload) { this.sDownload = studentDownload; }
         public String getStudentTasks() { return studentTasks; }
         public void setStudentTasks(String v) { this.studentTasks = v; }
         public String getUrls() { return urls; }

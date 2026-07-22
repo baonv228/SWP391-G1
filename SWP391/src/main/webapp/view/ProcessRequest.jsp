@@ -192,19 +192,30 @@
                 <h2>6. Uploaded Learning Materials</h2>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>No.</th><th>Name</th><th>Type</th><th>Visibility</th><th>Status</th><th>Uploaded At</th></tr></thead>
+                        <thead><tr><th>No.</th><th>Name</th><th>Type</th><th>Visibility</th><th>Status</th><th>Uploaded At</th><th>File Link</th></tr></thead>
                         <tbody>
                             <% List<MaterialDTO> uploadedMaterials = syllabus.getMaterials();
                                if (uploadedMaterials == null || uploadedMaterials.isEmpty()) { %>
-                            <tr><td colspan="6" class="empty">No uploaded material.</td></tr>
+                            <tr><td colspan="7" class="empty">No uploaded material.</td></tr>
                             <% } else { int i = 1; for (MaterialDTO material : uploadedMaterials) { %>
                             <tr>
                                 <td><%= i++ %></td>
-                                <td><%= h(material.getMaterialName()) %></td>
+                                <td>
+                                    <a class="material-link"
+                                       href="<%=request.getContextPath()%>/download-material?materialId=<%= material.getMaterialId() %>">
+                                        <%= h(material.getMaterialName()) %>
+                                    </a>
+                                </td>
                                 <td><%= h(material.getMaterialType()) %></td>
                                 <td><%= h(material.getVisibility()) %></td>
                                 <td><%= h(material.getStatus()) %></td>
                                 <td><%= material.getUploadedAt() != null ? dateFormat.format(material.getUploadedAt()) : "" %></td>
+                                <td>
+                                    <a class="download-button"
+                                       href="<%=request.getContextPath()%>/download-material?materialId=<%= material.getMaterialId() %>">
+                                        Download
+                                    </a>
+                                </td>
                             </tr>
                             <% }} %>
                         </tbody>

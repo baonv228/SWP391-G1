@@ -188,6 +188,32 @@ tbody tr:nth-child(even) {
     background: rgba(255, 255, 255, 0.94);
 }
 
+.material-link {
+    color: var(--orange-dark);
+    font-weight: 900;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.download-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--orange-dark);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.download-button:hover {
+    background: #9f4d0d;
+    color: var(--white);
+}
+
 .empty,
 .empty-card {
     color: var(--muted);
