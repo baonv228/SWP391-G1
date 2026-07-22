@@ -130,14 +130,15 @@
                                                 <td>${sub.subjectName}</td>
                                                 <td>${sub.credits}</td>
                                                 <td>
-                                                    <c:choose>
-                                                        <c:when test="${sub.required}">
-                                                            <span class="badge bg-warning text-dark">Required</span>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <span class="badge bg-light text-secondary border">Elective</span>
-                                                        </c:otherwise>
-                                                    </c:choose>
+                                                    <div class="small text-muted">
+                                                        Prerequisite:
+                                                        <c:choose>
+                                                            <c:when test="${not empty sub.prerequisiteText}">
+                                                                <c:out value="${sub.prerequisiteText}"/>
+                                                            </c:when>
+                                                            <c:otherwise>None</c:otherwise>
+                                                        </c:choose>
+                                                    </div>
                                                 </td>
                                                 <td>${sub.status}</td>
                                             </tr>

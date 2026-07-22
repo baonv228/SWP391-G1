@@ -193,7 +193,13 @@ public class CurriculumDAO extends DBContext {
         String whereClause = buildWhereClause(searchType, keyword);
 
         String sql = """
-                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
+                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.DecisionNo, c.Status,
+                       COALESCE((
+                           SELECT SUM(s.Credits)
+                           FROM dbo.[Curriculum_Subject] cs
+                           JOIN dbo.[Subject] s ON s.SubjectID = cs.SubjectID
+                           WHERE cs.CurriculumID = c.CurriculumID
+                       ), 0) AS TotalCredits,
                        tp.ProgramCode, tp.ProgramName, tp.MajorName
                 FROM dbo.[Curriculum] c
                 JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
@@ -239,7 +245,13 @@ public class CurriculumDAO extends DBContext {
 
     public CurriculumDTO getCurriculumById(int curriculumId) throws SQLException {
         String sql = """
-                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.Status,
+                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.DecisionNo, c.Status,
+                       COALESCE((
+                           SELECT SUM(s.Credits)
+                           FROM dbo.[Curriculum_Subject] cs
+                           JOIN dbo.[Subject] s ON s.SubjectID = cs.SubjectID
+                           WHERE cs.CurriculumID = c.CurriculumID
+                       ), 0) AS TotalCredits,
                        tp.ProgramCode, tp.ProgramName, tp.MajorName
                 FROM dbo.[Curriculum] c
                 JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
@@ -461,7 +473,23 @@ public class CurriculumDAO extends DBContext {
         Map<Integer, List<SubjectDTO>> map = new TreeMap<>();
         String sql = """
                 SELECT cs.SemesterNo,
-                       s.SubjectID, s.SubjectCode, s.SubjectName, s.Credits, s.Status,
+                       s.SubjectID, s.SubjectCode, s.SubjectName, s.Credits,
+                       CASE
+                           WHEN EXISTS (
+                               SELECT 1
+                               FROM dbo.[Syllabus] sy
+                               WHERE sy.SubjectID = s.SubjectID
+                                 AND sy.IsCurrentVersion = 1
+                                 AND sy.ApprovedBy IS NOT NULL
+                           ) THEN 'Active'
+                           ELSE 'WaitingForSyllabus'
+                       END AS Status,
+                       COALESCE((
+                           SELECT STRING_AGG(req.SubjectCode, ', ')
+                           FROM dbo.[Subject_Prerequisite] sp
+                           JOIN dbo.[Subject] req ON req.SubjectID = sp.RequiredSubjectID
+                           WHERE sp.SubjectID = s.SubjectID
+                       ), '') AS PrerequisiteCodes,
                        cs.IsRequired
                 FROM dbo.[Curriculum_Subject] cs
                 JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
@@ -483,6 +511,7 @@ public class CurriculumDAO extends DBContext {
                     subject.setSemester(semester);
                     subject.setStatus(rs.getString("Status"));
                     subject.setRequired(rs.getBoolean("IsRequired"));
+                    subject.setPrerequisiteText(rs.getString("PrerequisiteCodes"));
                     map.computeIfAbsent(semester, ignored -> new ArrayList<>()).add(subject);
                 }
             }
@@ -511,6 +540,8 @@ public class CurriculumDAO extends DBContext {
         dto.setCurriculumId(rs.getInt("CurriculumID"));
         dto.setCurriculumName(rs.getString("CurriculumName"));
         dto.setDescription(rs.getString("Description"));
+        dto.setDecisionNo(rs.getString("DecisionNo"));
+        dto.setTotalCredits(rs.getInt("TotalCredits"));
         dto.setStatus(rs.getString("Status"));
         dto.setProgramCode(rs.getString("ProgramCode"));
         dto.setProgramName(rs.getString("ProgramName"));

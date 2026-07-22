@@ -14,6 +14,7 @@ public class CurriculumDTO {
     // From Curriculum table
     private String curriculumName;
     private String description;
+    private String decisionNo;
     private String status;
     // Computed from Curriculum_Subject
     private int totalCredits;
@@ -46,6 +47,8 @@ public class CurriculumDTO {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getDecisionNo() { return decisionNo; }
+    public void setDecisionNo(String decisionNo) { this.decisionNo = decisionNo; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

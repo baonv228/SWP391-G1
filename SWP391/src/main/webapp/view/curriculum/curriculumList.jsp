@@ -49,7 +49,9 @@
                     <tr>
                         <th>Curriculum Code</th>
                         <th>Curriculum Name</th>
+                        <th>Description</th>
                         <th>Total Credits</th>
+                        <th>DecisionNo MM/dd/yyyy</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -59,17 +61,16 @@
                         <tr class="${status.index % 2 == 0 ? 'row-even' : 'row-odd'}" id="curriculum-row-${c.curriculumId}">
                             <td>${c.curriculumCode}</td>
                             <td>${c.curriculumName}</td>
+                            <td><c:out value="${c.description}"/></td>
                             <td>${c.totalCredits}</td>
+                            <td><c:out value="${c.decisionNo}"/></td>
                             <td>
                                 <c:choose>
                                     <c:when test="${c.status == 'Active'}">
-                                        <span class="badge bg-success">${c.status}</span>
-                                    </c:when>
-                                    <c:when test="${c.status == 'Inactive'}">
-                                        <span class="badge bg-secondary">${c.status}</span>
+                                        <span class="badge bg-success"><c:out value="${c.status}"/></span>
                                     </c:when>
                                     <c:otherwise>
-                                        <span class="badge bg-info">${c.status}</span>
+                                        <span class="badge bg-secondary"><c:out value="${c.status}"/></span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
