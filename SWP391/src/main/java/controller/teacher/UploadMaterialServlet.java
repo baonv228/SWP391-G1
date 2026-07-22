@@ -139,16 +139,12 @@ public class UploadMaterialServlet extends HttpServlet {
         }
 
         // ── Save/Upload file ─────────────────────────────────────────
-        File uploadsRoot = getUploadsRoot();
-        File syllabusDir = new File(uploadsRoot, String.valueOf(syllabusId));
-        String relativeFallbackPrefix = "/materials/" + syllabusId + "/";
-
         String finalFileUrl;
         try (InputStream in = filePart.getInputStream()) {
-            finalFileUrl = utils.CloudinaryUtil.uploadFile(in, originalFileName, syllabusDir, relativeFallbackPrefix);
+            finalFileUrl = utils.CloudinaryUtil.uploadFile(in, originalFileName);
         } catch (Exception e) {
             getServletContext().log("File save/upload error", e);
-            request.setAttribute("error", "Error uploading file: " + e.getMessage());
+            request.setAttribute("error", "Error uploading file to Cloudinary: " + e.getMessage());
             request.setAttribute("selectedSyllabusId", syllabusId);
             doGet(request, response);
             return;
@@ -176,12 +172,6 @@ public class UploadMaterialServlet extends HttpServlet {
             }
         } catch (SQLException e) {
             getServletContext().log("DB error inserting material", e);
-            // Remove local file if DB insert failed and it was stored locally
-            if (finalFileUrl.startsWith("/materials/")) {
-                String localFilename = finalFileUrl.substring(finalFileUrl.lastIndexOf('/') + 1);
-                File stored = new File(syllabusDir, localFilename);
-                if (stored.exists()) stored.delete();
-            }
             request.setAttribute("error", "Database error while saving material.");
             request.setAttribute("selectedSyllabusId", syllabusId);
             doGet(request, response);
