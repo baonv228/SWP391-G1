@@ -10,9 +10,9 @@ import java.util.Map;
 
 public class CloudinaryUtil {
 
-    private static final String CLOUD_NAME = "uaeubktv";
-    private static final String API_KEY = "424233371132972";
-    private static final String API_SECRET = "GGBtJp3BvW67f6Lzn_lN9DUeo4c";
+    private static final String CLOUD_NAME = getConfig("CLOUDINARY_CLOUD_NAME", "cloudinary.cloud_name", "uaeubktv");
+    private static final String API_KEY = getConfig("CLOUDINARY_API_KEY", "cloudinary.api_key", "424233371132972");
+    private static final String API_SECRET = getConfig("CLOUDINARY_API_SECRET", "cloudinary.api_secret", "GGBtJp3BvW67f6Lzn_lN9DUeo4c");
 
     private static Cloudinary cloudinary = null;
 
@@ -147,5 +147,17 @@ public class CloudinaryUtil {
     private static String getExtension(String fileName) {
         int dot = fileName.lastIndexOf('.');
         return (dot >= 0) ? fileName.substring(dot + 1) : "";
+    }
+
+    private static String getConfig(String envName, String propertyName, String defaultValue) {
+        String propertyValue = System.getProperty(propertyName);
+        if (propertyValue != null && !propertyValue.trim().isEmpty()) {
+            return propertyValue.trim();
+        }
+        String envValue = System.getenv(envName);
+        if (envValue != null && !envValue.trim().isEmpty()) {
+            return envValue.trim();
+        }
+        return defaultValue;
     }
 }
