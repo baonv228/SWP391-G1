@@ -12,8 +12,6 @@ import model.User;
 @WebServlet(name = "HomeServlet", urlPatterns = {"/home"})
 public class HomeServlet extends HttpServlet {
 
-    private static final String TRAINING_DEPARTMENT_ROLE = "Training Department";
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -24,28 +22,31 @@ public class HomeServlet extends HttpServlet {
         }
 
         String roleName = resolveRoleName(session);
+        String normalizedRole = normalizeRole(roleName);
         User user = (User) session.getAttribute("user");
         int roleId = (user != null) ? user.getRoleId() : -1;
 
-        if ("Training Department".equalsIgnoreCase(roleName) || roleId == 4) {
+        if ("trainingdepartment".equals(normalizedRole) || roleId == 4) {
             request.getRequestDispatcher("/view/TrainingDepartment.jsp").forward(request, response);
             return;
-        } else if ("Teacher".equalsIgnoreCase(roleName) || roleId == 3) {
+        }
+
+        if ("teacher".equals(normalizedRole) || roleId == 3) {
             response.sendRedirect(request.getContextPath() + "/teacher/dashboard");
             return;
-        } else if ("Student".equalsIgnoreCase(roleName) || roleId == 2) {
+        }
 
+        if ("student".equals(normalizedRole) || roleId == 2) {
             request.getRequestDispatcher("/view/home.jsp").forward(request, response);
-
             return;
         }
-        
-        if ("Syllabus Designer".equalsIgnoreCase(roleName)) {
+
+        if ("syllabusdesigner".equals(normalizedRole) || roleId == 5) {
             request.getRequestDispatcher("/view/SyllabusDesignerHome.jsp").forward(request, response);
             return;
         }
 
-        if ("Admin".equalsIgnoreCase(roleName)) {
+        if ("admin".equals(normalizedRole) || roleId == 1) {
             try {
                 dao.ReportDAO reportDAO = new dao.ReportDAO();
                 java.util.Map<String, Integer> dashboardStats = reportDAO.getAdminSummary();
@@ -55,16 +56,6 @@ public class HomeServlet extends HttpServlet {
                 request.setAttribute("dashboardStats", new java.util.LinkedHashMap<String, Integer>());
             }
             request.getRequestDispatcher("/view/AdminHome.jsp").forward(request, response);
-            return;
-        }
-
-        if ("Student".equalsIgnoreCase(roleName)) {
-            request.getRequestDispatcher("/view/StudentHome.jsp").forward(request, response);
-            return;
-        }
-
-        if ("Teacher".equalsIgnoreCase(roleName)) {
-            request.getRequestDispatcher("/view/TeacherHome.jsp").forward(request, response);
             return;
         }
 
@@ -93,5 +84,9 @@ public class HomeServlet extends HttpServlet {
             }
         }
         return "";
+    }
+
+    private String normalizeRole(String roleName) {
+        return roleName == null ? "" : roleName.replaceAll("\\s+", "").toLowerCase();
     }
 }

@@ -650,19 +650,24 @@ public class SyllabusDAO extends DBContext {
                        OR NULLIF(LTRIM(RTRIM(Details)), '') IS NOT NULL)
                 ORDER BY DisplayOrder, SessionNo, QuestionID
                 """;
-        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setQueryTimeout(10);
-            ps.setInt(1, syllabusId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    ConstructiveQuestion question = new ConstructiveQuestion();
-                    question.setQuestionId(rs.getInt("QuestionID"));
-                    question.setSyllabusId(rs.getInt("SyllabusID"));
-                    question.setSessionNo(rs.getInt("SessionNo"));
-                    question.setName(rs.getString("Name"));
-                    question.setDetails(rs.getString("Details"));
-                    question.setDisplayOrder(rs.getInt("DisplayOrder"));
-                    list.add(question);
+        try (Connection con = getConnection()) {
+            if (!hasDbTable(con, "dbo.Syllabus_Constructive_Question")) {
+                return list;
+            }
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setQueryTimeout(10);
+                ps.setInt(1, syllabusId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        ConstructiveQuestion question = new ConstructiveQuestion();
+                        question.setQuestionId(rs.getInt("QuestionID"));
+                        question.setSyllabusId(rs.getInt("SyllabusID"));
+                        question.setSessionNo(rs.getInt("SessionNo"));
+                        question.setName(rs.getString("Name"));
+                        question.setDetails(rs.getString("Details"));
+                        question.setDisplayOrder(rs.getInt("DisplayOrder"));
+                        list.add(question);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -759,25 +764,43 @@ public class SyllabusDAO extends DBContext {
 
 
     public SyllabusDTO getSyllabusDtoById(int syllabusId) throws SQLException {
-        String sql = """
-                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
-                       sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
-                       sy.LearningOutcome, sy.AssessmentMethod,
-                       sy.CreatedAt, sy.ApprovedAt,
-                       sy.SyllabusName, sy.SyllabusEnglish, sy.DegreeLevel,
-                       sy.TimeAllocation, sy.PreRequisiteText, sy.StudentTasks,
-                       sy.Tools, sy.ScoringScale, sy.DecisionNo, sy.Note,
-                       sy.MinAvgMarkToPass, sy.IsActive,
-                       su.SubjectCode, su.SubjectName, su.Credits
-                FROM dbo.[Syllabus] sy
-                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
-                WHERE sy.SyllabusID = ?
-                """;
-
         SyllabusDTO dto = null;
 
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = getConnection()) {
+            List<String> selectColumns = new ArrayList<>();
+            selectColumns.add("sy.SyllabusID");
+            selectColumns.add(syllabusColumn(con, "SyllabusTitle", "su.SubjectName"));
+            selectColumns.add(syllabusColumn(con, "VersionNo", "'1.0'"));
+            selectColumns.add(syllabusColumn(con, "Status", "'Active'"));
+            selectColumns.add(syllabusColumn(con, "IsCurrentVersion", "CAST(0 AS bit)"));
+            selectColumns.add(syllabusColumn(con, "ApprovedBy", "CAST(NULL AS int)"));
+            selectColumns.add(syllabusColumn(con, "Description", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "LearningOutcome", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "AssessmentMethod", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "CreatedAt", "CAST(NULL AS datetime)"));
+            selectColumns.add(syllabusColumn(con, "ApprovedAt", "CAST(NULL AS datetime)"));
+            selectColumns.add(syllabusColumn(con, "SyllabusName", "CAST(NULL AS nvarchar(255))"));
+            selectColumns.add(syllabusColumn(con, "SyllabusEnglish", "CAST(NULL AS nvarchar(255))"));
+            selectColumns.add(syllabusColumn(con, "DegreeLevel", "CAST(NULL AS nvarchar(100))"));
+            selectColumns.add(syllabusColumn(con, "TimeAllocation", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "PreRequisiteText", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "StudentTasks", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "Tools", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "ScoringScale", "CAST(NULL AS int)"));
+            selectColumns.add(syllabusColumn(con, "DecisionNo", "CAST(NULL AS nvarchar(100))"));
+            selectColumns.add(syllabusColumn(con, "Note", "CAST(NULL AS nvarchar(max))"));
+            selectColumns.add(syllabusColumn(con, "MinAvgMarkToPass", "CAST(NULL AS float)"));
+            selectColumns.add(syllabusColumn(con, "IsActive", "CAST(1 AS bit)"));
+            selectColumns.add("su.SubjectCode");
+            selectColumns.add("su.SubjectName");
+            selectColumns.add("su.Credits");
+
+            String sql = "SELECT " + String.join(", ", selectColumns)
+                    + " FROM dbo.[Syllabus] sy "
+                    + "JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID "
+                    + "WHERE sy.SyllabusID = ?";
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
@@ -786,6 +809,7 @@ public class SyllabusDAO extends DBContext {
                 if (rs.next()) {
                     dto = mapRow(rs);
                 }
+            }
             }
         }
 
@@ -838,22 +862,27 @@ public class SyllabusDAO extends DBContext {
 
     private List<MaterialDTO> getUploadedLearningMaterials(int syllabusId) throws SQLException {
         List<MaterialDTO> materials = new ArrayList<>();
-        String sql = """
-                SELECT MaterialID, SyllabusID, MaterialName, FilePath,
-                       MaterialType, Visibility, Status, UploadedAt,
-                       ISNULL(DownloadCount, 0) AS DownloadCount
-                FROM dbo.[Learning_Material]
-                WHERE SyllabusID = ? AND Status = 'Active'
-                ORDER BY UploadedAt DESC, MaterialID DESC
-                """;
+        try (Connection con = getConnection()) {
+            if (!hasDbTable(con, "dbo.Learning_Material")) {
+                return materials;
+            }
+            String downloadCountExpression = hasDbColumn(con, "dbo.Learning_Material", "DownloadCount")
+                    ? "ISNULL(DownloadCount, 0) AS DownloadCount"
+                    : "0 AS DownloadCount";
+            String sql = "SELECT MaterialID, SyllabusID, MaterialName, FilePath, "
+                    + "MaterialType, Visibility, Status, UploadedAt, "
+                    + downloadCountExpression + " "
+                    + "FROM dbo.[Learning_Material] "
+                    + "WHERE SyllabusID = ? AND Status = 'Active' "
+                    + "ORDER BY UploadedAt DESC, MaterialID DESC";
 
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     materials.add(mapUploadedLearningMaterial(rs));
                 }
+            }
             }
         }
 
@@ -996,6 +1025,33 @@ public class SyllabusDAO extends DBContext {
             }
         }
         return false;
+    }
+
+    private boolean hasDbColumn(Connection con, String tableName, String columnName) throws SQLException {
+        String sql = "SELECT COL_LENGTH(?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            ps.setString(2, columnName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getObject(1) != null;
+            }
+        }
+    }
+
+    private boolean hasDbTable(Connection con, String tableName) throws SQLException {
+        String sql = "SELECT OBJECT_ID(?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getObject(1) != null;
+            }
+        }
+    }
+
+    private String syllabusColumn(Connection con, String columnName, String defaultExpression) throws SQLException {
+        return hasDbColumn(con, "dbo.Syllabus", columnName)
+                ? "sy.[" + columnName + "] AS " + columnName
+                : defaultExpression + " AS " + columnName;
     }
 
     private SyllabusDTO mapRow(ResultSet rs) throws SQLException {

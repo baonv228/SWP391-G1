@@ -12,10 +12,10 @@ import java.util.List;
  */
 public class MaterialDAO {
 
-    private static final String MATERIAL_COLUMNS =
-            "MaterialID, SyllabusID, MaterialName, FilePath, " +
-            "MaterialType, Visibility, Status, UploadedAt, " +
-            "ISNULL(DownloadCount, 0) AS DownloadCount ";
+    private static final String[] MATERIAL_COLUMN_NAMES = {
+            "MaterialID", "SyllabusID", "MaterialName", "FilePath",
+            "MaterialType", "Visibility", "Status", "UploadedAt"
+    };
 
     // ----------------------------------------------------------------
     //  Read
@@ -23,16 +23,17 @@ public class MaterialDAO {
 
     public List<MaterialDTO> getMaterialsBySyllabusId(int syllabusId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT " + MATERIAL_COLUMNS +
-                "FROM Learning_Material " +
-                "WHERE SyllabusID = ? AND Status = 'Active' " +
-                "ORDER BY UploadedAt DESC, MaterialID DESC";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBContext.getConnection()) {
+            String sql = "SELECT " + materialColumns(conn) +
+                    "FROM Learning_Material " +
+                    "WHERE SyllabusID = ? AND Status = 'Active' " +
+                    "ORDER BY UploadedAt DESC, MaterialID DESC";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setQueryTimeout(10);
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
+            }
             }
         }
         return list;
@@ -54,32 +55,34 @@ public class MaterialDAO {
     public List<MaterialDTO> getMaterialsBySyllabusId(int syllabusId, int page, int pageSize) throws SQLException {
         int offset = (page - 1) * pageSize;
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT " + MATERIAL_COLUMNS +
-                "FROM Learning_Material " +
-                "WHERE SyllabusID = ? AND Status = 'Active' " +
-                "ORDER BY UploadedAt DESC, MaterialID DESC " +
-                "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBContext.getConnection()) {
+            String sql = "SELECT " + materialColumns(conn) +
+                    "FROM Learning_Material " +
+                    "WHERE SyllabusID = ? AND Status = 'Active' " +
+                    "ORDER BY UploadedAt DESC, MaterialID DESC " +
+                    "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, syllabusId);
             ps.setInt(2, offset);
             ps.setInt(3, pageSize);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
             }
+            }
         }
         return list;
     }
 
     public MaterialDTO getMaterialById(int materialId) throws SQLException {
-        String sql = "SELECT " + MATERIAL_COLUMNS +
-                "FROM Learning_Material " +
-                "WHERE MaterialID = ? AND Status = 'Active'";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBContext.getConnection()) {
+            String sql = "SELECT " + materialColumns(conn) +
+                    "FROM Learning_Material " +
+                    "WHERE MaterialID = ? AND Status = 'Active'";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, materialId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapRow(rs);
+            }
             }
         }
         return null;
@@ -87,15 +90,16 @@ public class MaterialDAO {
 
     public List<MaterialDTO> getAllMaterialsBySyllabusId(int syllabusId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT " + MATERIAL_COLUMNS +
-                "FROM Learning_Material " +
-                "WHERE SyllabusID = ? " +
-                "ORDER BY UploadedAt";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBContext.getConnection()) {
+            String sql = "SELECT " + materialColumns(conn) +
+                    "FROM Learning_Material " +
+                    "WHERE SyllabusID = ? " +
+                    "ORDER BY UploadedAt";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, syllabusId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
+            }
             }
         }
         return list;
@@ -104,17 +108,16 @@ public class MaterialDAO {
     /** All materials uploaded by a specific user (teacher's uploads). */
     public List<MaterialDTO> getMaterialsByUploader(int userId) throws SQLException {
         List<MaterialDTO> list = new ArrayList<>();
-        String sql = "SELECT m.MaterialID, m.SyllabusID, m.MaterialName, m.FilePath, " +
-                "m.MaterialType, m.Visibility, m.Status, m.UploadedAt, " +
-                "ISNULL(m.DownloadCount, 0) AS DownloadCount " +
-                "FROM Learning_Material m " +
-                "WHERE m.UploadedBy = ? AND m.Status = 'Active' " +
-                "ORDER BY m.UploadedAt DESC";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBContext.getConnection()) {
+            String sql = "SELECT " + materialColumns(conn, "m") +
+                    "FROM Learning_Material m " +
+                    "WHERE m.UploadedBy = ? AND m.Status = 'Active' " +
+                    "ORDER BY m.UploadedAt DESC";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
+            }
             }
         }
         return list;
@@ -170,13 +173,17 @@ public class MaterialDAO {
     }
 
     public boolean incrementDownloadCount(int materialId) throws SQLException {
+        try (Connection conn = DBContext.getConnection()) {
+            if (!hasColumn(conn, "dbo.Learning_Material", "DownloadCount")) {
+                return false;
+            }
         String sql = "UPDATE Learning_Material " +
                 "SET DownloadCount = ISNULL(DownloadCount, 0) + 1 " +
                 "WHERE MaterialID = ? AND Status = 'Active'";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, materialId);
             return ps.executeUpdate() > 0;
+            }
         }
     }
 
@@ -196,5 +203,35 @@ public class MaterialDAO {
         dto.setUploadedAt(rs.getTimestamp("UploadedAt"));
         dto.setDownloadCount(rs.getInt("DownloadCount"));
         return dto;
+    }
+
+    private String materialColumns(Connection conn) throws SQLException {
+        return materialColumns(conn, null);
+    }
+
+    private String materialColumns(Connection conn, String alias) throws SQLException {
+        String prefix = alias == null || alias.trim().isEmpty() ? "" : alias.trim() + ".";
+        StringBuilder columns = new StringBuilder();
+        for (String columnName : MATERIAL_COLUMN_NAMES) {
+            if (columns.length() > 0) {
+                columns.append(", ");
+            }
+            columns.append(prefix).append(columnName);
+        }
+        String downloadCountExpression = hasColumn(conn, "dbo.Learning_Material", "DownloadCount")
+                ? "ISNULL(" + prefix + "DownloadCount, 0) AS DownloadCount "
+                : "0 AS DownloadCount ";
+        return columns.append(", ").append(downloadCountExpression).toString();
+    }
+
+    private boolean hasColumn(Connection conn, String tableName, String columnName) throws SQLException {
+        String sql = "SELECT COL_LENGTH(?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            ps.setString(2, columnName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getObject(1) != null;
+            }
+        }
     }
 }
