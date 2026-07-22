@@ -700,7 +700,7 @@ public class SyllabusDAO extends DBContext {
         String whereClause = buildWhereClause(searchType, keyword);
 
         String sql = """
-                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
+                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.DecisionNo, sy.Status,
                        sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
                        sy.LearningOutcome, sy.AssessmentMethod,
                        sy.CreatedAt, sy.ApprovedAt,
@@ -869,18 +869,20 @@ public class SyllabusDAO extends DBContext {
     }
 
     private String buildWhereClause(String searchType, String keyword) {
+        String eligibleClause = "sy.IsCurrentVersion = 1 AND sy.ApprovedBy IS NOT NULL";
         if (keyword == null || keyword.trim().isEmpty()) {
-            return " WHERE sy.Status = 'Active' ";
+            return " WHERE " + eligibleClause + " ";
         }
 
         switch (searchType == null ? "" : searchType.toLowerCase()) {
             case "name":
-                return " WHERE sy.Status = 'Active' AND LOWER(sy.SyllabusTitle) LIKE LOWER(?) ";
+                return " WHERE " + eligibleClause + " AND LOWER(sy.SyllabusTitle) LIKE LOWER(?) ";
             case "subject":
-                return " WHERE sy.Status = 'Active' AND (LOWER(su.SubjectCode) LIKE LOWER(?) OR LOWER(su.SubjectName) LIKE LOWER(?)) ";
+                return " WHERE " + eligibleClause
+                        + " AND (LOWER(su.SubjectCode) LIKE LOWER(?) OR LOWER(su.SubjectName) LIKE LOWER(?)) ";
             case "code":
             default:
-                return " WHERE sy.Status = 'Active' AND LOWER(su.SubjectCode) LIKE LOWER(?) ";
+                return " WHERE " + eligibleClause + " AND LOWER(su.SubjectCode) LIKE LOWER(?) ";
         }
     }
 
