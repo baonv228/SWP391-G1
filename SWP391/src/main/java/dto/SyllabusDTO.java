@@ -38,7 +38,6 @@ public class SyllabusDTO {
     private List<model.SyllabusMaterial> textbooks = new java.util.ArrayList<>();
     private List<model.CLO> clos = new java.util.ArrayList<>();
     private List<model.SyllabusAssessment> assessments = new java.util.ArrayList<>();
-    private List<model.ConstructiveQuestion> constructiveQuestions = new java.util.ArrayList<>();
 
     // Extra display fields
     private List<String> learningOutcomes = new java.util.ArrayList<>();
@@ -52,7 +51,7 @@ public class SyllabusDTO {
         private String lo;
         private String itu;
         private String studentMaterials;
-        private String studentDownload;
+        private String sDownload;
         private String studentTasks;
         private String urls;
 
@@ -70,8 +69,8 @@ public class SyllabusDTO {
         public void setItu(String itu) { this.itu = itu; }
         public String getStudentMaterials() { return studentMaterials; }
         public void setStudentMaterials(String v) { this.studentMaterials = v; }
-        public String getStudentDownload() { return studentDownload; }
-        public void setStudentDownload(String studentDownload) { this.studentDownload = studentDownload; }
+        public String getSDownload() { return sDownload; }
+        public void setSDownload(String sDownload) { this.sDownload = sDownload; }
         public String getStudentTasks() { return studentTasks; }
         public void setStudentTasks(String v) { this.studentTasks = v; }
         public String getUrls() { return urls; }
@@ -185,7 +184,4 @@ public class SyllabusDTO {
 
     public List<model.SyllabusAssessment> getAssessments() { return assessments; }
     public void setAssessments(List<model.SyllabusAssessment> v) { this.assessments = v; }
-
-    public List<model.ConstructiveQuestion> getConstructiveQuestions() { return constructiveQuestions; }
-    public void setConstructiveQuestions(List<model.ConstructiveQuestion> v) { this.constructiveQuestions = v; }
 }

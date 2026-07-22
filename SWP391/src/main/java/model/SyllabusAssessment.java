@@ -21,7 +21,6 @@ public class SyllabusAssessment {
 
     // Transient — for CLO junction
     private List<Integer> cloIds = new ArrayList<>();
-    private List<String> cloNames = new ArrayList<>();
 
     public SyllabusAssessment() {}
 
@@ -69,7 +68,4 @@ public class SyllabusAssessment {
 
     public List<Integer> getCloIds() { return cloIds; }
     public void setCloIds(List<Integer> cloIds) { this.cloIds = cloIds; }
-
-    public List<String> getCloNames() { return cloNames; }
-    public void setCloNames(List<String> cloNames) { this.cloNames = cloNames; }
 }
