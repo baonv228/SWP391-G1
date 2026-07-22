@@ -70,6 +70,8 @@ public class SyllabusDTO {
         public void setItu(String itu) { this.itu = itu; }
         public String getStudentMaterials() { return studentMaterials; }
         public void setStudentMaterials(String v) { this.studentMaterials = v; }
+        public String getSDownload() { return studentDownload; }
+        public void setSDownload(String sDownload) { this.studentDownload = sDownload; }
         public String getStudentDownload() { return studentDownload; }
         public void setStudentDownload(String studentDownload) { this.studentDownload = studentDownload; }
         public String getStudentTasks() { return studentTasks; }

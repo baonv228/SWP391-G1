@@ -22,6 +22,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Edit Training Program - TPMS</title>
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/training.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body class="training-page">
 <div class="train-container">

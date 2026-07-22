@@ -27,3 +27,7 @@ Thumbs.db
 database/local_applied_migrations.txt
 /SWP391/target/
 /out/
+logs/
+*.log
+upload_log.txt
+db_error_log.txt

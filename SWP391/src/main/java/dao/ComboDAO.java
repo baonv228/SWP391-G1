@@ -20,7 +20,7 @@ public class ComboDAO extends DBContext {
                 SELECT c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder,
                        COUNT(cs.SubjectID) AS SubjectCount,
                        COALESCE(SUM(s.Credits), 0) AS TotalCredits,
-                       CAST(NULL AS NVARCHAR(MAX)) AS SubjectCodes
+                       STRING_AGG(CONVERT(NVARCHAR(MAX), s.SubjectCode), ', ') AS SubjectCodes
                 FROM dbo.[Combo] c
                 LEFT JOIN dbo.[Combo_Subject] cs ON c.ComboID = cs.ComboID
                 LEFT JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
@@ -53,7 +53,7 @@ public class ComboDAO extends DBContext {
                 SELECT c.ComboID, c.CurriculumID, c.ComboName, c.Description, c.Status, c.DisplayOrder,
                        COUNT(cs.SubjectID) AS SubjectCount,
                        COALESCE(SUM(s.Credits), 0) AS TotalCredits,
-                       CAST(NULL AS NVARCHAR(MAX)) AS SubjectCodes
+                       STRING_AGG(CONVERT(NVARCHAR(MAX), s.SubjectCode), ', ') AS SubjectCodes
                 FROM dbo.[Combo] c
                 LEFT JOIN dbo.[Combo_Subject] cs ON c.ComboID = cs.ComboID
                 LEFT JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID

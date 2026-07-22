@@ -1,0 +1,91 @@
+/* Shared TPMS visual theme: dashboard white and orange palette. */
+:root {
+    --primary: #f59e3d !important;
+    --primary-dark: #c76b12 !important;
+    --primary-soft: #fff1df !important;
+    --orange: #f59e3d !important;
+    --orange-dark: #c76b12 !important;
+    --orange-soft: #fff1df !important;
+    --cream: #fffaf3 !important;
+    --ink: #2b2118 !important;
+    --text: #2b2118 !important;
+    --muted: #7b6a5c !important;
+    --line: #f1d2ad !important;
+    --border: #f1d2ad !important;
+    --bg: #fffaf3 !important;
+    --white: #ffffff !important;
+}
+
+body {
+    color: var(--ink) !important;
+    background: #fffaf3 !important;
+}
+
+.topbar,
+.navbar,
+header,
+.card,
+.table-card,
+.table-container,
+.form-card,
+.search-bar,
+.filter-form,
+.modal-content {
+    border-color: var(--line) !important;
+}
+
+.brand,
+.brand-link,
+h1,
+h2,
+h3,
+.card-value,
+.module-title {
+    color: var(--orange-dark);
+}
+
+.btn-primary,
+.btn-login,
+.btn-submit,
+button[type="submit"],
+.welcome-banner {
+    background: var(--orange) !important;
+    border-color: var(--orange) !important;
+    color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-login:hover,
+.btn-submit:hover,
+button[type="submit"]:hover {
+    background: var(--orange-dark) !important;
+    border-color: var(--orange-dark) !important;
+}
+
+.btn-secondary,
+.btn-back,
+.btn-outline,
+.btn-reset {
+    border-color: var(--line) !important;
+    color: var(--orange-dark) !important;
+    background: #ffffff !important;
+}
+
+a:not(.btn-primary):not(.btn-login):not(.btn-submit) {
+    color: var(--orange-dark);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--orange) !important;
+    box-shadow: 0 0 0 0.2rem rgba(245, 158, 61, 0.18) !important;
+}
+
+.badge,
+.avatar,
+.card-icon,
+.module-icon {
+    background-color: var(--orange-soft) !important;
+    color: var(--orange-dark) !important;
+}
