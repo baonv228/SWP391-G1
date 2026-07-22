@@ -1,6 +1,11 @@
 USE [TPMS_DB]
 GO
 
+
+-- 1. drop database PLO
+DROP TABLE PLO;
+GO
+
 -- 1. Add CurriculumID to PLO
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PLO') AND name = 'CurriculumID')
 BEGIN

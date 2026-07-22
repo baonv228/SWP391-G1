@@ -11,21 +11,8 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Tạo Syllabus — TPMS</title>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css?v=3"/>
-    <script>
-    const contextPath = '<%=request.getContextPath()%>';
-        function fetchInitData() {
-            const subjectId = document.getElementById("subjectId").value;
-            if(!subjectId) return;
-            fetch(contextPath + "/syllabus-manage?action=ajax_init&subjectId=" + subjectId)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById("syllabusTitle").value = data.syllabusTitle || "";
-                    document.getElementById("versionNo").value = data.versionNo || "1.0";
-                    document.getElementById("preRequisiteText").value = data.preRequisiteText || "";
-                });
-        }
-    </script>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/syllabus.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
 <body class="syllabus-page">
 <div class="syl-container">
@@ -44,6 +31,7 @@
     <div class="alert alert-error"><%= error %></div>
     <% } %>
 
+    
     <!-- Excel Import Panel -->
     <div class="syl-card" id="excelImportPanel" style="background: linear-gradient(135deg, #fff9f0, #fff0e6); border: 2px dashed var(--primary); margin-bottom: 20px;">
         <h2 style="margin-bottom: 16px;">📥 Import từ Excel</h2>
@@ -74,11 +62,10 @@
         <a href="#sec-assessments">5. Đánh giá</a>
     </nav>
 
-    <form id="syllabusForm" method="post"
+    <form id="syllabusForm" method="post" enctype="multipart/form-data"
           action="<%=request.getContextPath()%>/syllabus-manage?action=create" accept-charset="UTF-8" onsubmit="return validateForm()">
         
         <input type="hidden" name="saveType" id="saveType" value="draft">
-        <input type="hidden" name="temp_material_file" id="temp_material_file">
 
         <!-- ================================================================ -->
         <!-- SECTION 1: Syllabus Details                                      -->
@@ -397,49 +384,12 @@
 
     function doSave(type) {
         document.getElementById('saveType').value = type;
-        const subjectVal = document.getElementById('subjectId').value;
-        if (!subjectVal || subjectVal === '') {
-            const validationAlert = document.getElementById('validationAlert');
-            if (validationAlert) {
-                validationAlert.innerHTML = 'Section 1: Vui lòng chọn Subject trước khi lưu.';
-                validationAlert.style.display = 'block';
-            }
-            window.scrollTo(0, 0);
-            return;
-        }
-
-        const form = document.getElementById('syllabusForm');
-        if (type !== 'draft') {
-            if (!form.reportValidity() || !validateForm()) {
-                return;
-            }
-        }
-
-        const btn = document.getElementById('btnSubmitApproval');
-        if (btn) { btn.disabled = true; btn.innerHTML = 'Đang xử lý...'; }
-
-        const fileInput = document.querySelector('input[name="student_material_file"]');
-        if (fileInput && fileInput.files && fileInput.files.length > 0) {
-            const formData = new FormData();
-            formData.append('student_material_file', fileInput.files[0]);
-            fetch('<%=request.getContextPath()%>/syllabus-manage?action=upload_temp', {
-                method: 'POST',
-                body: formData
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    document.getElementById('temp_material_file').value = data.tempPath;
-                    fileInput.disabled = true; // Ngăn chặn browser submit cái này
-                    document.getElementById('syllabusForm').submit();
-                } else {
-                    alert('Lỗi upload file: ' + data.error);
-                    if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
-                }
-            }).catch(e => {
-                alert('Lỗi kết nối: ' + e);
-                if (btn) { btn.disabled = false; btn.innerHTML = 'Submit for Approval'; }
-            });
-        } else {
+        if(type === 'draft') {
             document.getElementById('syllabusForm').submit();
+        } else {
+            if(validateForm()) {
+                document.getElementById('syllabusForm').submit();
+            }
         }
     }
 
@@ -488,72 +438,54 @@
     }
     
     function removeCLORow(btn, cloNum) {
-        const isUsed = document.querySelector(
-            'input[name^="ses_clo_"][value="' + cloNum + '"]:checked, ' +
-            'input[name^="asm_clo_"][value="' + cloNum + '"]:checked'
-        );
-
-        if (isUsed) {
-            alert('Không thể xóa CLO này vì nó đang được map trong Session hoặc Assessment!');
+        const isUsed = document.querySelector('input[name^="ses_clo_"][name$="_' + cloNum + '"]:checked') ||
+                       document.querySelector('input[name^="asm_clo_"][name$="_' + cloNum + '"]:checked');
+        if(isUsed) {
+            alert('KhÃ´ng thá»ƒ xÃ³a CLO nÃ y vÃ¬ nÃ³ Ä‘ang Ä‘Æ°á»£c map trong Session hoáº·c Assessment!');
             return;
         }
-
-        const selectedByCell = {};
-        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
-            selectedByCell[td.id] = Array.from(td.querySelectorAll('input[type="checkbox"]:checked'))
-                .map(cb => parseInt(cb.value, 10));
-        });
-
-        btn.closest('tr').remove();
-
+        const checkedMap = {};
+        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => { checkedMap[cb.name] = true; });
+        if(typeof btn === 'string') { const el = document.getElementById(btn); if(el) el.remove(); }
+        else { btn.closest('tr').remove(); }
         const cloRows = document.querySelectorAll('#cloBody tr');
         const oldToNew = {};
-
         cloRows.forEach((tr, index) => {
-            const newNum = index + 1;
+            const num = index + 1;
             const nameInput = tr.querySelector('input[name="clo_name"]');
             const detailsInput = tr.querySelector('input[name="clo_details"]');
-            const oldNum = parseInt(nameInput.value.replace(/\D/g, ''), 10);
-
-            oldToNew[oldNum] = newNum;
-            tr.id = 'cloRow_' + index;
-            nameInput.value = 'CLO' + newNum;
-
-            if (detailsInput && detailsInput.value === 'CLO' + oldNum) {
-                detailsInput.value = 'CLO' + newNum;
-            }
-
-            const deleteBtn = tr.querySelector('.btn-danger-syl');
-            if (deleteBtn) {
-                deleteBtn.setAttribute('onclick', 'removeCLORow(this, ' + newNum + ')');
-            }
-
+            const oldNum = parseInt(nameInput.value.replace('CLO', ''));
+            oldToNew[oldNum] = num;
+            nameInput.value = 'CLO' + num;
+            if(detailsInput.value === 'CLO' + oldNum) detailsInput.value = 'CLO' + num;
+            const actionBtn = tr.querySelector('.btn-danger-syl');
+            if(actionBtn) actionBtn.setAttribute('onclick', 'removeCLORow(this, ' + num + ')');
             const mapBtn = tr.querySelector('.btn-map-plo');
-            if (mapBtn) {
-                mapBtn.setAttribute('onclick', 'openPloModal(' + newNum + ', this)');
-            }
-
-            tr.querySelectorAll('input[name^="clo_plo_"]').forEach(input => {
-                input.name = 'clo_plo_' + index;
-            });
+            if(mapBtn) mapBtn.setAttribute('onclick', 'openPloModal(' + num + ', this)');
+            tr.querySelectorAll('input[name^="clo_plo_"]').forEach(inp => { inp.name = 'clo_plo_' + (num - 1); });
         });
-
         cloCount = cloRows.length;
-
-        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
-            const prefix = td.id.startsWith('sesClo_') ? 'ses' : 'asm';
-            const rowIdx = td.id.split('_')[1];
-            const selected = (selectedByCell[td.id] || [])
-                .filter(oldNum => oldToNew[oldNum])
-                .map(oldNum => oldToNew[oldNum]);
-
-            td.innerHTML = buildCLOCheckboxes(prefix, rowIdx, selected);
+        const newCheckedMap = {};
+        for(let key in checkedMap) {
+            const parts = key.split('_');
+            if(parts.length >= 4 && (parts[0] === 'ses' || parts[0] === 'asm') && parts[1] === 'clo') {
+                const oldNum = parseInt(parts[3]);
+                if(oldToNew[oldNum]) { parts[3] = oldToNew[oldNum]; newCheckedMap[parts.join('_')] = true; }
+            } else { newCheckedMap[key] = true; }
+        }
+        document.querySelectorAll('[id^="sesClo_"]').forEach(function (td) {
+            const idx = td.id.split('_')[1]; td.innerHTML = buildCLOCheckboxes('ses', idx);
         });
-
+        document.querySelectorAll('[id^="asmClo_"]').forEach(function (td) {
+            const idx = td.id.split('_')[1]; td.innerHTML = buildCLOCheckboxes('asm', idx);
+        });
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if(newCheckedMap[cb.name]) cb.checked = true;
+        });
         checkValidationStatus();
     }
 
-    function addSessionRow(data = null) {
+        function addSessionRow(data = null) {
         const i = sesCount++;
         const row = document.createElement('tr');
         row.id = 'sesRow_' + i;
@@ -613,7 +545,7 @@
         if(typeof checkValidationStatus === 'function') checkValidationStatus();
     }
 
-    function removeRow(btn, type) {
+function removeRow(btn, type) {
         if(typeof btn === 'string') {
             const el = document.getElementById(btn);
             if(el) el.remove();
@@ -640,7 +572,7 @@
                     tdClo.id = 'sesClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -656,7 +588,7 @@
                     tdClo.id = 'asmClo_' + index;
                     tdClo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                         const parts = cb.name.split('_');
-                        if(parts.length >= 3) { parts[2] = index; cb.name = parts.join('_'); }
+                        if(parts.length >= 4) { parts[2] = index; cb.name = parts.join('_'); }
                     });
                 }
                 const actionBtn = tr.querySelector('.btn-danger-syl');
@@ -667,44 +599,45 @@
         updateWeightTotal();
         checkValidationStatus();
     }
-    function buildCLOCheckboxes(prefix, rowIdx, checkedIds = []) {
-        const selected = checkedIds.map(Number);
+
+        function buildCLOCheckboxes(prefix, rowIdx, checkedIds = []) {
         let html = '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
         let found = false;
-
-        document.querySelectorAll('#cloBody tr').forEach(tr => {
-            const cloName = tr.querySelector('input[name="clo_name"]').value.trim();
-            const match = cloName.match(/CLO(\d+)/i);
-            if (!match) return;
-
-            const num = parseInt(match[1], 10);
-            const checked = selected.includes(num) ? ' checked' : '';
-
+        document.querySelectorAll('#cloBody tr').forEach((tr) => {
+            let cloNameStr = tr.querySelector('input[name="clo_name"]').value.trim();
+            const match = cloNameStr.match(/CLO(\d+)/i);
+            const num = match ? parseInt(match[1]) : 0;
+            const isChecked = checkedIds.includes(num) ? 'checked' : '';
             html += '<label style="font-size:12px;white-space:nowrap;">' +
-                '<input type="checkbox" onchange="checkValidationStatus()" ' +
-                'class="' + prefix + '-clo-cb" ' +
-                'name="' + prefix + '_clo_' + rowIdx + '" ' +
-                'value="' + num + '"' + checked + '/> CLO' + num +
+                '<input type="checkbox" onchange="checkValidationStatus()" class="' + prefix + '-clo-cb" name="' + prefix + '_clo_' + rowIdx + '_' + num + '" value="' + num + '" ' + isChecked + '/> CLO' + num +
                 '</label>';
             found = true;
         });
-
-        if (!found) {
-            html += '<span style="color:var(--muted);font-size:12px;">Thêm CLO trước</span>';
-        }
-
+        if (!found) html += '<span style="color:var(--muted);font-size:12px;">Thêm CLO trước</span>';
         html += '</div>';
         return html;
     }
 
     function updateCLOCheckboxes() {
-        document.querySelectorAll('[id^="sesClo_"], [id^="asmClo_"]').forEach(td => {
-            const prefix = td.id.startsWith('sesClo_') ? 'ses' : 'asm';
-            const rowIdx = td.id.split('_')[1];
-            const selected = Array.from(td.querySelectorAll('input[type="checkbox"]:checked'))
-                .map(cb => parseInt(cb.value, 10));
+        // Find existing checked values
+        const checkedMap = {};
+        document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            checkedMap[cb.name] = true;
+        });
 
-            td.innerHTML = buildCLOCheckboxes(prefix, rowIdx, selected);
+        // Rebuild CLO checkboxes in all session and assessment rows
+        document.querySelectorAll('[id^="sesClo_"]').forEach(function (td) {
+            const idx = td.id.split('_')[1];
+            td.innerHTML = buildCLOCheckboxes('ses', idx);
+        });
+        document.querySelectorAll('[id^="asmClo_"]').forEach(function (td) {
+            const idx = td.id.split('_')[1];
+            td.innerHTML = buildCLOCheckboxes('asm', idx);
+        });
+
+        // Restore checked values
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if(checkedMap[cb.name]) cb.checked = true;
         });
     }
 
@@ -715,7 +648,7 @@
         });
         const el = document.getElementById('weightTotal');
         el.textContent = 'Tổng weight: ' + total.toFixed(1) + '%';
-        el.style.color = (Math.abs(total - 100) < 0.01) ? '#2e7d32' : '#c62828';
+        el.style.color = (Math.abs(total - 100) < 0.01) ? '#f26d21' : '#c62828';
         checkValidationStatus();
     }
 
@@ -749,7 +682,7 @@
             btn.disabled = false;
             btn.title = "Submit Syllabus for Approval";
         } else {
-            btn.disabled = false; // BA UX Fix: Always allow clicking to show errors
+            btn.disabled = true;
             btn.title = "Submit for Approval is unavailable until:\n" + titleAttr.join("\n");
         }
     }
@@ -766,30 +699,6 @@
         if (sesCountActual < 10 || sesCountActual > 60) {
             errors.push('Section 4: Phải có từ 10 đến 60 Sessions.');
         }
-
-        // Student Material Package (ZIP) is required
-        const fileInput = document.querySelector('input[name="student_material_file"]');
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-            errors.push('Section 4: Vui lòng tải lên file Student Material Package (.zip).');
-        } else {
-            const fileName = fileInput.files[0].name.toLowerCase();
-            if (!fileName.endsWith('.zip')) {
-                errors.push('Section 4: File tài liệu phải có định dạng .zip.');
-            }
-            if (fileInput.files[0].size > 100 * 1024 * 1024) {
-                errors.push('Section 4: File tài liệu không được vượt quá 100MB.');
-            }
-        }
-
-
-        // Each CLO must have at least 1 PLO mapped
-        let cloPloMissing = false;
-        document.querySelectorAll('#cloBody tr').forEach((tr, index) => {
-            if (tr.querySelectorAll('input[name="clo_plo_' + index + '"]').length === 0) {
-                cloPloMissing = true;
-            }
-        });
-        if (cloPloMissing) errors.push('Section 3: Mỗi CLO phải được map với ít nhất 1 PLO.');
 
         // Each session must have at least 1 CLO
         let sessionCloMissing = false;

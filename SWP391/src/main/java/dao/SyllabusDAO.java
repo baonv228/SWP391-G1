@@ -239,19 +239,53 @@ public class SyllabusDAO extends DBContext {
     }
 
     public boolean approveSyllabus(int syllabusId, int reviewerId) {
-        String sql = """
+        String updateSyllabusSql = """
                 UPDATE dbo.[Syllabus]
                 SET Status = 'Approved', ApprovedBy = ?, ApprovedAt = GETDATE(), IsCurrentVersion = 1
                 WHERE SyllabusID = ?
                 """;
-        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, reviewerId);
-            ps.setInt(2, syllabusId);
-            boolean updated = ps.executeUpdate() > 0;
-            updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
+        String updateSubjectSql = """
+                UPDATE dbo.[Subject]
+                SET Status = 'Active'
+                WHERE SubjectID = (
+                    SELECT SubjectID
+                    FROM dbo.[Syllabus]
+                    WHERE SyllabusID = ?
+                )
+                """;
+        Connection con = null;
+        try {
+            con = getConnection();
+            con.setAutoCommit(false);
+
+            boolean updated;
+            try (PreparedStatement ps = con.prepareStatement(updateSyllabusSql)) {
+                ps.setInt(1, reviewerId);
+                ps.setInt(2, syllabusId);
+                updated = ps.executeUpdate() > 0;
+            }
+
+            if (updated) {
+                try (PreparedStatement ps = con.prepareStatement(updateSubjectSql)) {
+                    ps.setInt(1, syllabusId);
+                    ps.executeUpdate();
+                }
+            }
+
+            con.commit();
+            if (updated) {
+                updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
+            }
             return updated;
         } catch (Exception e) {
+            if (con != null) {
+                try { con.rollback(); } catch (Exception ex) {}
+            }
             System.out.println("approveSyllabus error: " + e.getMessage());
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); con.close(); } catch (Exception ex) {}
+            }
         }
         return false;
     }
