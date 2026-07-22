@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 import model.ProgramOutcome;
 import model.ProgramLearningOutcome;
 import model.User;
@@ -77,6 +79,8 @@ public class ProgramOutcomeServlet extends HttpServlet {
             processCreate(request, response);
         } else if ("update".equalsIgnoreCase(action)) {
             processUpdate(request, response);
+        } else if ("saveMapping".equalsIgnoreCase(action)) {
+            processSaveMapping(request, response);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid post action.");
         }
@@ -223,6 +227,36 @@ public class ProgramOutcomeServlet extends HttpServlet {
         redirectToList(request, response, curriculumId);
     }
 
+    private void processSaveMapping(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
+        if (curriculumId <= 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid curriculum ID.");
+            return;
+        }
+        Map<Integer, List<Integer>> mapping = new HashMap<>();
+        String[] values = request.getParameterValues("mapping");
+        if (values != null) {
+            for (String value : values) {
+                String[] ids = value.split(":", 2);
+                if (ids.length != 2) continue;
+                int poId = parseInt(ids[0], 0);
+                int ploId = parseInt(ids[1], 0);
+                if (poId > 0 && ploId > 0) {
+                    mapping.computeIfAbsent(poId, key -> new ArrayList<>()).add(ploId);
+                }
+            }
+        }
+        try {
+            mappingDAO.replaceMappingByCurriculum(curriculumId, mapping);
+            request.getSession().setAttribute("successMessage", "PO to PLO mapping saved successfully.");
+        } catch (SQLException e) {
+            getServletContext().log("Unable to save PO-PLO mapping", e);
+            request.getSession().setAttribute("errorMessage", "Unable to save PO to PLO mapping.");
+        }
+        redirectToList(request, response, curriculumId);
+    }
+
     private void redirectToList(HttpServletRequest request, HttpServletResponse response, int curriculumId)
             throws IOException {
         response.sendRedirect(request.getContextPath()
@@ -237,7 +271,9 @@ public class ProgramOutcomeServlet extends HttpServlet {
 
         String roleName = user.getRole().getRoleName();
         return "Admin".equalsIgnoreCase(roleName) || 
-               "Training Department".equalsIgnoreCase(roleName) || 
+               "TrainingDepartment".equalsIgnoreCase(roleName) ||
+               "Training Department".equalsIgnoreCase(roleName) ||
+               "SyllabusDesigner".equalsIgnoreCase(roleName) ||
                "Syllabus Designer".equalsIgnoreCase(roleName);
     }
 

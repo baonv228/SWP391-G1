@@ -251,6 +251,7 @@
             <%-- ═══════════════════════════════════════════════════════
                  SECTION 2b — Downloadable Learning Materials
             ═══════════════════════════════════════════════════════ --%>
+            <c:set var="learningMaterialsSection">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="materials-section-title mb-0">
                     ${fn:length(syllabus.materials)} learning material(s)
@@ -378,6 +379,7 @@
                     </c:choose>
                 </c:forEach>
             </div>
+            </c:set>
 
             <%-- ═══════════════════════════════════════════════════════
                  SECTION 3 — CLOs Mapping
@@ -455,6 +457,7 @@
             <%-- ═══════════════════════════════════════════════════════
                  SECTION 4 — Weekly Syllabus Sessions
             ═══════════════════════════════════════════════════════ --%>
+            <c:out value="${learningMaterialsSection}" escapeXml="false"/>
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="materials-section-title mb-0">
                     ${fn:length(syllabus.sessions)} sessions (45'/session)
@@ -489,7 +492,7 @@
                                     <td class="text-center">${s.lo}</td>
                                     <td class="text-center">${s.itu}</td>
                                     <td>${s.studentMaterials}</td>
-                                    <td>
+                                    <td style="visibility: hidden;" aria-hidden="true">
                                         <c:choose>
                                             <c:when test="${not empty s.studentDownload}">
                                                 <a href="javascript:void(0)"

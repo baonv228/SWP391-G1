@@ -535,12 +535,12 @@ public class CurriculumDAO extends DBContext {
 
     private String buildWhereClause(String searchType, String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return "";
+            return " WHERE c.Status = 'Active' ";
         }
         if ("name".equalsIgnoreCase(searchType)) {
-            return " WHERE c.CurriculumName LIKE ? ";
+            return " WHERE c.Status = 'Active' AND c.CurriculumName LIKE ? ";
         }
-        return " WHERE tp.ProgramCode LIKE ? ";
+        return " WHERE c.Status = 'Active' AND tp.ProgramCode LIKE ? ";
     }
 
     private int setSearchParams(PreparedStatement ps, String searchType, String keyword, int startIndex)
