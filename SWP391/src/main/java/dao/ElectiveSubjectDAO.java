@@ -14,9 +14,9 @@ public class ElectiveSubjectDAO extends DBContext {
         List<Subject> list = new ArrayList<>();
         String sql = """
                 SELECT s.SubjectID, s.CreatedBy, s.SubjectCode, s.SubjectName, s.Credits, s.Description, s.Status
-                FROM dbo.ElectiveSubject es
-                JOIN dbo.Subject s ON es.subjectId = s.SubjectID
-                WHERE es.electiveId = ?
+                FROM dbo.[Curriculum_Elective] ce
+                JOIN dbo.[Subject] s ON ce.SubjectID = s.SubjectID
+                WHERE ce.CurriculumElectiveID = ?
                 """;
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
