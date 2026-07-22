@@ -870,17 +870,17 @@ public class SyllabusDAO extends DBContext {
 
     private String buildWhereClause(String searchType, String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return "";
+            return " WHERE sy.Status = 'Active' ";
         }
 
         switch (searchType == null ? "" : searchType.toLowerCase()) {
             case "name":
-                return " WHERE LOWER(sy.SyllabusTitle) LIKE LOWER(?) ";
+                return " WHERE sy.Status = 'Active' AND LOWER(sy.SyllabusTitle) LIKE LOWER(?) ";
             case "subject":
-                return " WHERE LOWER(su.SubjectCode) LIKE LOWER(?) OR LOWER(su.SubjectName) LIKE LOWER(?) ";
+                return " WHERE sy.Status = 'Active' AND (LOWER(su.SubjectCode) LIKE LOWER(?) OR LOWER(su.SubjectName) LIKE LOWER(?)) ";
             case "code":
             default:
-                return " WHERE LOWER(su.SubjectCode) LIKE LOWER(?) ";
+                return " WHERE sy.Status = 'Active' AND LOWER(su.SubjectCode) LIKE LOWER(?) ";
         }
     }
 
