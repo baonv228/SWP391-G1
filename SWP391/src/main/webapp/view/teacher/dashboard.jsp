@@ -61,11 +61,11 @@
             <div class="quick-action-title">Course List</div>
             <div class="quick-action-desc">Browse and search all subjects and syllabi</div>
         </a>
-        <a href="${pageContext.request.contextPath}/teacher/report"
-           class="quick-action-card" id="qa-report">
-            <i class="bi bi-bar-chart-fill quick-action-icon icon-teal"></i>
-            <div class="quick-action-title">System Reports</div>
-            <div class="quick-action-desc">View statistics and export activity reports</div>
+        <a href="${pageContext.request.contextPath}/teacher/teaching-activities"
+           class="quick-action-card" id="qa-teaching-activities">
+            <i class="bi bi-easel quick-action-icon icon-teal"></i>
+            <div class="quick-action-title">Teaching &amp; Learning Activities</div>
+            <div class="quick-action-desc">Manage materials for each session of your syllabi</div>
         </a>
     </div>
 

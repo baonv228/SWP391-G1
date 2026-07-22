@@ -69,13 +69,35 @@ public class UploadMaterialServlet extends HttpServlet {
                 request.setAttribute("selectedSyllabusId", selectedSyllabusId);
             }
 
+            // Search / filter within the private cloud (name + type).
+            String searchType = request.getParameter("searchType");
+            if (searchType == null || !searchType.matches("name|type|all")) {
+                searchType = "all";
+            }
+            String keyword = request.getParameter("keyword");
+            if (keyword != null) {
+                if (ValidationUtil.containsDangerousPattern(keyword)) {
+                    request.setAttribute("errorMessage", "Invalid search input detected.");
+                    keyword = "";
+                } else if (keyword.length() > 200) {
+                    keyword = keyword.substring(0, 200);
+                    keyword = ValidationUtil.sanitize(keyword);
+                } else {
+                    keyword = ValidationUtil.sanitize(keyword);
+                }
+            }
+            request.setAttribute("keyword", keyword != null ? keyword : "");
+            request.setAttribute("searchType", searchType);
+
             // Private cloud: only show files uploaded by the current teacher.
             int page = ValidationUtil.parsePageNumber(request.getParameter("page"));
             MaterialDAO materialDAO = new MaterialDAO();
-            int total = materialDAO.countMaterialsByUploader(teacher.getUserId(), selectedSyllabusId);
+            int total = materialDAO.countMaterialsByUploader(
+                    teacher.getUserId(), selectedSyllabusId, keyword, searchType);
             PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
             List<MaterialDTO> existing = materialDAO.getMaterialsByUploader(
-                    teacher.getUserId(), selectedSyllabusId, pagination.getCurrentPage(), PAGE_SIZE);
+                    teacher.getUserId(), selectedSyllabusId,
+                    pagination.getCurrentPage(), PAGE_SIZE, keyword, searchType);
             request.setAttribute("existingMaterials", existing);
             request.setAttribute("materialPagination", pagination);
             request.setAttribute("totalMaterials", total);
@@ -104,6 +126,10 @@ public class UploadMaterialServlet extends HttpServlet {
         String action = request.getParameter("action");
         if ("update".equalsIgnoreCase(action)) {
             updateMaterialMetadata(request, response, teacher);
+            return;
+        }
+        if ("replace".equalsIgnoreCase(action)) {
+            replaceMaterialFile(request, response, teacher);
             return;
         }
         if ("delete".equalsIgnoreCase(action)) {
@@ -175,7 +201,8 @@ public class UploadMaterialServlet extends HttpServlet {
                     materialName,
                     finalFileUrl,
                     extension,
-                    "Private"
+                    "Private",
+                    filePart.getSize()
             );
 
             if (newId > 0) {
@@ -258,6 +285,80 @@ public class UploadMaterialServlet extends HttpServlet {
             getServletContext().log("DB error deleting material", e);
             request.setAttribute("error", "Database error while deleting material.");
             doGet(request, response);
+        }
+    }
+
+    /**
+     * Replaces the file of an existing material (owner only) while keeping its
+     * name and history. Uploads the new file to Cloudinary and updates
+     * FilePath / MaterialType / FileSize. The old Cloudinary asset is left
+     * orphaned (accepted trade-off — public_id is not persisted).
+     */
+    private void replaceMaterialFile(HttpServletRequest request, HttpServletResponse response, User teacher)
+            throws IOException, ServletException {
+        String materialIdParam = request.getParameter("materialId");
+        String syllabusIdParam = request.getParameter("syllabusId");
+
+        if (!ValidationUtil.isValidId(materialIdParam)) {
+            redirectToCloud(request, response, syllabusIdParam, "error", "Invalid material");
+            return;
+        }
+
+        Part filePart;
+        try {
+            filePart = request.getPart("materialFile");
+        } catch (Exception e) {
+            redirectToCloud(request, response, syllabusIdParam, "error", "Could not read uploaded file");
+            return;
+        }
+        if (filePart == null || filePart.getSize() == 0) {
+            redirectToCloud(request, response, syllabusIdParam, "error", "Please select a file to replace with");
+            return;
+        }
+
+        String originalFileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+        if (originalFileName.isEmpty()) {
+            redirectToCloud(request, response, syllabusIdParam, "error", "Invalid file name");
+            return;
+        }
+
+        String extension = getExtension(originalFileName).toUpperCase();
+        if (!isAllowedExtension(extension)) {
+            redirectToCloud(request, response, syllabusIdParam,
+                    "error", "File type not allowed. Allowed: ZIP, PDF, PPTX, DOCX, MP4.");
+            return;
+        }
+
+        // Store new file under the same syllabus folder when possible.
+        File uploadsRoot = getUploadsRoot();
+        String syllabusFolder = ValidationUtil.isValidId(syllabusIdParam) ? syllabusIdParam.trim() : "misc";
+        File syllabusDir = new File(uploadsRoot, syllabusFolder);
+        String relativeFallbackPrefix = "/materials/" + syllabusFolder + "/";
+
+        String finalFileUrl;
+        try (InputStream in = filePart.getInputStream()) {
+            finalFileUrl = utils.CloudinaryUtil.uploadFile(in, originalFileName, syllabusDir, relativeFallbackPrefix);
+        } catch (Exception e) {
+            getServletContext().log("File replace/upload error", e);
+            redirectToCloud(request, response, syllabusIdParam, "error", "Error uploading file: " + e.getMessage());
+            return;
+        }
+
+        try {
+            MaterialDAO materialDAO = new MaterialDAO();
+            boolean replaced = materialDAO.updateMaterialFile(
+                    Integer.parseInt(materialIdParam.trim()),
+                    teacher.getUserId(),
+                    finalFileUrl,
+                    extension,
+                    filePart.getSize()
+            );
+            redirectToCloud(request, response, syllabusIdParam,
+                    replaced ? "success" : "error",
+                    replaced ? "Material file replaced successfully" : "Material not found or access denied");
+        } catch (SQLException e) {
+            getServletContext().log("DB error replacing material file", e);
+            redirectToCloud(request, response, syllabusIdParam, "error", "Database error while replacing file.");
         }
     }
 

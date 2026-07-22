@@ -60,7 +60,6 @@
                         </div>
 
                         <input type="hidden" name="materialName" id="materialName" value="" />
-                        <input type="hidden" name="visibility" value="Private" />
 
                         <div class="mb-3">
                             <label for="materialFile" class="form-label fw-semibold">
@@ -105,10 +104,49 @@
                     </c:if>
                 </div>
                 <div class="teacher-card-body">
+                    <%-- Search / filter within the private cloud --%>
+                    <form action="${pageContext.request.contextPath}/teacher/upload-material"
+                          method="get" class="row g-2 align-items-center mb-3" id="material-search-form">
+                        <c:if test="${not empty selectedSyllabusId}">
+                            <input type="hidden" name="syllabusId" value="${selectedSyllabusId}"/>
+                        </c:if>
+                        <div class="col-sm-6">
+                            <input type="text" name="keyword" class="form-control form-control-sm"
+                                   placeholder="Search by name or type..."
+                                   value="${fn:escapeXml(keyword)}" maxlength="200"/>
+                        </div>
+                        <div class="col-sm-3">
+                            <select name="searchType" class="form-select form-select-sm">
+                                <option value="all" ${searchType == 'all' ? 'selected' : ''}>Name + Type</option>
+                                <option value="name" ${searchType == 'name' ? 'selected' : ''}>Name only</option>
+                                <option value="type" ${searchType == 'type' ? 'selected' : ''}>Type only</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 d-flex gap-1">
+                            <button type="submit" class="btn btn-sm btn-upload-submit flex-grow-1">
+                                <i class="bi bi-search me-1"></i>Search
+                            </button>
+                            <c:if test="${not empty keyword}">
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="${pageContext.request.contextPath}/teacher/upload-material<c:if test='${not empty selectedSyllabusId}'>?syllabusId=${selectedSyllabusId}</c:if>"
+                                   title="Clear search">
+                                    <i class="bi bi-x-lg"></i>
+                                </a>
+                            </c:if>
+                        </div>
+                    </form>
+
                     <c:choose>
                         <c:when test="${empty existingMaterials}">
                             <p class="text-muted text-center py-3">
-                                Your private cloud is empty. Upload a file to store it for this teacher account only.
+                                <c:choose>
+                                    <c:when test="${not empty keyword}">
+                                        No materials match your search. Try a different keyword.
+                                    </c:when>
+                                    <c:otherwise>
+                                        Your private cloud is empty. Upload a file to store it for this teacher account only.
+                                    </c:otherwise>
+                                </c:choose>
                             </p>
                         </c:when>
                         <c:otherwise>
@@ -119,7 +157,7 @@
                                             <th>#</th>
                                             <th>Name</th>
                                             <th>Type</th>
-                                            <th>Visibility</th>
+                                            <th>Size</th>
                                             <th>Uploaded</th>
                                              <th class="text-center">Downloads</th>
                                              <th class="text-center">Download</th>
@@ -152,39 +190,58 @@
                                                         ${mat.materialType}
                                                     </span>
                                                 </td>
-                                                <td>
-                                                    <c:choose>
-                                                        <c:when test="${mat.visibility == 'Public'}">
-                                                            <span class="badge bg-success-subtle text-success border border-success" style="font-size:.7rem;">Public</span>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <span class="badge bg-warning-subtle text-warning border border-warning" style="font-size:.7rem;">Private</span>
-                                                        </c:otherwise>
-                                                    </c:choose>
-                                                </td>
+                                                <td style="font-size:.78rem;" class="text-muted">${mat.fileSizeDisplay}</td>
                                                 <td style="font-size:.78rem;" class="text-muted">${mat.uploadedAt}</td>
                                                 <td class="text-center">
                                                     <span class="badge bg-info-subtle text-info border border-info">${mat.downloadCount}</span>
                                                 </td>
                                                  <td class="text-center">
-                                                     <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
-                                                        class="btn btn-sm btn-upload-submit py-0 px-2"
-                                                        title="Download ${fn:escapeXml(mat.materialName)}">
-                                                         <i class="bi bi-cloud-arrow-down-fill"></i>
-                                                     </a>
+                                                     <div class="d-inline-flex gap-1">
+                                                         <c:if test="${fn:toUpperCase(mat.materialType) == 'PDF'}">
+                                                             <a href="${pageContext.request.contextPath}/preview-material?materialId=${mat.materialId}"
+                                                                target="_blank" rel="noopener"
+                                                                class="btn btn-sm btn-outline-primary py-0 px-2"
+                                                                title="Preview ${fn:escapeXml(mat.materialName)}">
+                                                                 <i class="bi bi-eye"></i>
+                                                             </a>
+                                                         </c:if>
+                                                         <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                                            class="btn btn-sm btn-upload-submit py-0 px-2"
+                                                            title="Download ${fn:escapeXml(mat.materialName)}">
+                                                             <i class="bi bi-cloud-arrow-down-fill"></i>
+                                                         </a>
+                                                     </div>
                                                  </td>
                                                  <td class="text-center">
-                                                     <form action="${pageContext.request.contextPath}/teacher/upload-material"
-                                                           method="post" class="d-inline mb-0"
-                                                           onsubmit="return confirm('Delete this material from your private cloud?');">
-                                                         <input type="hidden" name="action" value="delete"/>
-                                                         <input type="hidden" name="materialId" value="${mat.materialId}"/>
-                                                         <input type="hidden" name="syllabusId" value="${selectedSyllabusId}"/>
-                                                         <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
-                                                                 title="Delete ${fn:escapeXml(mat.materialName)}">
-                                                             <i class="bi bi-trash"></i>
-                                                         </button>
-                                                     </form>
+                                                     <div class="d-inline-flex gap-1">
+                                                         <%-- Replace file: file input auto-submits on select --%>
+                                                         <form action="${pageContext.request.contextPath}/teacher/upload-material"
+                                                               method="post" enctype="multipart/form-data" class="d-inline mb-0">
+                                                             <input type="hidden" name="action" value="replace"/>
+                                                             <input type="hidden" name="materialId" value="${mat.materialId}"/>
+                                                             <input type="hidden" name="syllabusId" value="${selectedSyllabusId}"/>
+                                                             <input type="file" name="materialFile" id="replace-file-${mat.materialId}"
+                                                                    class="d-none"
+                                                                    accept=".zip,.pdf,.pptx,.ppt,.docx,.doc,.mp4,.avi"
+                                                                    onchange="if(this.files.length && confirm('Replace this file with the selected one? The name stays the same.')) { this.form.submit(); } else { this.value=''; }"/>
+                                                             <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                                     title="Replace file for ${fn:escapeXml(mat.materialName)}"
+                                                                     onclick="document.getElementById('replace-file-${mat.materialId}').click();">
+                                                                 <i class="bi bi-arrow-repeat"></i>
+                                                             </button>
+                                                         </form>
+                                                         <form action="${pageContext.request.contextPath}/teacher/upload-material"
+                                                               method="post" class="d-inline mb-0"
+                                                               onsubmit="return confirm('Delete this material from your private cloud?');">
+                                                             <input type="hidden" name="action" value="delete"/>
+                                                             <input type="hidden" name="materialId" value="${mat.materialId}"/>
+                                                             <input type="hidden" name="syllabusId" value="${selectedSyllabusId}"/>
+                                                             <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                                     title="Delete ${fn:escapeXml(mat.materialName)}">
+                                                                 <i class="bi bi-trash"></i>
+                                                             </button>
+                                                         </form>
+                                                     </div>
                                                  </td>
                                              </tr>
                                         </c:forEach>
@@ -196,17 +253,17 @@
                                     <ul class="pagination fpt-pagination mb-0">
                                         <c:if test="${materialPagination.hasPrevious()}">
                                             <li class="page-item">
-                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&page=${materialPagination.previousPage}">Previous</a>
+                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&keyword=${fn:escapeXml(keyword)}&searchType=${searchType}&page=${materialPagination.previousPage}">Previous</a>
                                             </li>
                                         </c:if>
                                         <c:forEach begin="1" end="${materialPagination.totalPages}" var="p">
                                             <li class="page-item ${p == materialPagination.currentPage ? 'active' : ''}">
-                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&page=${p}">${p}</a>
+                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&keyword=${fn:escapeXml(keyword)}&searchType=${searchType}&page=${p}">${p}</a>
                                             </li>
                                         </c:forEach>
                                         <c:if test="${materialPagination.hasNext()}">
                                             <li class="page-item">
-                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&page=${materialPagination.nextPage}">Next</a>
+                                                <a class="page-link" href="${pageContext.request.contextPath}/teacher/upload-material?syllabusId=${selectedSyllabusId}&keyword=${fn:escapeXml(keyword)}&searchType=${searchType}&page=${materialPagination.nextPage}">Next</a>
                                             </li>
                                         </c:if>
                                     </ul>
