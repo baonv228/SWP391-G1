@@ -64,6 +64,8 @@
     border: 1px solid #e9ecef;
     vertical-align: middle;
 }
+.syllabus-table-scroll { overflow-x: auto; margin-bottom: 2rem; }
+.syllabus-table-scroll .table-syllabus-detail { margin-bottom: 0; min-width: 1450px; }
 .badge-main {
     background-color: #e6f4ea;
     color: #137333;
@@ -243,6 +245,7 @@
             <%-- ═══════════════════════════════════════════════════════
                  SECTION 2b — Downloadable Learning Materials
             ═══════════════════════════════════════════════════════ --%>
+            <c:set var="learningMaterialsSection">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="materials-section-title mb-0">
                     ${fn:length(syllabus.materials)} learning material(s)
@@ -279,10 +282,11 @@
                                     <td class="text-center">${s.index + 1}</td>
                                     <td>
                                         <i class="bi ${mat.typeIconClass} me-1" style="color: #f3722c;"></i>
-                                        <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                        <a href="javascript:void(0)" data-file-path="${fn:escapeXml(mat.filePath)}"
+                                           onclick="downloadSessionMaterial(this.dataset.filePath)"
                                            class="text-decoration-none fw-semibold" style="color: #f3722c;"
                                            title="Download ${fn:escapeXml(mat.materialName)}">
-                                            ${mat.materialName}
+                                            <c:out value="${mat.materialName}"/>
                                         </a>
                                     </td>
                                     <td>
@@ -298,9 +302,10 @@
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
-                                    <td class="text-muted" style="font-size:.8rem;">${mat.uploadedAt}</td>
+                                    <td class="text-muted" style="font-size:.8rem;">From S-Download</td>
                                     <td class="text-center">
-                                        <a href="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"
+                                        <a href="javascript:void(0)" data-file-path="${fn:escapeXml(mat.filePath)}"
+                                           onclick="downloadSessionMaterial(this.dataset.filePath)"
                                            class="btn btn-sm py-0 px-2 d-inline-flex align-items-center"
                                            style="background-color: #f3722c; color: white;"
                                            title="Download ${fn:escapeXml(mat.materialName)}">
@@ -317,9 +322,10 @@
             <%-- Hidden downloads area for Download All --%>
             <div id="download-all-links" style="display:none;">
                 <c:forEach var="mat" items="${syllabus.materials}">
-                    <span data-url="${pageContext.request.contextPath}/download-material?materialId=${mat.materialId}"></span>
+                    <span data-file-path="${fn:escapeXml(mat.filePath)}"></span>
                 </c:forEach>
             </div>
+            </c:set>
 
             <%-- ═══════════════════════════════════════════════════════
                  SECTION 3 — CLOs Mapping
@@ -381,7 +387,8 @@
                                             </c:when>
                                             <c:otherwise>
                                                 <c:forEach var="p" items="${clo.plos}">
-                                                    <span class="badge bg-secondary text-white me-2 p-1 px-2" title="${p.ploDescription}">${p.ploName}</span>
+                                                    <span class="badge bg-secondary text-white me-2 p-1 px-2"
+                                                          title="${fn:escapeXml(p.ploDescription)}"><c:out value="${p.ploCode}"/></span>
                                                 </c:forEach>
                                             </c:otherwise>
                                         </c:choose>
@@ -396,6 +403,7 @@
             <%-- ═══════════════════════════════════════════════════════
                  SECTION 4 — Weekly Syllabus Sessions
             ═══════════════════════════════════════════════════════ --%>
+            <c:out value="${learningMaterialsSection}" escapeXml="false"/>
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="materials-section-title mb-0">
                     ${fn:length(syllabus.sessions)} sessions (45'/session)
@@ -430,7 +438,7 @@
                                     <td class="text-center">${s.lo}</td>
                                     <td class="text-center">${s.itu}</td>
                                     <td>${s.studentMaterials}</td>
-                                    <td>
+                                    <td style="visibility: hidden;" aria-hidden="true">
                                         <c:choose>
                                             <c:when test="${not empty s.SDownload}">
                                                 <a href="javascript:void(0)"
@@ -449,6 +457,41 @@
                     </c:choose>
                 </tbody>
             </table>
+
+            <div class="materials-section-title">
+                ${fn:length(syllabus.constructiveQuestions)} constructive question(s)
+            </div>
+            <c:if test="${not empty syllabus.constructiveQuestions}">
+                <table class="table-syllabus-detail" id="constructive-questions-table">
+                    <thead><tr><th style="width:55px;"></th><th style="width:120px;">Session No</th><th style="width:280px;">Name</th><th>Details</th></tr></thead>
+                    <tbody>
+                        <c:forEach var="question" items="${syllabus.constructiveQuestions}" varStatus="questionStatus">
+                            <tr><td class="text-center">${questionStatus.index + 1}</td><td class="text-center"><c:out value="${question.sessionNo}"/></td><td><c:out value="${question.name}"/></td><td><c:out value="${question.details}"/></td></tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </c:if>
+
+            <div class="materials-section-title">${fn:length(syllabus.assessments)} assessment(s)</div>
+            <div class="syllabus-table-scroll">
+                <table class="table-syllabus-detail" id="assessments-table">
+                    <thead><tr><th>Category</th><th>Type</th><th>Part</th><th>Weight</th><th>Completion Criteria</th><th>Duration</th><th>CLO</th><th>Question Type</th><th>No Question</th><th>Knowledge and Skill</th><th>Grading Guide</th><th>Note</th></tr></thead>
+                    <tbody>
+                        <c:choose>
+                            <c:when test="${empty syllabus.assessments}"><tr><td colspan="12" class="text-muted text-center py-3">No assessments added yet.</td></tr></c:when>
+                            <c:otherwise>
+                                <c:forEach var="assessment" items="${syllabus.assessments}">
+                                    <tr>
+                                        <td><c:out value="${assessment.category}"/></td><td><c:out value="${assessment.type}"/></td><td class="text-center"><c:out value="${assessment.part}"/></td><td class="text-center">${assessment.weight}%</td><td><c:out value="${assessment.completionCriteria}"/></td><td><c:out value="${assessment.duration}"/></td>
+                                        <td><c:choose><c:when test="${empty assessment.cloNames}">—</c:when><c:otherwise><c:forEach var="cloName" items="${assessment.cloNames}" varStatus="cs"><c:if test="${not cs.first}">, </c:if><c:out value="${cloName}"/></c:forEach></c:otherwise></c:choose></td>
+                                        <td><c:out value="${assessment.questionType}"/></td><td class="text-center"><c:out value="${assessment.noQuestion}"/></td><td><c:out value="${assessment.knowledgeAndSkill}"/></td><td><c:out value="${assessment.gradingGuide}"/></td><td><c:out value="${assessment.note}"/></td>
+                                    </tr>
+                                </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
+                    </tbody>
+                </table>
+            </div>
 
         </c:otherwise>
     </c:choose>
@@ -476,14 +519,17 @@ function downloadSingleMaterial(url) {
 function downloadAllMaterials() {
     const container = document.getElementById('download-all-links');
     if (!container) return;
-    const links = container.querySelectorAll('[data-url]');
+    const links = container.querySelectorAll('[data-file-path]');
     if (links.length === 0) {
         alert('No materials to download.');
         return;
     }
     links.forEach(function (el, idx) {
         setTimeout(function () {
-            downloadSingleMaterial(el.getAttribute('data-url'));
+            const path = el.dataset.filePath;
+            const ctx = '${pageContext.request.contextPath}';
+            const url = path.startsWith('/materials/') ? ctx + path : ctx + '/materials/' + path.replace(/^\/+/, '');
+            downloadSingleMaterial(url);
         }, idx * 1000);
     });
 }
