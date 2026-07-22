@@ -54,7 +54,7 @@ public class UserDao extends DBContext {
                 if (passwordHash == null || passwordHash.isBlank()) {
                     return null;
                 }
-                if (!BCrypt.checkpw(rawPassword, passwordHash)) {
+                if (!matchesPassword(rawPassword, passwordHash)) {
                     return null;
                 }
                 return mapUser(rs);
@@ -151,6 +151,22 @@ public class UserDao extends DBContext {
 
     public String hashPassword(String rawPassword) {
         return BCrypt.hashpw(rawPassword, BCrypt.gensalt(10));
+    }
+
+    private boolean matchesPassword(String rawPassword, String storedPassword) {
+        if (rawPassword == null || storedPassword == null || storedPassword.isBlank()) {
+            return false;
+        }
+        if (storedPassword.startsWith("$2a$")
+                || storedPassword.startsWith("$2b$")
+                || storedPassword.startsWith("$2y$")) {
+            try {
+                return BCrypt.checkpw(rawPassword, storedPassword);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        }
+        return rawPassword.equals(storedPassword);
     }
 
     public boolean existsEmail(String email) {

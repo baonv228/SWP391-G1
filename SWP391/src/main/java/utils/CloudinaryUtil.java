@@ -56,24 +56,19 @@ public class CloudinaryUtil {
         File localFile = new File(destinationDir, safeFileName);
         writeToFile(fileStream, localFile);
 
-        String resourceType = resolveResourceType(fileName);
-        if ("raw".equals(resourceType)) {
+        if (cloudinary == null) {
             return webAppRelativeFallbackPrefix + safeFileName;
         }
 
-        if (cloudinary != null) {
-            try {
-                String cloudinaryUrl = uploadToCloudinary(localFile, safeFileName, fileName);
-                if (localFile.exists()) {
-                    localFile.delete();
-                }
-                return cloudinaryUrl;
-            } catch (Exception e) {
-                System.err.println("Cloudinary upload failed: " + e.getMessage() + ". Falling back to local storage.");
+        try {
+            return uploadToCloudinary(localFile, safeFileName, fileName);
+        } catch (Exception e) {
+            throw new Exception("Cloudinary upload failed: " + e.getMessage(), e);
+        } finally {
+            if (localFile.exists()) {
+                localFile.delete();
             }
         }
-
-        return webAppRelativeFallbackPrefix + safeFileName;
     }
 
     public static String toRawDeliveryUrl(String fileUrl) {

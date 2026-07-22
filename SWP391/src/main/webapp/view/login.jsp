@@ -430,29 +430,29 @@
 
             <div class="quick-cards">
                 <div class="quick-card"
-                     onclick="fillCredentials('admin.tpms@gmail.com','123456',this)"
-                     title="Admin — admin.tpms@gmail.com / 123456">
+                     onclick="fillCredentials('admin@gmail.com','123456',this)"
+                     title="Admin — admin@gmail.com / 123456">
                     <span class="qc-icon">🛡️</span>
                     <div class="qc-role">Admin</div>
-                    <div class="qc-email">admin.tpms@gmail.com</div>
+                    <div class="qc-email">admin@gmail.com</div>
                     <div class="qc-pass">123456</div>
                 </div>
 
                 <div class="quick-card"
-                     onclick="fillCredentials('teacher.tpms@gmail.com','123456',this)"
-                     title="Teacher — teacher.tpms@gmail.com / 123456">
+                     onclick="fillCredentials('teacher@gmail.com','123456',this)"
+                     title="Teacher — teacher@gmail.com / 123456">
                     <span class="qc-icon">👨‍🏫</span>
                     <div class="qc-role">Teacher</div>
-                    <div class="qc-email">teacher.tpms@gmail.com</div>
+                    <div class="qc-email">teacher@gmail.com</div>
                     <div class="qc-pass">123456</div>
                 </div>
 
                 <div class="quick-card"
-                     onclick="fillCredentials('student.tpms@gmail.com','123456',this)"
-                     title="Student — student.tpms@gmail.com / 123456">
+                     onclick="fillCredentials('nguyenbao220824@gmail.com','123456',this)"
+                     title="Student — nguyenbao220824@gmail.com / 123456">
                     <span class="qc-icon">🎓</span>
                     <div class="qc-role">Student</div>
-                    <div class="qc-email">student.tpms@gmail.com</div>
+                    <div class="qc-email">nguyenbao220824@gmail.com</div>
                     <div class="qc-pass">123456</div>
                 </div>
             </div>
