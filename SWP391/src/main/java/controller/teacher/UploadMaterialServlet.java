@@ -199,6 +199,7 @@ public class UploadMaterialServlet extends HttpServlet {
         switch (ext) {
             case "ZIP": case "PDF": case "PPTX": case "PPT":
             case "DOCX": case "DOC": case "MP4": case "AVI":
+            case "XLSX": case "XLS":
                 return true;
             default: return false;
         }

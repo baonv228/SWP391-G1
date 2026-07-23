@@ -811,7 +811,7 @@ public class SyllabusDAO extends DBContext {
             }
             dto.setSessions(mappedSessions);
 
-            dto.setMaterials(buildSessionDownloadMaterials(syllabusId, dbSessions));
+            dto.setMaterials(new MaterialDAO().getAllMaterialsBySyllabusId(syllabusId));
         }
 
         return dto;
