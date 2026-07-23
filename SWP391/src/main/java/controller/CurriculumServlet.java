@@ -81,9 +81,7 @@ public class CurriculumServlet extends HttpServlet {
 
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<Curriculum> curriculums = curriculumDAO.getCurriculums();
-        request.setAttribute("curriculums", curriculums);
-        request.getRequestDispatcher("/curriculum/list.jsp").forward(request, response);
+        response.sendRedirect(request.getContextPath() + "/curriculum");
     }
 
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)

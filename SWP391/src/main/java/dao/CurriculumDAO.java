@@ -188,35 +188,44 @@ public class CurriculumDAO extends DBContext {
 
     public List<CurriculumDTO> searchCurricula(String searchType, String keyword,
                                                int page, int pageSize) throws SQLException {
+        return searchCurricula(searchType, keyword, page, pageSize, false);
+    }
+
+    public List<CurriculumDTO> searchCurricula(String searchType, String keyword,
+                                               int page, int pageSize, boolean activeOnly) throws SQLException {
         List<CurriculumDTO> list = new ArrayList<>();
         int offset = (page - 1) * pageSize;
-        String whereClause = buildWhereClause(searchType, keyword);
+        String whereClause = buildWhereClause(searchType, keyword, activeOnly);
 
-        String sql = """
-                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.DecisionNo, c.Status,
-                       COALESCE((
-                           SELECT SUM(s.Credits)
-                           FROM dbo.[Curriculum_Subject] cs
-                           JOIN dbo.[Subject] s ON s.SubjectID = cs.SubjectID
-                           WHERE cs.CurriculumID = c.CurriculumID
-                       ), 0) AS TotalCredits,
-                       tp.ProgramCode, tp.ProgramName, tp.MajorName
-                FROM dbo.[Curriculum] c
-                JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
-                """ + whereClause + """
-                ORDER BY c.CurriculumID
-                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-                """;
+        try (Connection con = getConnection()) {
+            String decisionNoColumn = hasColumn(con, "dbo.Curriculum", "DecisionNo")
+                    ? "c.DecisionNo"
+                    : "CAST(NULL AS NVARCHAR(150)) AS DecisionNo";
+            String sql = """
+                    SELECT c.CurriculumID, c.CurriculumName, c.Description, %s, c.Status,
+                           COALESCE((
+                               SELECT SUM(s.Credits)
+                               FROM dbo.[Curriculum_Subject] cs
+                               JOIN dbo.[Subject] s ON s.SubjectID = cs.SubjectID
+                               WHERE cs.CurriculumID = c.CurriculumID
+                           ), 0) AS TotalCredits,
+                           tp.ProgramCode, tp.ProgramName, tp.MajorName
+                    FROM dbo.[Curriculum] c
+                    JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                    """.formatted(decisionNoColumn) + whereClause + """
+                    ORDER BY c.CurriculumID
+                    OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                    """;
 
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            int idx = setSearchParams(ps, searchType, keyword, 1);
-            ps.setInt(idx++, offset);
-            ps.setInt(idx, pageSize);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                int idx = setSearchParams(ps, searchType, keyword, 1);
+                ps.setInt(idx++, offset);
+                ps.setInt(idx, pageSize);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRowBasic(rs));
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(mapRowBasic(rs));
+                    }
                 }
             }
         }
@@ -224,7 +233,11 @@ public class CurriculumDAO extends DBContext {
     }
 
     public int countCurricula(String searchType, String keyword) throws SQLException {
-        String whereClause = buildWhereClause(searchType, keyword);
+        return countCurricula(searchType, keyword, false);
+    }
+
+    public int countCurricula(String searchType, String keyword, boolean activeOnly) throws SQLException {
+        String whereClause = buildWhereClause(searchType, keyword, activeOnly);
         String sql = """
                 SELECT COUNT(*)
                 FROM dbo.[Curriculum] c
@@ -244,27 +257,31 @@ public class CurriculumDAO extends DBContext {
     }
 
     public CurriculumDTO getCurriculumById(int curriculumId) throws SQLException {
-        String sql = """
-                SELECT c.CurriculumID, c.CurriculumName, c.Description, c.DecisionNo, c.Status,
-                       COALESCE((
-                           SELECT SUM(s.Credits)
-                           FROM dbo.[Curriculum_Subject] cs
-                           JOIN dbo.[Subject] s ON s.SubjectID = cs.SubjectID
-                           WHERE cs.CurriculumID = c.CurriculumID
-                       ), 0) AS TotalCredits,
-                       tp.ProgramCode, tp.ProgramName, tp.MajorName
-                FROM dbo.[Curriculum] c
-                JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
-                WHERE c.CurriculumID = ?
-                """;
-
         CurriculumDTO dto = null;
-        try (Connection con = getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, curriculumId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    dto = mapRowBasic(rs);
+        try (Connection con = getConnection()) {
+            String decisionNoColumn = hasColumn(con, "dbo.Curriculum", "DecisionNo")
+                    ? "c.DecisionNo"
+                    : "CAST(NULL AS NVARCHAR(150)) AS DecisionNo";
+            String sql = """
+                    SELECT c.CurriculumID, c.CurriculumName, c.Description, %s, c.Status,
+                           COALESCE((
+                               SELECT SUM(s.Credits)
+                               FROM dbo.[Curriculum_Subject] cs
+                               JOIN dbo.[Subject] s ON s.SubjectID = cs.SubjectID
+                               WHERE cs.CurriculumID = c.CurriculumID
+                           ), 0) AS TotalCredits,
+                           tp.ProgramCode, tp.ProgramName, tp.MajorName
+                    FROM dbo.[Curriculum] c
+                    JOIN dbo.[Training_Program] tp ON c.ProgramID = tp.ProgramID
+                    WHERE c.CurriculumID = ?
+                    """.formatted(decisionNoColumn);
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, curriculumId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        dto = mapRowBasic(rs);
+                    }
                 }
             }
         }
@@ -549,14 +566,22 @@ public class CurriculumDAO extends DBContext {
         return dto;
     }
 
-    private String buildWhereClause(String searchType, String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return " WHERE c.Status = 'Active' ";
+    private String buildWhereClause(String searchType, String keyword, boolean activeOnly) {
+        List<String> conditions = new ArrayList<>();
+        if (activeOnly) {
+            conditions.add("c.Status = 'Active'");
         }
-        if ("name".equalsIgnoreCase(searchType)) {
-            return " WHERE c.Status = 'Active' AND c.CurriculumName LIKE ? ";
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            if ("name".equalsIgnoreCase(searchType)) {
+                conditions.add("c.CurriculumName LIKE ?");
+            } else {
+                conditions.add("tp.ProgramCode LIKE ?");
+            }
         }
-        return " WHERE c.Status = 'Active' AND tp.ProgramCode LIKE ? ";
+        if (conditions.isEmpty()) {
+            return "";
+        }
+        return " WHERE " + String.join(" AND ", conditions) + " ";
     }
 
     private int setSearchParams(PreparedStatement ps, String searchType, String keyword, int startIndex)
@@ -566,5 +591,16 @@ public class CurriculumDAO extends DBContext {
         }
         ps.setString(startIndex++, "%" + keyword.trim() + "%");
         return startIndex;
+    }
+
+    private boolean hasColumn(Connection con, String tableName, String columnName) throws SQLException {
+        String sql = "SELECT COL_LENGTH(?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+            ps.setString(2, columnName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getObject(1) != null;
+            }
+        }
     }
 }
