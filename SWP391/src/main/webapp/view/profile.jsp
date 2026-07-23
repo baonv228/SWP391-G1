@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<c:set var="pageTitle" value="Hồ sơ cá nhân & Sơ đồ đào tạo" scope="request"/>
+<c:set var="pageTitle" value="${requestScope.showCurriculumTree ? 'Hồ sơ cá nhân & Sơ đồ đào tạo' : 'Hồ sơ cá nhân'}" scope="request"/>
 <jsp:include page="/view/layout/header.jsp"/>
 
 <style>
@@ -233,14 +233,23 @@
     <div class="row">
         
         <!-- Left Side: Profile Setup -->
-        <div class="col-md-4">
+        <div class="${requestScope.showCurriculumTree ? 'col-md-4' : 'col-md-6 mx-auto'}">
             <div class="profile-card">
                 <div class="profile-header">
                     <h3>Thông tin tài khoản</h3>
-                    <div class="profile-subtitle">Xem & cấu hình hồ sơ và ngành học đào tạo.</div>
+                    <div class="profile-subtitle">
+                        <c:choose>
+                            <c:when test="${requestScope.showCurriculumTree}">
+                                Xem &amp; cấu hình hồ sơ và ngành học đào tạo.
+                            </c:when>
+                            <c:otherwise>
+                                Xem &amp; cập nhật thông tin hồ sơ cá nhân.
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
 
-                <c:if test="${not empty requestScope.curriculumFallbackNotice}">
+                <c:if test="${requestScope.showCurriculumTree and not empty requestScope.curriculumFallbackNotice}">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i> ${requestScope.curriculumFallbackNotice}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -280,20 +289,22 @@
                         <input id="fullName" type="text" name="fullName" class="form-control" value="${sessionScope.user.fullName}" required />
                     </div>
 
-                    <!-- Curriculum Select Dropdown -->
-                    <div class="mb-4">
-                        <label for="curriculumId" class="form-label">Ngành học & Chương trình (Curriculum)</label>
-                        <select name="curriculumId" id="curriculumId" class="form-select" onchange="this.form.submit()">
-                            <c:forEach var="c" items="${requestScope.curriculums}">
-                                <option value="${c.curriculumId}" ${c.curriculumId == requestScope.selectedCurId ? 'selected' : ''}>
-                                    ${c.curriculumName} (${c.programCode})
-                                </option>
-                            </c:forEach>
-                        </select>
-                        <div class="form-text" style="font-size: 0.8rem; margin-top: 0.4rem;">
-                            <i class="bi bi-info-circle"></i> Sơ đồ cây đào tạo bên dưới sẽ tự động thay đổi dựa theo cấu hình ngành học này.
+                    <!-- Curriculum Select — only for Student / learner roles -->
+                    <c:if test="${requestScope.showCurriculumTree}">
+                        <div class="mb-4">
+                            <label for="curriculumId" class="form-label">Ngành học &amp; Chương trình (Curriculum)</label>
+                            <select name="curriculumId" id="curriculumId" class="form-select" onchange="this.form.submit()">
+                                <c:forEach var="c" items="${requestScope.curriculums}">
+                                    <option value="${c.curriculumId}" ${c.curriculumId == requestScope.selectedCurId ? 'selected' : ''}>
+                                        ${c.curriculumName} (${c.programCode})
+                                    </option>
+                                </c:forEach>
+                            </select>
+                            <div class="form-text" style="font-size: 0.8rem; margin-top: 0.4rem;">
+                                <i class="bi bi-info-circle"></i> Sơ đồ cây đào tạo bên dưới sẽ tự động thay đổi dựa theo cấu hình ngành học này.
+                            </div>
                         </div>
-                    </div>
+                    </c:if>
 
                     <button type="submit" class="btn btn-save w-100 mb-3">Lưu thay đổi hồ sơ</button>
                 </form>
@@ -306,7 +317,8 @@
             </div>
         </div>
 
-        <!-- Right Side: Interactive Study Tree Map -->
+        <!-- Right Side: Interactive Study Tree Map (Student only) -->
+        <c:if test="${requestScope.showCurriculumTree}">
         <div class="col-md-8">
             <div class="tree-section">
                 
@@ -417,10 +429,12 @@
 
             </div>
         </div>
+        </c:if>
 
     </div>
 </div>
 
+<c:if test="${requestScope.showCurriculumTree}">
 <script>
     // Deserialize prerequisites mapping from request
     const prerequisiteMap = JSON.parse('${requestScope.prereqsJson}');
@@ -527,5 +541,6 @@
         }
     }
 </script>
+</c:if>
 
 <jsp:include page="/view/layout/footer.jsp"/>
