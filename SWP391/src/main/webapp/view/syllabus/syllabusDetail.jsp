@@ -500,9 +500,12 @@
 <script>
 function downloadSessionMaterial(filePath) {
     const ctx = '${pageContext.request.contextPath}';
-    let url = filePath.startsWith('/materials/')
-        ? ctx + filePath
-        : ctx + '/materials/' + filePath.replace(/^\/+/, '');
+    let url = filePath;
+    if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
+        url = filePath.startsWith('/materials/')
+            ? ctx + filePath
+            : ctx + '/materials/' + filePath.replace(/^\/+/, '');
+    }
     window.location.href = url;
 }
 
@@ -528,7 +531,10 @@ function downloadAllMaterials() {
         setTimeout(function () {
             const path = el.dataset.filePath;
             const ctx = '${pageContext.request.contextPath}';
-            const url = path.startsWith('/materials/') ? ctx + path : ctx + '/materials/' + path.replace(/^\/+/, '');
+            let url = path;
+            if (!path.startsWith('http://') && !path.startsWith('https://')) {
+                url = path.startsWith('/materials/') ? ctx + path : ctx + '/materials/' + path.replace(/^\/+/, '');
+            }
             downloadSingleMaterial(url);
         }, idx * 1000);
     });
