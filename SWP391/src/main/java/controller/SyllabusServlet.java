@@ -321,15 +321,17 @@ public class SyllabusServlet extends HttpServlet {
                 */
 
                 // NEW CLOUDINARY UPLOAD LOGIC
-                try (InputStream input = new java.io.FileInputStream(tempFile)) {
-                    String fileUrl = utils.CloudinaryUtil.uploadFile(input, tempFile.getName());
+                boolean saved = false;
+                try {
+                    String fileUrl = utils.CloudinaryUtil.uploadFile(tempFile, tempFile.getName());
                     syllabusDAO.saveMaterialFile(syllabusId, userId, fileUrl);
+                    saved = true;
                     System.out.println("SUCCESS: " + syllabusId + " -> " + fileUrl);
                 } catch (Exception e) {
-                    System.out.println("Error uploading to Cloudinary: " + e.getMessage());
+                    throw new ServletException("Không thể lưu Student Material Package: " + e.getMessage(), e);
                 } finally {
-                    // Clean up temp file to save disk space
-                    if (tempFile.exists()) {
+                    // Keep the temporary file when saving fails so the upload can be diagnosed/retried.
+                    if (saved && tempFile.exists()) {
                         tempFile.delete();
                     }
                 }

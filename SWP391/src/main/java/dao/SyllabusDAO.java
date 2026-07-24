@@ -1,5 +1,6 @@
 package dao;
 
+import static dao.DBContext.getConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -238,78 +239,19 @@ public class SyllabusDAO extends DBContext {
     }
 
     public boolean approveSyllabus(int syllabusId, int reviewerId) {
-        String updateSyllabusSql = """
+        String sql = """
                 UPDATE dbo.[Syllabus]
                 SET Status = 'Approved', ApprovedBy = ?, ApprovedAt = GETDATE(), IsCurrentVersion = 1
                 WHERE SyllabusID = ?
                 """;
-        String updateSubjectSql = """
-                UPDATE dbo.[Subject]
-                SET Status = 'Active'
-                WHERE Status = 'WaitingForSyllabus'
-                  AND SubjectID = (
-                      SELECT SubjectID
-                      FROM dbo.[Syllabus]
-                      WHERE SyllabusID = ?
-                  )
-                """;
-        String updateCurriculumStatusSql = """
-                UPDATE c
-                SET Status = CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM dbo.[Curriculum_Subject] cs
-                        JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
-                        WHERE cs.CurriculumID = c.CurriculumID
-                          AND (s.Status IS NULL OR s.Status <> 'Active')
-                    ) THEN 'Not Active'
-                    ELSE 'Active'
-                END
-                FROM dbo.[Curriculum] c
-                WHERE c.CurriculumID IN (
-                    SELECT cs.CurriculumID
-                    FROM dbo.[Curriculum_Subject] cs
-                    JOIN dbo.[Syllabus] sy ON cs.SubjectID = sy.SubjectID
-                    WHERE sy.SyllabusID = ?
-                )
-                """;
-        Connection con = null;
-        try {
-            con = getConnection();
-            con.setAutoCommit(false);
-
-            boolean updated;
-            try (PreparedStatement ps = con.prepareStatement(updateSyllabusSql)) {
-                ps.setInt(1, reviewerId);
-                ps.setInt(2, syllabusId);
-                updated = ps.executeUpdate() > 0;
-            }
-
-            if (updated) {
-                try (PreparedStatement ps = con.prepareStatement(updateSubjectSql)) {
-                    ps.setInt(1, syllabusId);
-                    ps.executeUpdate();
-                }
-                try (PreparedStatement ps = con.prepareStatement(updateCurriculumStatusSql)) {
-                    ps.setInt(1, syllabusId);
-                    ps.executeUpdate();
-                }
-            }
-
-            con.commit();
-            if (updated) {
-                updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
-            }
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, reviewerId);
+            ps.setInt(2, syllabusId);
+            boolean updated = ps.executeUpdate() > 0;
+            updateLatestApprovalRequest(syllabusId, reviewerId, "Approved", null);
             return updated;
         } catch (Exception e) {
-            if (con != null) {
-                try { con.rollback(); } catch (Exception ex) {}
-            }
             System.out.println("approveSyllabus error: " + e.getMessage());
-        } finally {
-            if (con != null) {
-                try { con.setAutoCommit(true); con.close(); } catch (Exception ex) {}
-            }
         }
         return false;
     }
@@ -727,15 +669,20 @@ public class SyllabusDAO extends DBContext {
     // =========================================================================
     // FILE UPLOAD — Learning_Material record
     // =========================================================================
-    public void saveMaterialFile(int syllabusId, int uploadedBy, String filePath) {
-        String sql = "INSERT INTO dbo.[Learning_Material](SyllabusID,UploadedBy,MaterialName,FilePath,MaterialType,Visibility,Status) VALUES(?,?,?,?,?,?,?)";
+    public void saveMaterialFile(int syllabusId, int uploadedBy, String filePath) throws SQLException {
+        String sql = """
+                INSERT INTO dbo.[Learning_Material]
+                    (SyllabusID, UploadedBy, MaterialName, FilePath, MaterialType,
+                     Visibility, Status, UploadedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE())
+                """;
         try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, syllabusId); ps.setInt(2, uploadedBy);
             ps.setString(3, "Student Material Package"); ps.setString(4, filePath);
             ps.setString(5, "ZIP"); ps.setString(6, "Public"); ps.setString(7, "Active");
-            ps.executeUpdate();
-        } catch (Exception e) {
-            System.out.println("saveMaterialFile error: " + e.getMessage());
+            if (ps.executeUpdate() != 1) {
+                throw new SQLException("Learning_Material insert did not create a row.");
+            }
         }
     }
 

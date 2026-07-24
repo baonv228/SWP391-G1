@@ -43,11 +43,14 @@ public class CloudinaryUtil {
             throw new Exception("Cloudinary credentials are not configured.");
         }
 
-        // Collisions prevention suffix
-        String safeFileName = System.currentTimeMillis() + "_" + fileName.replaceAll("[^a-zA-Z0-9._\\-]", "_");
-        
-        // Write to temporary local file
-        File localFile = File.createTempFile("upload_", "_" + safeFileName);
+        File tempDirectory = new File(
+                System.getProperty("user.home") + File.separator + "tpms-uploads"
+                        + File.separator + "temp" + File.separator + "cloudinary");
+        if (!tempDirectory.exists() && !tempDirectory.mkdirs()) {
+            throw new Exception("Cannot create Cloudinary temporary directory: " + tempDirectory);
+        }
+
+        File localFile = File.createTempFile("upload_", ".tmp", tempDirectory);
         try {
             try (OutputStream out = new FileOutputStream(localFile)) {
                 byte[] buf = new byte[8192];
@@ -56,32 +59,48 @@ public class CloudinaryUtil {
                     out.write(buf, 0, length);
                 }
             }
-
-            // Determine resource type: raw (for zip/docs), image, or video
-            String ext = getExtension(fileName).toLowerCase();
-            String resourceType = "raw";
-            if (ext.equals("pdf") || ext.equals("docx") || ext.equals("zip") || ext.equals("xlsx") || ext.equals("pptx") || ext.equals("doc") || ext.equals("ppt")) {
-                resourceType = "raw";
-            } else if (ext.equals("mp4") || ext.equals("avi") || ext.equals("mov") || ext.equals("webm")) {
-                resourceType = "video";
-            } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("gif")) {
-                resourceType = "image";
-            }
-
-            Map params = ObjectUtils.asMap(
-                "folder", "flm_materials",
-                "resource_type", resourceType,
-                "public_id", safeFileName
-            );
-
-            Map uploadResult = cloudinary.uploader().upload(localFile, params);
-            return (String) uploadResult.get("secure_url");
+            return uploadFile(localFile, fileName);
         } finally {
             // Always delete temp file to prevent disk leak
             if (localFile.exists()) {
                 localFile.delete();
             }
         }
+    }
+
+    /**
+     * Uploads an existing local file without copying it through java.io.tmpdir.
+     */
+    public static String uploadFile(File localFile, String fileName) throws Exception {
+        if (cloudinary == null) {
+            throw new Exception("Cloudinary credentials are not configured.");
+        }
+        if (localFile == null || !localFile.isFile()) {
+            throw new Exception("Upload file does not exist: " + localFile);
+        }
+
+        String safeFileName = System.currentTimeMillis() + "_"
+                + fileName.replaceAll("[^a-zA-Z0-9._\\-]", "_");
+        String ext = getExtension(fileName).toLowerCase();
+        String resourceType = "raw";
+        if (ext.equals("mp4") || ext.equals("avi") || ext.equals("mov") || ext.equals("webm")) {
+            resourceType = "video";
+        } else if (ext.equals("png") || ext.equals("jpg") || ext.equals("jpeg") || ext.equals("gif")) {
+            resourceType = "image";
+        }
+
+        Map params = ObjectUtils.asMap(
+            "folder", "flm_materials",
+            "resource_type", resourceType,
+            "public_id", safeFileName
+        );
+
+        Map uploadResult = cloudinary.uploader().upload(localFile, params);
+        String secureUrl = (String) uploadResult.get("secure_url");
+        if (secureUrl == null || secureUrl.isBlank()) {
+            throw new Exception("Cloudinary did not return secure_url.");
+        }
+        return secureUrl;
     }
 
     private static String getExtension(String fileName) {
