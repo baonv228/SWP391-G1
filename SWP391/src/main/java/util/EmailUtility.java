@@ -7,73 +7,110 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Tiện ích hỗ trợ gửi email sử dụng Jakarta Mail API.
- * Hỗ trợ chế độ Mock Console Fallback khi chạy local/dev nếu chưa cấu hình tài khoản thực tế.
+ * Gửi email thật qua SMTP (Jakarta Mail). Không dùng mock/console fallback.
+ * Cấu hình: src/main/resources/mail.properties
+ * Có thể ghi đè bằng env: TPMS_MAIL_EMAIL, TPMS_MAIL_APP_PASSWORD
  */
 public class EmailUtility {
 
-    // Cấu hình SMTP
-    private static final String SMTP_HOST = "smtp.gmail.com";
-    private static final String SMTP_PORT = "587"; // Cổng TLS cho Gmail
-    
-    // ĐIỀN THÔNG TIN EMAIL CỦA BẠN TẠI ĐÂY ĐỂ GỬI MAIL THẬT
-    private static final String SENDER_EMAIL = "nguyenngoclinh07032003@gmail.com"; 
-    private static final String SENDER_APP_PASSWORD = "qlue dddn hqeo uiyb"; // Mật khẩu ứng dụng Gmail (App Password)
+    private static final Properties MAIL_CONFIG = loadConfig();
+
+    private EmailUtility() {
+    }
+
+    private static Properties loadConfig() {
+        Properties props = new Properties();
+        try (InputStream in = EmailUtility.class.getClassLoader().getResourceAsStream("mail.properties")) {
+            if (in != null) {
+                props.load(in);
+            } else {
+                System.err.println("[SMTP] Không tìm thấy mail.properties trên classpath.");
+            }
+        } catch (Exception e) {
+            System.err.println("[SMTP] Lỗi đọc mail.properties: " + e.getMessage());
+        }
+        return props;
+    }
+
+    private static String cfg(String key, String defaultValue) {
+        String envKey = switch (key) {
+            case "mail.sender.email" -> firstNonBlank(System.getenv("TPMS_MAIL_EMAIL"), System.getProperty("tpms.mail.email"));
+            case "mail.sender.app-password" -> firstNonBlank(System.getenv("TPMS_MAIL_APP_PASSWORD"), System.getProperty("tpms.mail.appPassword"));
+            default -> null;
+        };
+        if (envKey != null && !envKey.isBlank()) {
+            return envKey.trim();
+        }
+        String value = MAIL_CONFIG.getProperty(key, defaultValue);
+        return value == null ? defaultValue : value.trim();
+    }
+
+    private static String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) {
+            return a;
+        }
+        if (b != null && !b.isBlank()) {
+            return b;
+        }
+        return null;
+    }
+
+    private static boolean isConfigured(String email, String appPassword) {
+        if (email == null || email.isBlank() || appPassword == null || appPassword.isBlank()) {
+            return false;
+        }
+        String lower = email.toLowerCase();
+        if (lower.contains("your-email") || lower.contains("example.com")) {
+            return false;
+        }
+        String pwd = appPassword.replace(" ", "");
+        return !pwd.equalsIgnoreCase("REPLACE_WITH_NEW_APP_PASSWORD")
+                && !pwd.equalsIgnoreCase("your-app-password")
+                && pwd.length() >= 16;
+    }
 
     /**
-     * Gửi email dạng HTML UTF-8.
+     * Gửi email HTML UTF-8 qua SMTP thật.
      *
-     * @param recipientEmail Địa chỉ email người nhận
-     * @param subject        Tiêu đề email
-     * @param content        Nội dung email (hỗ trợ mã HTML)
-     * @return true nếu gửi thành công (hoặc in ra console thành công ở chế độ Dev)
+     * @return true chỉ khi SMTP gửi thành công; false nếu thiếu cấu hình hoặc gửi lỗi
      */
     public static boolean sendEmail(String recipientEmail, String subject, String content) {
-        // Kiểm tra xem đã cấu hình email thật hay chưa.
-        // Nếu vẫn dùng giá trị mặc định, hệ thống sẽ chạy chế độ Mock và in ra console.
-        if (SENDER_EMAIL.equals("your-email@gmail.com") 
-                || SENDER_APP_PASSWORD.equals("your-app-password") 
-                || SENDER_APP_PASSWORD.isBlank()) {
-            
-            System.out.println("==========================================================================");
-            System.out.println("[DEV MOCK EMAIL] Gửi mail tới: " + recipientEmail);
-            System.out.println("[DEV MOCK EMAIL] Tiêu đề: " + subject);
-            System.out.println("[DEV MOCK EMAIL] Nội dung: \n" + content);
-            System.out.println("==========================================================================");
-            return true;
+        String senderEmail = cfg("mail.sender.email", "");
+        String senderName = cfg("mail.sender.name", "TPMS System");
+        String appPassword = cfg("mail.sender.app-password", "").replace(" ", "");
+
+        if (!isConfigured(senderEmail, appPassword)) {
+            System.err.println("[SMTP] Chưa cấu hình mail.sender.email / mail.sender.app-password trong mail.properties");
+            System.err.println("[SMTP] Tạo Gmail App Password rồi điền vào mail.properties (không dùng mock).");
+            return false;
         }
 
-        // Cấu hình các thuộc tính kết nối SMTP
         Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", SMTP_HOST);
-        props.put("mail.smtp.port", SMTP_PORT);
-        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+        props.put("mail.smtp.auth", cfg("mail.smtp.auth", "true"));
+        props.put("mail.smtp.starttls.enable", cfg("mail.smtp.starttls.enable", "true"));
+        props.put("mail.smtp.host", cfg("mail.smtp.host", "smtp.gmail.com"));
+        props.put("mail.smtp.port", cfg("mail.smtp.port", "587"));
+        props.put("mail.smtp.ssl.protocols", cfg("mail.smtp.ssl.protocols", "TLSv1.2"));
 
-        // Khởi tạo Mail Session
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, SENDER_APP_PASSWORD);
+                return new PasswordAuthentication(senderEmail, appPassword);
             }
         });
 
         try {
             Message message = new MimeMessage(session);
-            // Thiết lập thông tin người gửi
-            message.setFrom(new InternetAddress(SENDER_EMAIL, "TPMS System"));
-            // Thiết lập thông tin người nhận
+            message.setFrom(new InternetAddress(senderEmail, senderName));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
-            // Thiết lập tiêu đề
             message.setSubject(subject);
-            // Thiết lập nội dung dạng HTML UTF-8
             message.setContent(content, "text/html; charset=UTF-8");
 
-            // Tiến hành gửi email
             Transport.send(message);
             System.out.println("[SMTP EMAIL] Đã gửi mail thật thành công tới: " + recipientEmail);
             return true;
