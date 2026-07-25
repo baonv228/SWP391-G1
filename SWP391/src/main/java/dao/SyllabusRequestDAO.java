@@ -119,6 +119,27 @@ public class SyllabusRequestDAO {
         return -1;
     }
 
+    /**
+     * Updates the status and review details of a Syllabus_Approval_Request.
+     */
+    public boolean updateRequestStatus(int requestId, String status, String reviewNote, int reviewedBy) throws SQLException {
+        String sql = "UPDATE Syllabus_Approval_Request " +
+                "SET Status = ?, ReviewNote = ?, ReviewedBy = ?, ReviewedAt = GETDATE() " +
+                "WHERE RequestID = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            if (reviewNote != null && !reviewNote.trim().isEmpty()) {
+                ps.setString(2, reviewNote.trim());
+            } else {
+                ps.setNull(2, Types.NVARCHAR);
+            }
+            ps.setInt(3, reviewedBy);
+            ps.setInt(4, requestId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     // ----------------------------------------------------------------
     //  Helper: map ResultSet row to DTO
     // ----------------------------------------------------------------
