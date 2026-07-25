@@ -60,6 +60,15 @@ public class SyllabusServlet extends HttpServlet {
             case "delete":
                 handleDelete(request, response, user);
                 break;
+            case "history":
+                handleHistory(request, response);
+                break;
+            case "clone_approved":
+                processCloneApproved(request, response, user);
+                break;
+            case "teacher_requests":
+                handleTeacherRequests(request, response, user);
+                break;
             case "download_template":
                 handleDownloadTemplate(request, response);
                 break;
@@ -88,6 +97,9 @@ public class SyllabusServlet extends HttpServlet {
                 break;
             case "import_excel":
                 handleImportExcel(request, response);
+                break;
+            case "review_teacher_request":
+                processReviewTeacherRequest(request, response, user);
                 break;
             case "upload_temp":
                 handleUploadTemp(request, response);
@@ -209,9 +221,9 @@ public class SyllabusServlet extends HttpServlet {
                 return;
             }
 
-            if (syllabusDAO.hasDraftForSubject(syllabus.getSubjectId(), 0)) {
-                request.setAttribute("error", "Đã tồn tại một bản Draft cho Subject này.");
-                showCreateForm(request, response);
+            int existingDraftId = syllabusDAO.getDraftSyllabusIdForSubject(syllabus.getSubjectId());
+            if (existingDraftId > 0) {
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=edit&id=" + existingDraftId + "&error=draft_exists");
                 return;
             }
 
@@ -674,6 +686,97 @@ public class SyllabusServlet extends HttpServlet {
             err.put("success", false);
             err.put("errors", List.of("Lỗi hệ thống khi xử lý file: " + e.getMessage()));
             response.getWriter().write(gson.toJson(err));
+        }
+    }
+
+    private void handleHistory(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int subjectId = parseInt(request.getParameter("subjectId"), 0);
+        List<Syllabus> history = syllabusDAO.getSyllabusHistory(subjectId);
+        
+        response.setContentType("application/json;charset=UTF-8");
+        List<Map<String, Object>> result = new ArrayList<>();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+        for (Syllabus s : history) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("versionNo", s.getVersionNo());
+            map.put("status", s.getStatus());
+            map.put("createdAt", s.getCreatedAt() != null ? sdf.format(s.getCreatedAt()) : "");
+            map.put("createdByName", s.getCreatedByName() != null ? s.getCreatedByName() : "");
+            map.put("note", s.getNote() != null ? s.getNote() : "");
+            result.add(map);
+        }
+        response.getWriter().write(new Gson().toJson(result));
+    }
+
+    private void processCloneApproved(HttpServletRequest request, HttpServletResponse response, User user) throws IOException {
+        int syllabusId = parseInt(request.getParameter("id"), 0);
+        String reason = safeTrim(request.getParameter("editReason"));
+        
+        Syllabus oldSyllabus = syllabusDAO.getSyllabusById(syllabusId);
+        if (oldSyllabus == null || !"Approved".equals(oldSyllabus.getStatus())) {
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
+            return;
+        }
+
+        String newVersion = syllabusDAO.getNextMinorVersionNo(oldSyllabus.getSubjectId(), oldSyllabus.getVersionNo());
+
+        // Setup new clone
+        oldSyllabus.setVersionNo(newVersion);
+        oldSyllabus.setStatus("Draft");
+        oldSyllabus.setNote(reason);
+        oldSyllabus.setCreatedBy(user.getUserId());
+        oldSyllabus.setCurrentVersion(false);
+        oldSyllabus.setApprovedBy(null);
+        oldSyllabus.setApprovedAt(null);
+
+        int newSyllabusId = syllabusDAO.createDraftSyllabus(oldSyllabus);
+        if (newSyllabusId > 0) {
+            String oldFile = syllabusDAO.getLatestMaterialFilePath(syllabusId);
+            
+            List<SyllabusMaterial> materials = syllabusDAO.getMaterials(syllabusId);
+            List<CLO> clos = syllabusDAO.getCLOs(syllabusId);
+            List<SyllabusSession> sessions = syllabusDAO.getSessions(syllabusId);
+            List<SyllabusAssessment> assessments = syllabusDAO.getAssessments(syllabusId);
+            
+            syllabusDAO.saveAllChildren(newSyllabusId, materials, clos, sessions, assessments);
+
+            if (oldFile != null && !oldFile.isEmpty()) {
+                syllabusDAO.saveMaterialFile(newSyllabusId, user.getUserId(), oldFile);
+            }
+            
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=edit&id=" + newSyllabusId + "&success=clone");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list&error=clone_failed");
+        }
+    }
+
+    private void handleTeacherRequests(HttpServletRequest request, HttpServletResponse response, User user) throws ServletException, IOException {
+        try {
+            dao.SyllabusRequestDAO requestDAO = new dao.SyllabusRequestDAO();
+            List<dto.SyllabusRequestDTO> requests = requestDAO.getAllRequests("Pending", 1, 100);
+            request.setAttribute("requests", requests);
+            request.getRequestDispatcher("/syllabus/teacher_requests.jsp").forward(request, response);
+        } catch (Exception e) {
+            System.out.println("handleTeacherRequests error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi khi lấy danh sách yêu cầu.");
+        }
+    }
+
+    private void processReviewTeacherRequest(HttpServletRequest request, HttpServletResponse response, User user) throws ServletException, IOException {
+        try {
+            int requestId = Integer.parseInt(request.getParameter("requestId"));
+            String status = request.getParameter("status"); // Approved or Rejected
+            String reviewNote = request.getParameter("reviewNote");
+
+            dao.SyllabusRequestDAO requestDAO = new dao.SyllabusRequestDAO();
+            requestDAO.updateRequestStatus(requestId, status, reviewNote, user.getUserId());
+
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=teacher_requests&success=1");
+        } catch (Exception e) {
+            System.out.println("processReviewTeacherRequest error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=teacher_requests&error=1");
         }
     }
 }

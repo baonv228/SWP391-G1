@@ -34,7 +34,11 @@
 
     <!-- Error/Validation Wrapper -->
     <div id="validationAlert" class="alert alert-error" style="display:none;"></div>
-    <% if (error != null && !error.isEmpty()) { %>
+    <% if ("draft_exists".equals(error)) { %>
+    <div class="alert alert-error" style="background:#fff3cd; color:#856404; padding:10px; margin-bottom:20px; border-radius:4px; border:1px solid #ffeeba;">
+        Môn học này đã có một bản nháp. Hệ thống đã tự động chuyển hướng bạn đến bản nháp hiện tại để tiếp tục chỉnh sửa.
+    </div>
+    <% } else if (error != null && !error.isEmpty()) { %>
     <div class="alert alert-error"><%= error %></div>
     <% } %>
     <% if ("draft".equals(request.getParameter("success"))) { %>
@@ -830,7 +834,10 @@
         }
 
         const fileInput = document.querySelector('input[name="student_material_file"]');
-        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        const hasExistingFile = <%= syllabus.getMaterialFilePath() != null ? "true" : "false" %>;
+        if ((!fileInput || !fileInput.files || fileInput.files.length === 0) && !hasExistingFile) {
+            errors.push('Section 4: Vui lòng tải lên file Student Material Package (.zip).');
+        } else if (fileInput && fileInput.files && fileInput.files.length > 0) {
             const fileName = fileInput.files[0].name.toLowerCase();
             if (!fileName.endsWith('.zip')) {
                 errors.push('Section 4: File tài liệu phải có định dạng .zip.');
@@ -898,20 +905,12 @@
 
         // Load sessions and assessments from data
         <% 
-            java.util.Map<Integer, Integer> cloIdToOrder = new java.util.HashMap<>();
-            if (clos != null) {
-                for (CLO c : clos) {
-                    cloIdToOrder.put(c.getCloId(), c.getDisplayOrder());
-                }
-            }
-        
             if(sessions != null) {
             for(SyllabusSession s : sessions) { 
                 String cloArr = "[";
                 if(s.getCloIds() != null) {
                     for(int i=0; i<s.getCloIds().size(); i++) {
-                        Integer order = cloIdToOrder.get(s.getCloIds().get(i));
-                        if(order != null) cloArr += order;
+                        cloArr += s.getCloIds().get(i);
                         if(i < s.getCloIds().size()-1) cloArr += ",";
                     }
                 }
@@ -934,8 +933,7 @@
                 String cloArr = "[";
                 if(a.getCloIds() != null) {
                     for(int i=0; i<a.getCloIds().size(); i++) {
-                        Integer order = cloIdToOrder.get(a.getCloIds().get(i));
-                        if(order != null) cloArr += order;
+                        cloArr += a.getCloIds().get(i);
                         if(i < a.getCloIds().size()-1) cloArr += ",";
                     }
                 }
@@ -1152,7 +1150,7 @@
         </div>
     </div>
     
-    <% if (!"Draft".equals(syllabus.getStatus())) { %>
+    <% if (!"Draft".equals(syllabus.getStatus()) && !"Rejected".equals(syllabus.getStatus())) { %>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Lock inputs

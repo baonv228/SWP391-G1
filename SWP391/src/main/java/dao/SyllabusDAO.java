@@ -73,6 +73,17 @@ public class SyllabusDAO extends DBContext {
         return false;
     }
 
+    public int getDraftSyllabusIdForSubject(int subjectId) {
+        String sql = "SELECT TOP 1 SyllabusID FROM dbo.[Syllabus] WHERE SubjectID=? AND Status='Draft' AND IsActive=1 ORDER BY CreatedAt DESC";
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { System.out.println("getDraftSyllabusIdForSubject error: " + e.getMessage()); }
+        return -1;
+    }
+
     // =========================================================================
     // VERSION — next version number
     // =========================================================================
@@ -88,6 +99,48 @@ public class SyllabusDAO extends DBContext {
             }
         } catch (Exception e) { System.out.println("getNextVersionNo error: " + e.getMessage()); }
         return "1.0";
+    }
+
+    public String getNextMinorVersionNo(int subjectId, String currentVersion) {
+        String majorVersion = currentVersion.contains(".") ? currentVersion.split("\\.")[0] : currentVersion;
+        String sql = "SELECT MAX(CAST(RIGHT(VersionNo, LEN(VersionNo) - CHARINDEX('.', VersionNo)) AS INT)) FROM dbo.[Syllabus] WHERE SubjectID=? AND VersionNo LIKE ? AND CHARINDEX('.', VersionNo) > 0";
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            ps.setString(2, majorVersion + ".%");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int maxMinor = rs.getInt(1);
+                    if (!rs.wasNull()) return majorVersion + "." + (maxMinor + 1);
+                }
+            }
+        } catch (Exception e) { System.out.println("getNextMinorVersionNo error: " + e.getMessage()); }
+        return majorVersion + ".1";
+    }
+
+    public List<Syllabus> getSyllabusHistory(int subjectId) {
+        List<Syllabus> list = new ArrayList<>();
+        String sql = """
+                SELECT s.*, sub.SubjectCode, sub.SubjectName, creator.FullName AS CreatedByName, approver.FullName AS ApprovedByName
+                FROM dbo.[Syllabus] s
+                JOIN dbo.[Subject] sub ON s.SubjectID = sub.SubjectID
+                LEFT JOIN dbo.[User] creator ON s.CreatedBy = creator.UserID
+                LEFT JOIN dbo.[User] approver ON s.ApprovedBy = approver.UserID
+                WHERE s.SubjectID = ?
+                ORDER BY CAST(LEFT(s.VersionNo, CHARINDEX('.', s.VersionNo)-1) AS INT) DESC, 
+                         CAST(RIGHT(s.VersionNo, LEN(s.VersionNo) - CHARINDEX('.', s.VersionNo)) AS INT) DESC
+                """;
+        try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subjectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Syllabus s = mapSyllabusRow(rs);
+                    // Add ApprovedByName which is missing from mapSyllabusRow
+                    s.setApprovedByName(rs.getString("ApprovedByName"));
+                    list.add(s);
+                }
+            }
+        } catch (Exception e) { System.out.println("getSyllabusHistory error: " + e.getMessage()); }
+        return list;
     }
 
     // =========================================================================
@@ -633,7 +686,7 @@ public class SyllabusDAO extends DBContext {
                 }
             }
             // Fetch CLO mappings after RS is closed
-            String sqlMap = "SELECT CLOID FROM dbo.[Session_CLO] WHERE SessionID=?";
+            String sqlMap = "SELECT c.DisplayOrder FROM dbo.[Session_CLO] sc JOIN dbo.[CLO] c ON sc.CLOID = c.CLOID WHERE sc.SessionID=?";
             try (PreparedStatement psM = con.prepareStatement(sqlMap)) {
                 for (SyllabusSession s : list) {
                     psM.setInt(1, s.getSessionId());
@@ -669,7 +722,7 @@ public class SyllabusDAO extends DBContext {
             }
             // Fetch CLO mappings after RS is closed
             String sqlMap = """
-                    SELECT ac.CLOID, c.CLOName
+                    SELECT c.DisplayOrder, c.CLOName
                     FROM dbo.[Assessment_CLO] ac
                     JOIN dbo.[CLO] c ON c.CLOID = ac.CLOID
                     WHERE ac.AssessmentID = ?
@@ -682,7 +735,7 @@ public class SyllabusDAO extends DBContext {
                         List<Integer> cloIds = new ArrayList<>();
                         List<String> cloNames = new ArrayList<>();
                         while (rsM.next()) {
-                            cloIds.add(rsM.getInt("CLOID"));
+                            cloIds.add(rsM.getInt("DisplayOrder"));
                             cloNames.add(rsM.getString("CLOName"));
                         }
                         a.setCloIds(cloIds);
