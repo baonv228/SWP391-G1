@@ -425,38 +425,7 @@
 
         <input type="hidden" name="action" value="login" />
 
-        <div class="quick-login">
-            <div class="quick-login-label">Đăng nhập nhanh theo vai trò</div>
 
-            <div class="quick-cards">
-                <div class="quick-card"
-                     onclick="fillCredentials('admin.tpms@gmail.com','123456',this)"
-                     title="Admin — admin.tpms@gmail.com / 123456">
-                    <span class="qc-icon">🛡️</span>
-                    <div class="qc-role">Admin</div>
-                    <div class="qc-email">admin.tpms@gmail.com</div>
-                    <div class="qc-pass">123456</div>
-                </div>
-
-                <div class="quick-card"
-                     onclick="fillCredentials('teacher.tpms@gmail.com','123456',this)"
-                     title="Teacher — teacher.tpms@gmail.com / 123456">
-                    <span class="qc-icon">👨‍🏫</span>
-                    <div class="qc-role">Teacher</div>
-                    <div class="qc-email">teacher.tpms@gmail.com</div>
-                    <div class="qc-pass">123456</div>
-                </div>
-
-                <div class="quick-card"
-                     onclick="fillCredentials('student.tpms@gmail.com','123456',this)"
-                     title="Student — student.tpms@gmail.com / 123456">
-                    <span class="qc-icon">🎓</span>
-                    <div class="qc-role">Student</div>
-                    <div class="qc-email">student.tpms@gmail.com</div>
-                    <div class="qc-pass">123456</div>
-                </div>
-            </div>
-        </div>
 
         <div class="row">
             <label for="email">Email</label>

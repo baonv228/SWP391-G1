@@ -1,5 +1,8 @@
 ﻿<%@page import="java.util.Map"%>
+<%@page import="java.util.HashMap"%>
 <%@page import="java.util.List"%>
+<%@page import="model.CurriculumSubjectPLO"%>
+<%@page import="model.CurriculumSubject"%>
 <%@page import="model.PLO"%>
 <%@page import="model.PO"%>
 <%@page import="model.Subject"%>
@@ -18,6 +21,18 @@
                 .replace("\"", "&quot;")
                 .replace("'", "&#39;");
     }
+
+    private String js(Object value) {
+        if (value == null) {
+            return "";
+        }
+        return String.valueOf(value)
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("</", "<\\/");
+    }
 %>
 <%
     Curriculum curriculum = (Curriculum) request.getAttribute("curriculum");
@@ -28,8 +43,16 @@
     Map<Integer, String> prerequisiteIdsMap = (Map<Integer, String>) request.getAttribute("prerequisiteIdsMap");
     List<PLO> plos = (List<PLO>) request.getAttribute("plos");
     List<PO> pos = (List<PO>) request.getAttribute("pos");
+    List<CurriculumSubject> curriculumSubjects = (List<CurriculumSubject>) request.getAttribute("curriculumSubjects");
+    List<CurriculumSubjectPLO> subjectPLOs = (List<CurriculumSubjectPLO>) request.getAttribute("subjectPLOs");
     String error = (String) request.getAttribute("error");
     Object totalCreditsAttr = request.getAttribute("totalCredits");
+    Map<Integer, Subject> subjectById = new HashMap<>();
+    if (subjects != null) {
+        for (Subject subject : subjects) {
+            subjectById.put(subject.getSubjectId(), subject);
+        }
+    }
 
     int selectedProgramId = 0;
     Object selectedProgramIdAttr = request.getAttribute("selectedProgramId");
@@ -682,7 +705,59 @@
                         .replaceAll('"', "&quot;")
                         .replaceAll("'", "&#39;");
             }
+
+            <% if (curriculumSubjects != null && !curriculumSubjects.isEmpty()) {
+                for (CurriculumSubject curriculumSubject : curriculumSubjects) {
+                    Subject restoredSubject = subjectById.get(curriculumSubject.getSubjectId());
+                    if (restoredSubject == null) {
+                        continue;
+                    }
+                    String subjectKey = curriculumSubject.getClientKey() != null && !curriculumSubject.getClientKey().isBlank()
+                            ? curriculumSubject.getClientKey()
+                            : "subject_restore_" + curriculumSubject.getSubjectId();
+                    String prerequisiteText = prerequisiteTextMap != null ? prerequisiteTextMap.get(restoredSubject.getSubjectId()) : "";
+                    if (prerequisiteText == null || prerequisiteText.isBlank()) {
+                        prerequisiteText = "none";
+                    }
+            %>
+            selectedSubjects.push({
+                key: "<%= js(subjectKey) %>",
+                subjectId: <%= restoredSubject.getSubjectId() %>,
+                semester: <%= curriculumSubject.getSemesterNo() != null ? curriculumSubject.getSemesterNo() : 0 %>,
+                code: "<%= js(restoredSubject.getSubjectCode()) %>",
+                name: "<%= js(restoredSubject.getSubjectName()) %>",
+                credits: <%= restoredSubject.getCredits() %>,
+                status: "<%= js(restoredSubject.getStatus()) %>",
+                prerequisiteText: "<%= js(prerequisiteText) %>",
+                plos: [
+                    <% boolean firstMapping = true;
+                    if (subjectPLOs != null) {
+                        for (CurriculumSubjectPLO mapping : subjectPLOs) {
+                            if (!subjectKey.equals(mapping.getCurriculumSubjectClientKey())) {
+                                continue;
+                            }
+                            if (!firstMapping) { %>,<% }
+                            firstMapping = false;
+                    %>
+                    {
+                        ploKey: "<%= js(mapping.getPloClientKey()) %>",
+                        level: "<%= js(mapping.getContributionLevel()) %>"
+                    }
+                    <%  }
+                    } %>
+                ]
+            });
+            <%  }
+            } %>
+            if (selectedSubjects.length > 0) {
+                subjectKeyCounter = selectedSubjects.reduce(function (max, item) {
+                    const match = String(item.key || "").match(/^subject_(\d+)$/);
+                    return match ? Math.max(max, Number(match[1]) + 1) : max;
+                }, selectedSubjects.length);
+                renderSubjects();
+            }
         </script>
     </body>
 </html>
+
 

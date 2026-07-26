@@ -256,6 +256,22 @@ public class CurriculumDAO extends DBContext {
         return 0;
     }
 
+    public boolean existsCurriculumName(String curriculumName) throws SQLException {
+        String sql = """
+                SELECT TOP 1 1
+                FROM dbo.[Curriculum]
+                WHERE LOWER(LTRIM(RTRIM(CurriculumName))) = LOWER(LTRIM(RTRIM(?)))
+                """;
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, curriculumName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
     public CurriculumDTO getCurriculumById(int curriculumId) throws SQLException {
         CurriculumDTO dto = null;
         try (Connection con = getConnection()) {
