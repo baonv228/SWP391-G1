@@ -22,6 +22,7 @@ import java.util.List;
 /**
  * Teacher Dashboard — shows summary stats for the logged-in teacher.
  * URL: /teacher/dashboard
+ * 
  */
 @WebServlet(name = "TeacherDashboardServlet", urlPatterns = {"/teacher/dashboard"})
 public class TeacherDashboardServlet extends HttpServlet {
