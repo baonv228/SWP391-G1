@@ -15,6 +15,7 @@ import jakarta.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -116,7 +117,7 @@ public class SyllabusServlet extends HttpServlet {
 
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<Subject> subjects = subjectDAO.getSubjectsWaitingForSyllabus();
+        List<Subject> subjects = subjectDAO.getAllSubjects();
         request.setAttribute("subjects", subjects);
         request.getRequestDispatcher("/syllabus/create.jsp").forward(request, response);
     }
@@ -613,6 +614,14 @@ public class SyllabusServlet extends HttpServlet {
         try {
             jakarta.servlet.http.Part filePart = request.getPart("student_material_file");
             if (filePart != null && filePart.getSize() > 0) {
+                String originalFileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+                if (!originalFileName.toLowerCase().endsWith(".zip")) {
+                    result.put("success", false);
+                    result.put("error", "Vui lòng upload file định dạng .zip");
+                    response.getWriter().write(gson.toJson(result));
+                    return;
+                }
+                
                 String tempDir = getUploadBasePath() + File.separator + "temp";
                 File dir = new File(tempDir);
                 if (!dir.exists()) dir.mkdirs();

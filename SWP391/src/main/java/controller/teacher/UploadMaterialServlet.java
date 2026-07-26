@@ -132,7 +132,7 @@ public class UploadMaterialServlet extends HttpServlet {
         // Derive material type from extension
         String extension = getExtension(originalFileName).toUpperCase();
         if (!isAllowedExtension(extension)) {
-            request.setAttribute("error", "File type not allowed. Allowed: ZIP, PDF, PPTX, DOCX, MP4.");
+            request.setAttribute("error", "File type not allowed. Bắt buộc phải là file .zip.");
             request.setAttribute("selectedSyllabusId", syllabusId);
             doGet(request, response);
             return;
@@ -196,12 +196,6 @@ public class UploadMaterialServlet extends HttpServlet {
     }
 
     private boolean isAllowedExtension(String ext) {
-        switch (ext) {
-            case "ZIP": case "PDF": case "PPTX": case "PPT":
-            case "DOCX": case "DOC": case "MP4": case "AVI":
-            case "XLSX": case "XLS":
-                return true;
-            default: return false;
-        }
+        return "ZIP".equals(ext);
     }
 }

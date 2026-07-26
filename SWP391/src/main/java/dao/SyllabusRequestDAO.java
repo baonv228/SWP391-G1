@@ -11,6 +11,7 @@ import java.util.List;
  *
  * Used by Teacher to submit new design/modification requests,
  * and by Training Department to review them.
+ * 
  */
 public class SyllabusRequestDAO {
 

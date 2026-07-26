@@ -24,6 +24,7 @@ import java.util.List;
  *
  * GET  /teacher/submit-request          → Show submission form + request history
  * POST /teacher/submit-request          → Save new request (Pending)
+ * 
  */
 @WebServlet(name = "SubmitRequestServlet", urlPatterns = {"/teacher/submit-request"})
 public class SubmitRequestServlet extends HttpServlet {
