@@ -248,7 +248,7 @@
             
             <div class="form-group" style="padding: 15px; background: #e3f2fd; border-radius: 6px; margin-bottom: 20px;">
                 <label>Student Material Package (ZIP file) <span class="required">*</span></label>
-                <input type="file" name="student_material_file" accept=".zip" class="form-control" style="background:#fff;">
+                <input type="file" name="student_material_file" id="student_material_file" class="form-control" accept=".zip" />
                 <small style="color:var(--muted);">Tải lên tài liệu học tập cho sinh viên. Chỉ hỗ trợ file .zip, tối đa 100MB.</small>
             </div>
 
