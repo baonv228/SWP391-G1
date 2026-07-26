@@ -9,6 +9,9 @@
     List<SyllabusAssessment> assessments = (List<SyllabusAssessment>) request.getAttribute("assessments");
     List<TrainingProgram> programs = (List<TrainingProgram>) request.getAttribute("programs");
     String error = (String) request.getAttribute("error");
+    if (error == null || error.isEmpty()) {
+        error = request.getParameter("error");
+    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
