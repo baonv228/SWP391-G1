@@ -21,7 +21,7 @@ public class EmailUtility {
     
     // ĐIỀN THÔNG TIN EMAIL CỦA BẠN TẠI ĐÂY ĐỂ GỬI MAIL THẬT
     private static final String SENDER_EMAIL = "nguyenngoclinh07032003@gmail.com"; 
-    private static final String SENDER_APP_PASSWORD = "qlue dddn hqeo uiyb"; // Mật khẩu ứng dụng Gmail (App Password)
+    private static final String SENDER_APP_PASSWORD = "lzfc uemg wrfg cpvt"; // Mật khẩu ứng dụng Gmail (App Password)
 
     /**
      * Gửi email dạng HTML UTF-8.

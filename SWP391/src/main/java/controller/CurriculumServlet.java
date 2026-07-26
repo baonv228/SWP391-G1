@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -136,11 +137,22 @@ public class CurriculumServlet extends HttpServlet {
 
         String validationError = validateCreate(curriculum, requiredTotalCredits, curriculumSubjects, subjectMap, plos, pos, subjectPLOs);
         if (validationError != null) {
-            request.setAttribute("error", validationError);
-            request.setAttribute("curriculum", curriculum);
-            request.setAttribute("totalCredits", requiredTotalCredits);
-            request.setAttribute("plos", plos);
-            request.setAttribute("pos", pos);
+            keepCreateFormInput(request, validationError, curriculum, requiredTotalCredits, curriculumSubjects, plos, pos, subjectPLOs);
+            showCreateForm(request, response);
+            return;
+        }
+
+        try {
+            if (curriculumDAO.existsCurriculumName(curriculum.getCurriculumName())) {
+                keepCreateFormInput(request, "Curriculum code da ton tai. Vui long doi code khac.", curriculum,
+                        requiredTotalCredits, curriculumSubjects, plos, pos, subjectPLOs);
+                showCreateForm(request, response);
+                return;
+            }
+        } catch (SQLException e) {
+            getServletContext().log("Unable to validate duplicate curriculum code", e);
+            keepCreateFormInput(request, "Khong the kiem tra Curriculum code. Vui long thu lai.", curriculum,
+                    requiredTotalCredits, curriculumSubjects, plos, pos, subjectPLOs);
             showCreateForm(request, response);
             return;
         }
@@ -151,13 +163,23 @@ public class CurriculumServlet extends HttpServlet {
         if (id > 0) {
             response.sendRedirect(request.getContextPath() + "/training-program?action=detail&id=" + curriculum.getProgramId());
         } else {
-            request.setAttribute("error", "Khong the tao Curriculum.");
-            request.setAttribute("curriculum", curriculum);
-            request.setAttribute("totalCredits", requiredTotalCredits);
-            request.setAttribute("plos", plos);
-            request.setAttribute("pos", pos);
+            keepCreateFormInput(request, "Khong the tao Curriculum.", curriculum, requiredTotalCredits,
+                    curriculumSubjects, plos, pos, subjectPLOs);
             showCreateForm(request, response);
         }
+    }
+
+    private void keepCreateFormInput(HttpServletRequest request, String error, Curriculum curriculum,
+                                     int requiredTotalCredits, List<CurriculumSubject> curriculumSubjects,
+                                     List<PLO> plos, List<PO> pos,
+                                     List<CurriculumSubjectPLO> subjectPLOs) {
+        request.setAttribute("error", error);
+        request.setAttribute("curriculum", curriculum);
+        request.setAttribute("totalCredits", requiredTotalCredits);
+        request.setAttribute("curriculumSubjects", curriculumSubjects);
+        request.setAttribute("plos", plos);
+        request.setAttribute("pos", pos);
+        request.setAttribute("subjectPLOs", subjectPLOs);
     }
 
     private List<CurriculumSubject> parseCurriculumSubjects(String[] subjectKeys, String[] subjectIds, String[] semesterNos) {

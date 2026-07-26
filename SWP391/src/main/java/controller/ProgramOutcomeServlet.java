@@ -3,7 +3,7 @@ package controller;
 import dao.CurriculumDAO;
 import dao.ProgramOutcomeDAO;
 import dao.ProgramLearningOutcomeDAO;
-import dao.ProgramOutcomePLOMappingDAO;
+import dao.PoPloDAO;
 import dto.CurriculumDTO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,12 +13,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
 import model.ProgramOutcome;
 import model.ProgramLearningOutcome;
+import model.PoPlo;
 import model.User;
 
 @WebServlet(name = "ProgramOutcomeServlet", urlPatterns = {"/curriculum/po", "/ProgramOutcomeServlet", "/po-management"})
@@ -27,7 +27,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
     private final ProgramOutcomeDAO poDAO = new ProgramOutcomeDAO();
     private final CurriculumDAO curriculumDAO = new CurriculumDAO();
     private final ProgramLearningOutcomeDAO ploDAO = new ProgramLearningOutcomeDAO();
-    private final ProgramOutcomePLOMappingDAO mappingDAO = new ProgramOutcomePLOMappingDAO();
+    private final PoPloDAO mappingDAO = new PoPloDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -41,19 +41,6 @@ public class ProgramOutcomeServlet extends HttpServlet {
         String action = safeTrim(request.getParameter("action"));
         if (action.isEmpty() || "list".equalsIgnoreCase(action)) {
             showList(request, response);
-        } else if ("edit".equalsIgnoreCase(action)) {
-            // Check authorization for modification
-            if (!canManagePO(request)) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "You do not have permission to perform this action.");
-                return;
-            }
-            showEditForm(request, response);
-        } else if ("delete".equalsIgnoreCase(action)) {
-            if (!canManagePO(request)) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "You do not have permission to perform this action.");
-                return;
-            }
-            processDelete(request, response);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action requested.");
         }
@@ -69,17 +56,13 @@ public class ProgramOutcomeServlet extends HttpServlet {
             return;
         }
 
-        if (!canManagePO(request)) {
+        if (!canManageMapping(request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "You do not have permission to perform this action.");
             return;
         }
 
         String action = safeTrim(request.getParameter("action"));
-        if ("create".equalsIgnoreCase(action)) {
-            processCreate(request, response);
-        } else if ("update".equalsIgnoreCase(action)) {
-            processUpdate(request, response);
-        } else if ("saveMapping".equalsIgnoreCase(action)) {
+        if ("saveMapping".equalsIgnoreCase(action)) {
             processSaveMapping(request, response);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid post action.");
@@ -104,13 +87,18 @@ public class ProgramOutcomeServlet extends HttpServlet {
             List<ProgramOutcome> poList = poDAO.getPOByCurriculum(curriculumId);
             List<ProgramLearningOutcome> ploList = ploDAO.getPLOByCurriculum(curriculumId);
             Map<Integer, List<Integer>> poPloMapping = mappingDAO.getMappingByCurriculum(curriculumId);
+            boolean mappingExists = mappingDAO.hasMappingByCurriculum(curriculumId);
+            boolean canManageMapping = canManageMapping(request);
+            boolean editMapping = canManageMapping && "true".equalsIgnoreCase(request.getParameter("editMapping"));
 
             request.setAttribute("curriculum", curriculum);
             request.setAttribute("poList", poList);
             request.setAttribute("ploList", ploList);
             request.setAttribute("poPloMapping", poPloMapping);
+            request.setAttribute("mappingExists", mappingExists);
+            request.setAttribute("editMapping", editMapping);
             request.setAttribute("curriculumId", curriculumId);
-            request.setAttribute("canManagePO", canManagePO(request));
+            request.setAttribute("canManageMapping", canManageMapping);
 
             request.getRequestDispatcher("/view/curriculum/po-management.jsp").forward(request, response);
         } catch (SQLException e) {
@@ -120,113 +108,6 @@ public class ProgramOutcomeServlet extends HttpServlet {
         }
     }
 
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        int poId = parseInt(request.getParameter("poId"), 0);
-        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
-        ProgramOutcome po = poDAO.getPOById(poId);
-        if (po == null) {
-            redirectToList(request, response, curriculumId);
-            return;
-        }
-
-        try {
-            CurriculumDTO curriculum = curriculumDAO.getCurriculumById(curriculumId);
-            List<ProgramOutcome> poList = poDAO.getPOByCurriculum(curriculumId);
-            List<ProgramLearningOutcome> ploList = ploDAO.getPLOByCurriculum(curriculumId);
-            Map<Integer, List<Integer>> poPloMapping = mappingDAO.getMappingByCurriculum(curriculumId);
-            
-            request.setAttribute("curriculum", curriculum);
-            request.setAttribute("poList", poList);
-            request.setAttribute("ploList", ploList);
-            request.setAttribute("poPloMapping", poPloMapping);
-            request.setAttribute("curriculumId", curriculumId);
-            request.setAttribute("editingPO", po); // Pass editing PO to JSP
-            request.setAttribute("canManagePO", canManagePO(request));
-
-            request.getRequestDispatcher("/view/curriculum/po-management.jsp").forward(request, response);
-        } catch (SQLException e) {
-            getServletContext().log("Database error in ProgramOutcomeServlet.showEditForm", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database error occurred.");
-        }
-    }
-
-    private void processCreate(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
-        String poName = safeTrim(request.getParameter("poName"));
-        String poDescription = safeTrim(request.getParameter("poDescription"));
-
-        if (curriculumId <= 0 || poName.isEmpty()) {
-            request.getSession().setAttribute("errorMessage", "PO Name cannot be empty.");
-            redirectToList(request, response, curriculumId);
-            return;
-        }
-
-        ProgramOutcome po = new ProgramOutcome();
-        po.setCurriculumId(curriculumId);
-        po.setPoName(poName);
-        po.setPoDescription(poDescription);
-
-        boolean success = poDAO.insertPO(po);
-        if (!success) {
-            request.getSession().setAttribute("errorMessage", "Failed to add Program Outcome.");
-        } else {
-            request.getSession().setAttribute("successMessage", "Program Outcome added successfully.");
-        }
-
-        redirectToList(request, response, curriculumId);
-    }
-
-    private void processUpdate(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        int poId = parseInt(request.getParameter("poId"), 0);
-        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
-        String poName = safeTrim(request.getParameter("poName"));
-        String poDescription = safeTrim(request.getParameter("poDescription"));
-
-        if (poId <= 0 || curriculumId <= 0 || poName.isEmpty()) {
-            request.getSession().setAttribute("errorMessage", "PO Name cannot be empty.");
-            redirectToList(request, response, curriculumId);
-            return;
-        }
-
-        ProgramOutcome po = new ProgramOutcome();
-        po.setPoId(poId);
-        po.setCurriculumId(curriculumId);
-        po.setPoName(poName);
-        po.setPoDescription(poDescription);
-
-        boolean success = poDAO.updatePO(po);
-        if (!success) {
-            request.getSession().setAttribute("errorMessage", "Failed to update Program Outcome.");
-        } else {
-            request.getSession().setAttribute("successMessage", "Program Outcome updated successfully.");
-        }
-
-        redirectToList(request, response, curriculumId);
-    }
-
-    private void processDelete(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        int poId = parseInt(request.getParameter("poId"), 0);
-        int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
-
-        if (poId <= 0 || curriculumId <= 0) {
-            redirectToList(request, response, curriculumId);
-            return;
-        }
-
-        boolean success = poDAO.deletePO(poId);
-        if (!success) {
-            request.getSession().setAttribute("errorMessage", "Failed to delete Program Outcome.");
-        } else {
-            request.getSession().setAttribute("successMessage", "Program Outcome deleted successfully.");
-        }
-
-        redirectToList(request, response, curriculumId);
-    }
-
     private void processSaveMapping(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         int curriculumId = parseInt(request.getParameter("curriculumId"), 0);
@@ -234,7 +115,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid curriculum ID.");
             return;
         }
-        Map<Integer, List<Integer>> mapping = new HashMap<>();
+        List<PoPlo> mapping = new ArrayList<>();
         String[] values = request.getParameterValues("mapping");
         if (values != null) {
             for (String value : values) {
@@ -243,7 +124,7 @@ public class ProgramOutcomeServlet extends HttpServlet {
                 int poId = parseInt(ids[0], 0);
                 int ploId = parseInt(ids[1], 0);
                 if (poId > 0 && ploId > 0) {
-                    mapping.computeIfAbsent(poId, key -> new ArrayList<>()).add(ploId);
+                    mapping.add(new PoPlo(poId, ploId));
                 }
             }
         }
@@ -263,18 +144,15 @@ public class ProgramOutcomeServlet extends HttpServlet {
                 + "/curriculum/po?action=list&curriculumId=" + curriculumId);
     }
 
-    private boolean canManagePO(HttpServletRequest request) {
+    private boolean canManageMapping(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null) return false;
         User user = (User) session.getAttribute("user");
         if (user == null || user.getRole() == null) return false;
 
         String roleName = user.getRole().getRoleName();
-        return "Admin".equalsIgnoreCase(roleName) || 
-               "TrainingDepartment".equalsIgnoreCase(roleName) ||
-               "Training Department".equalsIgnoreCase(roleName) ||
-               "SyllabusDesigner".equalsIgnoreCase(roleName) ||
-               "Syllabus Designer".equalsIgnoreCase(roleName);
+        return "TrainingDepartment".equalsIgnoreCase(roleName) ||
+               "Training Department".equalsIgnoreCase(roleName);
     }
 
     private String safeTrim(String value) {

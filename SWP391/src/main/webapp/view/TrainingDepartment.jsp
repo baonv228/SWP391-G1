@@ -33,7 +33,7 @@
 <body>
 <main class="page">
     <header class="topbar">
-        <div class="brand">Training Management System</div>
+        <div class="brand">Training Program Management System</div>
 
         <div class="top-actions" aria-label="Tài khoản">
             <a class="profile" href="<%=request.getContextPath()%>/profile" title="<%= displayName %>">
