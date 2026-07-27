@@ -41,7 +41,7 @@
                     <p><%= programName.isBlank() ? "Department overview" : programName %></p>
                 </div>
                 <div class="toolbar-actions">
-                    <span class="count-pill">(<%= curriculums != null ? curriculums.size() : 0 %>)</span>
+
                     <a class="create-button" href="<%=request.getContextPath()%>/curriculum-manage?action=create&programId=<%= program != null ? program.getProgramId() : 0 %>">Create curriculum</a>
                 </div>
             </section>
