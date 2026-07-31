@@ -2,6 +2,7 @@ package controller.teacher;
 
 import dao.MaterialDAO;
 import dao.SyllabusDAO;
+import dao.TeacherProgramDAO;
 import dto.MaterialDTO;
 import dto.SyllabusDTO;
 import jakarta.servlet.ServletException;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
+import model.TrainingProgram;
 import model.User;
 import utils.AuthUtil;
 import utils.ValidationUtil;
@@ -21,10 +23,17 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * UploadMaterialServlet — Teacher uploads a ZIP/PDF file as a learning material.
+ * UploadMaterialServlet — Teacher uploads a ZIP/PDF file as teacher material
+ * (only teacher-uploaded materials can be downloaded/viewed).
  *
  * GET  /teacher/upload-material?syllabusId=N  → Show upload form for that syllabus
  * POST /teacher/upload-material               → Process file upload
+ *
+ * === CHỈNH SỬA (Teacher Program Assignment) ===
+ * - Dropdown syllabus chỉ còn các syllabus thuộc ngành (Training_Program)
+ *   đã được Training Department gán cho teacher (bảng Teacher_Program).
+ * - POST từ chối upload nếu syllabus không thuộc ngành đã gán.
+ * - Course List KHÔNG bị ảnh hưởng (vẫn xem full tất cả ngành).
  *
  * @MultipartConfig enables multipart/form-data handling built into Jakarta Servlet 6.
  * Max file size: 100 MB per file, 110 MB total request.
@@ -48,23 +57,41 @@ public class UploadMaterialServlet extends HttpServlet {
             throws ServletException, IOException {
         if (!AuthUtil.requireTeacher(request, response)) return;
 
+        User teacher = AuthUtil.getLoggedInUser(request);
+
         try {
-            // Pre-load all active syllabi for the dropdown
+            // CHANGED: load syllabi by assigned majors instead of all syllabi
+            TeacherProgramDAO teacherProgramDAO = new TeacherProgramDAO();
+            List<Integer> programIds = teacherProgramDAO.getProgramIdsByTeacherId(teacher.getUserId());
+            List<TrainingProgram> assignedPrograms = teacherProgramDAO.getProgramsByTeacherId(teacher.getUserId());
+            request.setAttribute("assignedPrograms", assignedPrograms);
+
             SyllabusDAO syllabusDAO = new SyllabusDAO();
-            List<SyllabusDTO> syllabi = syllabusDAO.searchSyllabi("", "", 1, 1000);
+            List<SyllabusDTO> syllabi = syllabusDAO.searchSyllabiByProgramIds(programIds);
             request.setAttribute("syllabi", syllabi);
 
-            // If syllabusId param given, pre-select it
-            String syllabusIdParam = request.getParameter("syllabusId");
-            if (ValidationUtil.isValidId(syllabusIdParam)) {
-                request.setAttribute("selectedSyllabusId", Integer.parseInt(syllabusIdParam));
+            if (programIds.isEmpty()) {
+                request.setAttribute("error",
+                        "Bạn chưa được gán ngành nào. Liên hệ Training Department để được gán (SE, KTE, …).");
             }
 
-            // Show existing materials for selected syllabus
+            // If syllabusId param given, pre-select only if allowed for this teacher
+            String syllabusIdParam = request.getParameter("syllabusId");
             if (ValidationUtil.isValidId(syllabusIdParam)) {
+                int syllabusId = Integer.parseInt(syllabusIdParam);
+                if (syllabusDAO.isSyllabusInProgramIds(syllabusId, programIds)) {
+                    request.setAttribute("selectedSyllabusId", syllabusId);
+                } else {
+                    request.setAttribute("error",
+                            "Syllabus này không thuộc ngành bạn được gán. Chỉ được upload trong ngành đã gán.");
+                }
+            }
+
+            // Show existing materials only for an allowed selected syllabus
+            Object selectedObj = request.getAttribute("selectedSyllabusId");
+            if (selectedObj instanceof Integer selectedSyllabusId) {
                 MaterialDAO materialDAO = new MaterialDAO();
-                List<MaterialDTO> existing = materialDAO.getMaterialsBySyllabusId(
-                        Integer.parseInt(syllabusIdParam));
+                List<MaterialDTO> existing = materialDAO.getMaterialsBySyllabusId(selectedSyllabusId);
                 request.setAttribute("existingMaterials", existing);
             }
 
@@ -103,6 +130,24 @@ public class UploadMaterialServlet extends HttpServlet {
 
         int syllabusId = Integer.parseInt(syllabusIdParam.trim());
         materialName = ValidationUtil.sanitize(materialName);
+
+        // CHANGED: block upload outside assigned majors
+        try {
+            TeacherProgramDAO teacherProgramDAO = new TeacherProgramDAO();
+            List<Integer> programIds = teacherProgramDAO.getProgramIdsByTeacherId(teacher.getUserId());
+            SyllabusDAO syllabusDAO = new SyllabusDAO();
+            if (!syllabusDAO.isSyllabusInProgramIds(syllabusId, programIds)) {
+                request.setAttribute("error",
+                        "Không được upload ngoài ngành đã gán. Liên hệ Training Department nếu cần thêm ngành.");
+                doGet(request, response);
+                return;
+            }
+        } catch (SQLException e) {
+            getServletContext().log("DB error checking teacher program scope", e);
+            request.setAttribute("error", "Database error while checking major assignment.");
+            doGet(request, response);
+            return;
+        }
 
         // ── Get uploaded file ─────────────────────────────────────────
         Part filePart = request.getPart("materialFile");

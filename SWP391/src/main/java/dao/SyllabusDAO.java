@@ -689,4 +689,87 @@ public class SyllabusDAO extends DBContext {
         return dto;
     }
 
+    // =========================================================
+    // NEW (Teacher Program Assignment) — additive methods only
+    // Filter syllabi by Training_Program IDs via Curriculum_Subject.
+    // Does not change existing searchSyllabi / countSyllabi behavior.
+    // =========================================================
+
+    /**
+     * Syllabi whose Subject belongs to at least one Curriculum under the given ProgramIDs.
+     * Returns empty list if programIds is null/empty.
+     */
+    public List<SyllabusDTO> searchSyllabiByProgramIds(List<Integer> programIds) throws SQLException {
+        List<SyllabusDTO> list = new ArrayList<>();
+        if (programIds == null || programIds.isEmpty()) {
+            return list;
+        }
+
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < programIds.size(); i++) {
+            if (i > 0) placeholders.append(',');
+            placeholders.append('?');
+        }
+
+        String sql = """
+                SELECT DISTINCT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.DecisionNo, sy.Status,
+                       sy.IsCurrentVersion, sy.ApprovedBy, sy.Description,
+                       sy.LearningOutcome, sy.AssessmentMethod,
+                       sy.CreatedAt, sy.ApprovedAt,
+                       su.SubjectCode, su.SubjectName, su.Credits
+                FROM dbo.[Syllabus] sy
+                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
+                JOIN dbo.[Curriculum_Subject] cs ON cs.SubjectID = su.SubjectID
+                JOIN dbo.[Curriculum] c ON c.CurriculumID = cs.CurriculumID
+                WHERE c.ProgramID IN (%s)
+                ORDER BY sy.CreatedAt DESC, sy.SyllabusID DESC
+                """.formatted(placeholders);
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int idx = 1;
+            for (Integer programId : programIds) {
+                ps.setInt(idx++, programId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    /** True if syllabus subject is linked to any curriculum of the given programs. */
+    public boolean isSyllabusInProgramIds(int syllabusId, List<Integer> programIds) throws SQLException {
+        if (programIds == null || programIds.isEmpty()) {
+            return false;
+        }
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < programIds.size(); i++) {
+            if (i > 0) placeholders.append(',');
+            placeholders.append('?');
+        }
+        String sql = """
+                SELECT TOP 1 1
+                FROM dbo.[Syllabus] sy
+                JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
+                JOIN dbo.[Curriculum_Subject] cs ON cs.SubjectID = su.SubjectID
+                JOIN dbo.[Curriculum] c ON c.CurriculumID = cs.CurriculumID
+                WHERE sy.SyllabusID = ? AND c.ProgramID IN (%s)
+                """.formatted(placeholders);
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int idx = 1;
+            ps.setInt(idx++, syllabusId);
+            for (Integer programId : programIds) {
+                ps.setInt(idx++, programId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
 }

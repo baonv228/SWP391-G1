@@ -15,22 +15,28 @@
         </div>
     </div>
 
-    <%-- Quick Stats --%>
+    <%-- Quick Stats (clickable) — CHANGED: wrap cards in links for teacher navigation --%>
     <div class="stats-grid" id="teacher-stats-grid">
-        <div class="stat-card" id="stat-materials">
+        <a href="${pageContext.request.contextPath}/teacher/my-materials"
+           class="stat-card stat-card-link" id="stat-materials"
+           title="Xem tài liệu bạn đã upload">
             <div class="stat-icon stat-icon-blue"><i class="bi bi-folder2-open"></i></div>
             <div class="stat-body">
                 <div class="stat-number">${myMaterialsCount}</div>
                 <div class="stat-label">My Uploaded Materials</div>
             </div>
-        </div>
-        <div class="stat-card" id="stat-requests">
+            <i class="bi bi-chevron-right stat-card-chevron"></i>
+        </a>
+        <a href="${pageContext.request.contextPath}/teacher/submit-request#my-requests"
+           class="stat-card stat-card-link" id="stat-requests"
+           title="Xem / gửi design requests">
             <div class="stat-icon stat-icon-orange"><i class="bi bi-file-earmark-text"></i></div>
             <div class="stat-body">
                 <div class="stat-number">${totalRequests}</div>
                 <div class="stat-label">Design Requests Submitted</div>
             </div>
-        </div>
+            <i class="bi bi-chevron-right stat-card-chevron"></i>
+        </a>
     </div>
 
     <%-- Quick Navigation --%>
@@ -39,8 +45,8 @@
         <a href="${pageContext.request.contextPath}/teacher/upload-material"
            class="quick-action-card" id="qa-upload">
             <i class="bi bi-cloud-upload-fill quick-action-icon icon-green"></i>
-            <div class="quick-action-title">Upload Learning Materials</div>
-            <div class="quick-action-desc">Upload ZIP files, PDFs, slides for your syllabi</div>
+            <div class="quick-action-title">Upload Teacher Materials</div>
+            <div class="quick-action-desc">Upload ZIP, PDF, slides — only teacher-uploaded materials can be downloaded to view</div>
         </a>
         <a href="${pageContext.request.contextPath}/teacher/submit-request"
            class="quick-action-card" id="qa-request">
@@ -53,12 +59,6 @@
             <i class="bi bi-journal-bookmark-fill quick-action-icon icon-blue"></i>
             <div class="quick-action-title">Course List</div>
             <div class="quick-action-desc">Browse and search all subjects and syllabi</div>
-        </a>
-        <a href="${pageContext.request.contextPath}/teacher/report"
-           class="quick-action-card" id="qa-report">
-            <i class="bi bi-bar-chart-fill quick-action-icon icon-teal"></i>
-            <div class="quick-action-title">System Reports</div>
-            <div class="quick-action-desc">View statistics and export activity reports</div>
         </a>
     </div>
 

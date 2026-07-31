@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<c:set var="pageTitle" value="Upload Learning Materials - Teacher" scope="request"/>
+<c:set var="pageTitle" value="Upload Teacher Materials - Teacher" scope="request"/>
 <jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
@@ -10,8 +10,18 @@
            class="btn btn-back" id="btn-back-dashboard">
             <i class="bi bi-arrow-left me-1"></i>Dashboard
         </a>
-        <h2 class="page-title mb-0">Upload Learning Materials</h2>
+        <h2 class="page-title mb-0">Upload Teacher Materials</h2>
     </div>
+    <p class="text-muted mb-2">Chỉ tài liệu do giáo viên đăng mới có thể tải về để xem.</p>
+    <c:if test="${not empty assignedPrograms}">
+        <p class="mb-3" style="font-size:.9rem;">
+            Ngành được gán:
+            <c:forEach var="p" items="${assignedPrograms}" varStatus="st">
+                <span class="badge bg-warning-subtle text-dark border">${p.programCode}</span><c:if test="${!st.last}"> </c:if>
+            </c:forEach>
+            — chỉ upload syllabus thuộc các ngành này.
+        </p>
+    </c:if>
 
     <%-- Success / Error alerts --%>
     <c:if test="${not empty param.success}">
