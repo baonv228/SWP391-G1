@@ -32,6 +32,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Secrets / local mail config ###
+src/main/resources/mail.properties
+
 ### VS Code ###
 .vscode/
 

@@ -71,4 +71,14 @@ public class MaterialDTO {
 
     public long getFileSizeBytes() { return fileSizeBytes; }
     public void setFileSizeBytes(long fileSizeBytes) { this.fileSizeBytes = fileSizeBytes; }
+
+    // NEW (Teacher My Materials list) — optional display fields from join
+    private String subjectCode;
+    private String syllabusTitle;
+
+    public String getSubjectCode() { return subjectCode; }
+    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
+
+    public String getSyllabusTitle() { return syllabusTitle; }
+    public void setSyllabusTitle(String syllabusTitle) { this.syllabusTitle = syllabusTitle; }
 }

@@ -118,6 +118,37 @@ public class MaterialDAO {
         return list;
     }
 
+    /**
+     * NEW — Teacher "My Uploaded Materials" detail list.
+     * Same filter as getMaterialsByUploader, plus SubjectCode / SyllabusTitle for display.
+     */
+    public List<MaterialDTO> getMaterialsByUploaderDetailed(int userId) throws SQLException {
+        List<MaterialDTO> list = new ArrayList<>();
+        String sql = """
+                SELECT m.MaterialID, m.SyllabusID, m.MaterialName, m.FilePath,
+                       m.MaterialType, m.Visibility, m.Status, m.UploadedAt,
+                       su.SubjectCode, sy.SyllabusTitle
+                FROM dbo.Learning_Material m
+                JOIN dbo.Syllabus sy ON m.SyllabusID = sy.SyllabusID
+                JOIN dbo.Subject su ON sy.SubjectID = su.SubjectID
+                WHERE m.UploadedBy = ? AND m.Status = 'Active'
+                ORDER BY m.UploadedAt DESC
+                """;
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    MaterialDTO dto = mapRow(rs);
+                    dto.setSubjectCode(rs.getString("SubjectCode"));
+                    dto.setSyllabusTitle(rs.getString("SyllabusTitle"));
+                    list.add(dto);
+                }
+            }
+        }
+        return list;
+    }
+
     // ----------------------------------------------------------------
     //  Write: INSERT
     // ----------------------------------------------------------------

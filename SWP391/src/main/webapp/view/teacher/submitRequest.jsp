@@ -65,7 +65,7 @@
         </div>
 
         <div class="col-lg-7">
-            <div class="teacher-card">
+            <div class="teacher-card" id="my-requests">
                 <div class="teacher-card-header"><i class="bi bi-clock-history me-2"></i>My Request History <span class="ms-2 badge bg-secondary">${totalRequests}</span></div>
                 <div class="teacher-card-body">
                     <c:choose>

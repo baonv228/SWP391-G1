@@ -1,0 +1,12 @@
+# SMTP configuration for TPMS email (OTP, welcome, notifications)
+# Copy to mail.properties and fill App Password.
+
+mail.smtp.host=smtp.gmail.com
+mail.smtp.port=587
+mail.smtp.auth=true
+mail.smtp.starttls.enable=true
+mail.smtp.ssl.protocols=TLSv1.2
+
+mail.sender.email=your-email@gmail.com
+mail.sender.name=TPMS System
+mail.sender.app-password=REPLACE_WITH_NEW_APP_PASSWORD
