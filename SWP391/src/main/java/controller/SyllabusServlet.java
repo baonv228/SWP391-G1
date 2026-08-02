@@ -15,6 +15,7 @@ import jakarta.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ public class SyllabusServlet extends HttpServlet {
             case "create":
                 showCreateForm(request, response);
                 break;
+            case "view":
             case "edit":
                 showEditForm(request, response);
                 break;
@@ -58,6 +60,15 @@ public class SyllabusServlet extends HttpServlet {
                 break;
             case "delete":
                 handleDelete(request, response, user);
+                break;
+            case "history":
+                handleHistory(request, response);
+                break;
+            case "clone_approved":
+                processCloneApproved(request, response, user);
+                break;
+            case "teacher_requests":
+                handleTeacherRequests(request, response, user);
                 break;
             case "download_template":
                 handleDownloadTemplate(request, response);
@@ -88,6 +99,12 @@ public class SyllabusServlet extends HttpServlet {
             case "import_excel":
                 handleImportExcel(request, response);
                 break;
+            case "review_teacher_request":
+                processReviewTeacherRequest(request, response, user);
+                break;
+            case "upload_temp":
+                handleUploadTemp(request, response);
+                break;
             default:
                 response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
                 break;
@@ -100,7 +117,7 @@ public class SyllabusServlet extends HttpServlet {
 
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<Subject> subjects = subjectDAO.getSubjectsWaitingForSyllabus();
+        List<Subject> subjects = subjectDAO.getAllSubjects();
         request.setAttribute("subjects", subjects);
         request.getRequestDispatcher("/syllabus/create.jsp").forward(request, response);
     }
@@ -205,9 +222,9 @@ public class SyllabusServlet extends HttpServlet {
                 return;
             }
 
-            if (syllabusDAO.hasDraftForSubject(syllabus.getSubjectId(), 0)) {
-                request.setAttribute("error", "Đã tồn tại một bản Draft cho Subject này.");
-                showCreateForm(request, response);
+            int existingDraftId = syllabusDAO.getDraftSyllabusIdForSubject(syllabus.getSubjectId());
+            if (existingDraftId > 0) {
+                response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=edit&id=" + existingDraftId + "&error=draft_exists");
                 return;
             }
 
@@ -296,31 +313,40 @@ public class SyllabusServlet extends HttpServlet {
     }
 
     private void handleFileUpload(HttpServletRequest request, int syllabusId, int userId) throws IOException, ServletException {
-        Part filePart = request.getPart("student_material_file");
-        if (filePart != null && filePart.getSize() > 0) {
-            // Validate: chỉ cho phép .zip
-            String submittedName = filePart.getSubmittedFileName();
-            if (submittedName == null || !submittedName.toLowerCase().endsWith(".zip")) {
-                System.out.println("Rejected upload: not a .zip file -> " + submittedName);
-                return;
+        String tempPath = request.getParameter("temp_material_file");
+        if (tempPath != null && !tempPath.trim().isEmpty()) {
+            File tempFile = new File(tempPath.trim());
+            if (tempFile.exists()) {
+                /*
+                // OLD LOCAL UPLOAD LOGIC
+                String uploadDir = getUploadBasePath() + File.separator + "syllabus" + File.separator + syllabusId;
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+                String fileName = "material.zip";
+                File finalFile = new File(dir, fileName);
+
+                try {
+                    java.nio.file.Files.copy(tempFile.toPath(), finalFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    syllabusDAO.saveMaterialFile(syllabusId, userId, "syllabus/" + syllabusId + "/" + fileName);
+                } catch (Exception e) {
+                    System.out.println("Error moving temp file: " + e.getMessage());
+                }
+                */
+
+                // NEW CLOUDINARY UPLOAD LOGIC
+                try (InputStream input = new java.io.FileInputStream(tempFile)) {
+                    String fileUrl = utils.CloudinaryUtil.uploadFile(input, tempFile.getName());
+                    syllabusDAO.saveMaterialFile(syllabusId, userId, fileUrl);
+                    System.out.println("SUCCESS: " + syllabusId + " -> " + fileUrl);
+                } catch (Exception e) {
+                    System.out.println("Error uploading to Cloudinary: " + e.getMessage());
+                } finally {
+                    // Clean up temp file to save disk space
+                    if (tempFile.exists()) {
+                        tempFile.delete();
+                    }
+                }
             }
-
-            String uploadDir = getUploadBasePath() + File.separator + "syllabus" + File.separator + syllabusId;
-            File dir = new File(uploadDir);
-            if (!dir.exists()) dir.mkdirs();
-
-            String fileName = "material.zip";
-            String filePath = dir.getAbsolutePath() + File.separator + fileName;
-
-            // Write file
-            try (var input = filePart.getInputStream();
-                 var output = new java.io.FileOutputStream(filePath)) {
-                input.transferTo(output);
-            }
-
-            // Save path to DB (relative for portability)
-            String dbPath = "syllabus/" + syllabusId + "/" + fileName;
-            syllabusDAO.saveMaterialFile(syllabusId, userId, dbPath);
         }
     }
 
@@ -580,6 +606,44 @@ public class SyllabusServlet extends HttpServlet {
         }
     }
 
+    private void handleUploadTemp(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        Map<String, Object> result = new HashMap<>();
+        Gson gson = new Gson();
+        try {
+            jakarta.servlet.http.Part filePart = request.getPart("student_material_file");
+            if (filePart != null && filePart.getSize() > 0) {
+                String originalFileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+                if (!originalFileName.toLowerCase().endsWith(".zip")) {
+                    result.put("success", false);
+                    result.put("error", "Vui lòng upload file định dạng .zip");
+                    response.getWriter().write(gson.toJson(result));
+                    return;
+                }
+                
+                String tempDir = getUploadBasePath() + File.separator + "temp";
+                File dir = new File(tempDir);
+                if (!dir.exists()) dir.mkdirs();
+                String fileName = System.currentTimeMillis() + "_material.zip";
+                String filePath = dir.getAbsolutePath() + File.separator + fileName;
+                try (InputStream input = filePart.getInputStream();
+                     java.io.FileOutputStream output = new java.io.FileOutputStream(filePath)) {
+                    input.transferTo(output);
+                }
+                result.put("success", true);
+                result.put("tempPath", filePath);
+            } else {
+                result.put("success", false);
+                result.put("error", "No file uploaded");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("error", e.getMessage());
+        }
+        response.getWriter().write(gson.toJson(result));
+    }
+
     private void handleImportExcel(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("application/json; charset=UTF-8");
@@ -631,6 +695,97 @@ public class SyllabusServlet extends HttpServlet {
             err.put("success", false);
             err.put("errors", List.of("Lỗi hệ thống khi xử lý file: " + e.getMessage()));
             response.getWriter().write(gson.toJson(err));
+        }
+    }
+
+    private void handleHistory(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int subjectId = parseInt(request.getParameter("subjectId"), 0);
+        List<Syllabus> history = syllabusDAO.getSyllabusHistory(subjectId);
+        
+        response.setContentType("application/json;charset=UTF-8");
+        List<Map<String, Object>> result = new ArrayList<>();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+        for (Syllabus s : history) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("versionNo", s.getVersionNo());
+            map.put("status", s.getStatus());
+            map.put("createdAt", s.getCreatedAt() != null ? sdf.format(s.getCreatedAt()) : "");
+            map.put("createdByName", s.getCreatedByName() != null ? s.getCreatedByName() : "");
+            map.put("note", s.getNote() != null ? s.getNote() : "");
+            result.add(map);
+        }
+        response.getWriter().write(new Gson().toJson(result));
+    }
+
+    private void processCloneApproved(HttpServletRequest request, HttpServletResponse response, User user) throws IOException {
+        int syllabusId = parseInt(request.getParameter("id"), 0);
+        String reason = safeTrim(request.getParameter("editReason"));
+        
+        Syllabus oldSyllabus = syllabusDAO.getSyllabusById(syllabusId);
+        if (oldSyllabus == null || !"Approved".equals(oldSyllabus.getStatus())) {
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list");
+            return;
+        }
+
+        String newVersion = syllabusDAO.getNextMinorVersionNo(oldSyllabus.getSubjectId(), oldSyllabus.getVersionNo());
+
+        // Setup new clone
+        oldSyllabus.setVersionNo(newVersion);
+        oldSyllabus.setStatus("Draft");
+        oldSyllabus.setNote(reason);
+        oldSyllabus.setCreatedBy(user.getUserId());
+        oldSyllabus.setCurrentVersion(false);
+        oldSyllabus.setApprovedBy(null);
+        oldSyllabus.setApprovedAt(null);
+
+        int newSyllabusId = syllabusDAO.createDraftSyllabus(oldSyllabus);
+        if (newSyllabusId > 0) {
+            String oldFile = syllabusDAO.getLatestMaterialFilePath(syllabusId);
+            
+            List<SyllabusMaterial> materials = syllabusDAO.getMaterials(syllabusId);
+            List<CLO> clos = syllabusDAO.getCLOs(syllabusId);
+            List<SyllabusSession> sessions = syllabusDAO.getSessions(syllabusId);
+            List<SyllabusAssessment> assessments = syllabusDAO.getAssessments(syllabusId);
+            
+            syllabusDAO.saveAllChildren(newSyllabusId, materials, clos, sessions, assessments);
+
+            if (oldFile != null && !oldFile.isEmpty()) {
+                syllabusDAO.saveMaterialFile(newSyllabusId, user.getUserId(), oldFile);
+            }
+            
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=edit&id=" + newSyllabusId + "&success=clone");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=list&error=clone_failed");
+        }
+    }
+
+    private void handleTeacherRequests(HttpServletRequest request, HttpServletResponse response, User user) throws ServletException, IOException {
+        try {
+            dao.SyllabusRequestDAO requestDAO = new dao.SyllabusRequestDAO();
+            List<dto.SyllabusRequestDTO> requests = requestDAO.getAllRequests("Pending", 1, 100);
+            request.setAttribute("requests", requests);
+            request.getRequestDispatcher("/syllabus/teacher_requests.jsp").forward(request, response);
+        } catch (Exception e) {
+            System.out.println("handleTeacherRequests error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi khi lấy danh sách yêu cầu.");
+        }
+    }
+
+    private void processReviewTeacherRequest(HttpServletRequest request, HttpServletResponse response, User user) throws ServletException, IOException {
+        try {
+            int requestId = Integer.parseInt(request.getParameter("requestId"));
+            String status = request.getParameter("status"); // Approved or Rejected
+            String reviewNote = request.getParameter("reviewNote");
+
+            dao.SyllabusRequestDAO requestDAO = new dao.SyllabusRequestDAO();
+            requestDAO.updateRequestStatus(requestId, status, reviewNote, user.getUserId());
+
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=teacher_requests&success=1");
+        } catch (Exception e) {
+            System.out.println("processReviewTeacherRequest error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/syllabus-manage?action=teacher_requests&error=1");
         }
     }
 }

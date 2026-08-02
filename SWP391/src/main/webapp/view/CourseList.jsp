@@ -116,7 +116,7 @@
                             <th>Subject Code</th>
                             <th>Subject Name</th>
                             <th>Credits</th>
-                            <th>Prerequisite</th>
+                            <th>Môn điều kiện</th>
                             <th>Status</th>
                             <th>Detail</th>
                         </tr>

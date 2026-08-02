@@ -96,12 +96,18 @@
                                 </table>
                             </div>
                             <c:if test="${pagination.totalPages > 1}">
-                                <nav class="mt-2"><ul class="pagination fpt-pagination">
+                                <nav class="mt-2"><ul class="pagination fpt-pagination mb-0">
+                                    <c:if test="${pagination.hasPrevious()}">
+                                        <li class="page-item"><a class="page-link" href="${pageContext.request.contextPath}/teacher/submit-request?page=${pagination.previousPage}">Previous</a></li>
+                                    </c:if>
                                     <c:forEach begin="1" end="${pagination.totalPages}" var="p">
                                         <li class="page-item ${p == pagination.currentPage ? 'active' : ''}">
                                             <a class="page-link" href="${pageContext.request.contextPath}/teacher/submit-request?page=${p}">${p}</a>
                                         </li>
                                     </c:forEach>
+                                    <c:if test="${pagination.hasNext()}">
+                                        <li class="page-item"><a class="page-link" href="${pageContext.request.contextPath}/teacher/submit-request?page=${pagination.nextPage}">Next</a></li>
+                                    </c:if>
                                 </ul></nav>
                             </c:if>
                         </c:otherwise>

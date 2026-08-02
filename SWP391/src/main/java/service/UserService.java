@@ -39,21 +39,13 @@ public class UserService {
     }
 
     // ----- Login with Google -----
-    // Tim user theo email Google tra ve. Neu chua co thi tu tao tai khoan Student.
+    // Chi cho phep tai khoan da dang ky truoc do dang nhap bang Google.
     public User loginWithGoogle(String email, String fullName) {
         User user = userDao.findByEmail(email);
-        if (user != null) {
-            if (user.getStatus() == null || !user.getStatus().equalsIgnoreCase("Active")) {
-                return null;
-            }
-            return user;
+        if (user == null || user.getStatus() == null || !user.getStatus().equalsIgnoreCase("Active")) {
+            return null;
         }
-        // Tai khoan dang nhap bang Google chua ton tai -> tao moi voi mat khau ngau nhien
-        String randomPassword = UUID.randomUUID().toString();
-        String safeName = (fullName == null || fullName.isBlank())
-                ? email.substring(0, email.indexOf("@")) : fullName;
-        boolean ok = userDao.register(safeName, email, randomPassword, "Student");
-        return ok ? userDao.findByEmail(email) : null;
+        return user;
     }
 
     // ----- Register -----

@@ -55,6 +55,7 @@
                         <th>Is Current Version</th>
                         <th>Approved</th>
                         <th>Version No</th>
+                        <th>DecisionNo MM/dd/yyyy</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -84,18 +85,9 @@
                                     ${s.versionNo}
                                 </a>
                             </td>
+                            <td><c:out value="${s.decisionNo}"/></td>
                             <td>
-                                <c:choose>
-                                    <c:when test="${s.status == 'Active' or s.status == 'Approved'}">
-                                        <span class="badge bg-success">${s.status}</span>
-                                    </c:when>
-                                    <c:when test="${s.status == 'Draft'}">
-                                        <span class="badge bg-warning text-dark">${s.status}</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge bg-secondary">${s.status}</span>
-                                    </c:otherwise>
-                                </c:choose>
+                                <span class="badge bg-success">Active</span>
                             </td>
                         </tr>
                     </c:forEach>

@@ -6,6 +6,7 @@ public class Curriculum {
     private int createdBy;
     private String curriculumName;
     private String description;
+    private String decisionNo;
     private String status;
     private String programCode;
     private String programName;
@@ -64,6 +65,9 @@ public class Curriculum {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public String getDecisionNo() { return decisionNo; }
+    public void setDecisionNo(String decisionNo) { this.decisionNo = decisionNo; }
 
     public String getStatus() {
         return status;

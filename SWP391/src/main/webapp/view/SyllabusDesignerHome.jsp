@@ -118,10 +118,10 @@
             <div class="action-desc">Quản lý, xem lại và theo dõi trạng thái các đề cương mà bạn đã tạo.</div>
         </a>
         
-        <a href="#" class="action-card" style="opacity: 0.6; cursor: not-allowed;" onclick="event.preventDefault(); alert('Chức năng đang phát triển!');">
-            <div class="action-icon">📊</div>
-            <div class="action-title">Báo cáo & Thống kê</div>
-            <div class="action-desc">Tính năng đang trong quá trình phát triển, sẽ sớm ra mắt.</div>
+        <a href="<%=request.getContextPath()%>/syllabus-manage?action=teacher_requests" class="action-card">
+            <div class="action-icon">📩</div>
+            <div class="action-title">Yêu cầu từ Giáo viên</div>
+            <div class="action-desc">Quản lý và xét duyệt các yêu cầu tạo mới hoặc chỉnh sửa Syllabus từ Giáo viên.</div>
         </a>
     </div>
 

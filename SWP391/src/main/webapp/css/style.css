@@ -5,14 +5,14 @@
 
 /* ---- Variables ---- */
 :root {
-    --fpt-orange:       #F5A623;
-    --fpt-orange-dark:  #d4891a;
+    --fpt-orange:       #f37021;
+    --fpt-orange-dark:  #d95f12;
     --fpt-green:        #28a745;
     --fpt-green-dark:   #1e7e34;
     --fpt-blue:         #007bff;
     --fpt-teal:         #17a589;
     --header-height:    64px;
-    --table-header-bg:  #F5A623;
+    --table-header-bg:  #f37021;
     --table-row-even:   #ffffff;
     --table-row-odd:    #fafafa;
     --text-primary:     #1a1a1a;
@@ -412,6 +412,14 @@ a:hover { color: var(--fpt-blue); text-decoration: underline; }
 /* ---- Semester Block (Curriculum Detail) ---- */
 .semester-block { margin-bottom: 24px; }
 
+.curriculum-semester-table {
+    table-layout: fixed;
+}
+
+.curriculum-semester-table td {
+    overflow-wrap: anywhere;
+}
+
 .semester-header {
     background-color: var(--fpt-orange);
     color: #fff;
@@ -428,6 +436,48 @@ a:hover { color: var(--fpt-blue); text-decoration: underline; }
     border: 1px solid #f0dfc0;
     border-radius: 8px;
     padding: 18px 22px;
+}
+
+.curriculum-action-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+}
+
+.curriculum-action-btn {
+    min-width: 132px;
+    border-radius: 999px;
+    padding: 10px 24px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    box-shadow: 0 8px 18px rgba(242, 113, 28, .16);
+}
+
+#btn-curriculum-combo,
+.btn-combo {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    border: 1px solid #f97316;
+    color: #fff !important;
+}
+
+#btn-curriculum-elective,
+.btn-elective {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    border: 1px solid #f97316;
+    color: #fff !important;
+}
+
+#btn-curriculum-combo:focus,
+#btn-curriculum-elective:focus,
+#btn-curriculum-combo:active,
+#btn-curriculum-elective:active,
+.btn-combo:hover,
+.btn-elective:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #ea580c, #f97316);
+    border-color: #ea580c;
+    color: #fff !important;
 }
 
 /* ---- Flow Diagram (Prerequisite Detail) ---- */
@@ -828,6 +878,15 @@ a.stat-card-link:hover .stat-card-chevron { color: #f3722c; }
     font-size: .82rem;
     color: var(--fpt-green-dark);
     font-weight: 500;
+}
+
+/* Upload Material page — form & list side by side */
+.upload-material-row > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+}
+.upload-material-row .teacher-card {
+    flex: 1;
 }
 
 /* Upload submit button */

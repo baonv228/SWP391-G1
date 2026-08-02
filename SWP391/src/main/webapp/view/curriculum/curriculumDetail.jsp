@@ -5,6 +5,12 @@
 <jsp:include page="/view/layout/header.jsp"/>
 
 <main class="container-fluid main-content">
+    <c:set var="canUpdateCurriculumStatus"
+           value="${not empty sessionScope.user
+               and not empty sessionScope.user.role
+               and (sessionScope.user.role.roleName == 'Training Department' or sessionScope.user.role.roleName == 'Admin')}"/>
+    <c:set var="targetCurriculumStatus" value="${curriculum.status == 'Active' ? 'Not Active' : 'Active'}"/>
+
     <h2 class="page-title">Curriculum Detail</h2>
 
     <c:choose>
@@ -12,6 +18,13 @@
             <div class="alert alert-warning" id="curriculum-detail-not-found">Curriculum not found.</div>
         </c:when>
         <c:otherwise>
+            <c:if test="${param.result == 'statusUpdated'}">
+                <div class="alert alert-success" role="alert">Curriculum status has been changed successfully.</div>
+            </c:if>
+            <c:if test="${param.result == 'statusUpdateFailed'}">
+                <div class="alert alert-danger" role="alert">Could not update curriculum status.</div>
+            </c:if>
+
             <%-- Curriculum Info Card --%>
             <div class="detail-section" id="curriculum-info-section">
                 <div class="detail-row">
@@ -53,7 +66,7 @@
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">Status:</div>
-                    <div class="detail-value">
+                    <div class="detail-value d-flex align-items-center gap-2 flex-wrap">
                         <c:choose>
                             <c:when test="${curriculum.status == 'Active'}">
                                 <span class="badge bg-success" id="detail-curriculum-status">Active</span>
@@ -62,8 +75,19 @@
                                 <span class="badge bg-secondary" id="detail-curriculum-status">${curriculum.status}</span>
                             </c:otherwise>
                         </c:choose>
+                        <c:if test="${canUpdateCurriculumStatus}">
+                            <button type="button"
+                                    class="btn btn-sm text-white fw-bold"
+                                    style="background-color: var(--fpt-orange); border: none;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmStatusModal"
+                                    id="btn-change-curriculum-status">
+                                Change Status
+                            </button>
+                        </c:if>
                     </div>
                 </div>
+               
             </div>
 
             <%-- Semester Breakdown --%>
@@ -74,7 +98,16 @@
                         <div class="semester-block" id="semester-block-${entry.key}">
                             <div class="semester-header">Semester ${entry.key}</div>
                             <div class="table-responsive">
-                                <table class="fpt-table" id="semester-${entry.key}-table">
+                                <table class="fpt-table curriculum-semester-table"
+                                       id="semester-${entry.key}-table"
+                                       style="table-layout: fixed;">
+                                    <colgroup>
+                                        <col style="width: 16.5%;">
+                                        <col style="width: 38%;">
+                                        <col style="width: 11%;">
+                                        <col style="width: 13%;">
+                                        <col style="width: 21.5%;">
+                                    </colgroup>
                                     <thead>
                                         <tr>
                                             <th>Subject Code</th>
@@ -97,14 +130,15 @@
                                                 <td>${sub.subjectName}</td>
                                                 <td>${sub.credits}</td>
                                                 <td>
-                                                    <c:choose>
-                                                        <c:when test="${sub.required}">
-                                                            <span class="badge bg-warning text-dark">Required</span>
-                                                        </c:when>
-                                                        <c:otherwise>
-                                                            <span class="badge bg-light text-secondary border">Elective</span>
-                                                        </c:otherwise>
-                                                    </c:choose>
+                                                    <div class="small text-muted">
+                                                        Prerequisite:
+                                                        <c:choose>
+                                                            <c:when test="${not empty sub.prerequisiteText}">
+                                                                <c:out value="${sub.prerequisiteText}"/>
+                                                            </c:when>
+                                                            <c:otherwise>None</c:otherwise>
+                                                        </c:choose>
+                                                    </div>
                                                 </td>
                                                 <td>${sub.status}</td>
                                             </tr>
@@ -126,10 +160,44 @@
                 </div>
             </div>
 
-            <div class="mt-4">
+            <div class="mt-4 d-flex gap-2 flex-wrap">
                 <a href="${pageContext.request.contextPath}/curriculum" class="btn btn-back" id="btn-back-curriculum">
                     <i class="bi bi-arrow-left me-1"></i>Back to Curriculum List
                 </a>
+                <a href="${pageContext.request.contextPath}/curriculum/po?action=list&amp;curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-po">
+                    <i class="bi bi-eye-fill"></i> View PO
+                </a>
+                <a href="${pageContext.request.contextPath}/combo?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-combo">
+                    <i class="bi bi-stack"></i> View Combo
+                </a>
+                <a href="${pageContext.request.contextPath}/curriculum/elective?action=list&curriculumId=${curriculum.curriculumId}" class="btn text-white fw-bold d-inline-flex align-items-center gap-1 px-3" style="background-color: var(--fpt-orange); border: none;" id="btn-view-elective">
+                    <i class="bi bi-list-check"></i> View Elective
+                </a>
+            </div>
+
+            <div class="modal fade" id="confirmStatusModal" tabindex="-1" aria-labelledby="confirmStatusModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="confirmStatusModalLabel">Confirm Status Change</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to change this curriculum status to <strong>${targetCurriculumStatus}</strong>?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form method="post" action="${pageContext.request.contextPath}/curriculum/detail" class="m-0">
+                                <input type="hidden" name="action" value="updateStatus"/>
+                                <input type="hidden" name="curriculumId" value="${curriculum.curriculumId}"/>
+                                <input type="hidden" name="targetStatus" value="${targetCurriculumStatus}"/>
+                                <button type="submit" class="btn text-white fw-bold" style="background-color: var(--fpt-orange); border: none;">
+                                    Confirm
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </c:otherwise>
     </c:choose>

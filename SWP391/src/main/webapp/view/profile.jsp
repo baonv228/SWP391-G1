@@ -1,192 +1,23 @@
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@page import="model.User"%>
-<%
-    User current = (User) session.getAttribute("user");
-    String error = (String) request.getAttribute("error");
-    String message = (String) request.getAttribute("message");
-    String fullNameValue = current != null && current.getFullName() != null ? current.getFullName() : "";
-    String emailValue = current != null && current.getEmail() != null ? current.getEmail() : "";
-%>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hồ sơ</title>
-    <style>
-        :root {
-            --orange: #f37021;
-            --orange-dark: #d95f12;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #eaded4;
-            --danger: #dc3545;
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            font-family: "Segoe UI", Arial, sans-serif;
-            background:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 241, 231, 0.98)),
-                radial-gradient(circle at 15% 20%, rgba(243, 112, 33, 0.1), transparent 26%);
-        }
-        .card {
-            width: 100%;
-            max-width: 520px;
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
-            padding: 22px;
-        }
-        h2 {
-            margin: 0;
-            text-align: center;
-            color: var(--orange-dark);
-            font-size: 22px;
-            font-weight: 800;
-        }
-        .subtitle {
-            text-align: center;
-            margin-top: 6px;
-            color: var(--muted);
-            font-size: 13px;
-        }
-        .message, .error {
-            margin: 14px 0 10px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 13px;
-            text-align: center;
-            line-height: 1.5;
-        }
-        .message {
-            border: 1px solid rgba(243, 112, 33, 0.22);
-            background: #fff7f0;
-            color: var(--orange-dark);
-        }
-        .error {
-            border: 1px solid rgba(220, 53, 69, 0.35);
-            background: rgba(220, 53, 69, 0.08);
-            color: var(--danger);
-        }
-        .meta {
-            margin-top: 14px;
-            padding: 12px;
-            border-radius: 10px;
-            background: #fffaf6;
-            border: 1px solid var(--border);
-            font-size: 13px;
-            color: #374151;
-            line-height: 1.6;
-        }
-        form { margin-top: 14px; }
-        .row { margin-bottom: 12px; }
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 6px;
-        }
-        input {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            font-size: 14px;
-            outline: none;
-            background: #fff;
-            color: var(--text);
-        }
-        input:focus {
-            border-color: rgba(243, 112, 33, 0.9);
-            box-shadow: 0 0 0 0.2rem rgba(243, 112, 33, 0.16);
-        }
-        .btn-primary {
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            border-radius: 10px;
-            padding: 10px 12px;
-            background: var(--orange);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 700;
-            margin-top: 6px;
-        }
-        .btn-primary:hover { background: var(--orange-dark); }
-        .links {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            margin-top: 14px;
-            flex-wrap: wrap;
-            font-size: 13px;
-        }
-        .links a {
-            color: var(--orange-dark);
-            text-decoration: none;
-            font-weight: 700;
-        }
-    </style>
-    <script>
-        function validateProfile() {
-            const fullName = document.getElementById("fullName").value.trim();
-            if (!fullName) {
-                alert("Họ tên không được để trống.");
-                return false;
-            }
-            return true;
-        }
-    </script>
-</head>
-<body>
-<div class="card">
-    <h2>Hồ sơ cá nhân</h2>
-    <div class="subtitle">Xem và cập nhật thông tin tài khoản.</div>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
-<<<<<<< Updated upstream
-    <% if (message != null) { %>
-    <div class="message"><%= message %></div>
-    <% } %>
-=======
-<c:choose>
-    <c:when test="${sessionScope.user.role.roleName eq 'Student' or sessionScope.user.role.roleName eq 'syllabusds'}">
-        <c:set var="pageTitle" value="Hồ sơ cá nhân & Sơ đồ đào tạo" scope="request"/>
-    </c:when>
-    <c:otherwise>
-        <c:set var="pageTitle" value="Hồ sơ cá nhân" scope="request"/>
-    </c:otherwise>
-</c:choose>
+<c:set var="pageTitle" value="${requestScope.showCurriculumTree ? 'Hồ sơ cá nhân & Sơ đồ đào tạo' : 'Hồ sơ cá nhân'}" scope="request"/>
 <jsp:include page="/view/layout/header.jsp"/>
->>>>>>> Stashed changes
 
-    <% if (error != null) { %>
-    <div class="error"><%= error %></div>
-    <% } %>
+<style>
+    :root {
+        --fpt-orange: #f37021;
+        --fpt-orange-dark: #e05e1a;
+        --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        --border-color: #e2e8f0;
+    }
 
-    <div class="meta">
-        <div><strong>Email:</strong> <%= emailValue %></div>
-        <div><strong>Vai trò:</strong> <%= current != null && current.getRole() != null ? current.getRole().getRoleName() : "" %></div>
-    </div>
+    body {
+        background-color: #f8fafc;
+        color: #334155;
+    }
 
-<<<<<<< Updated upstream
-    <form method="post" action="<%=request.getContextPath()%>/profile" onsubmit="return validateProfile();">
-        <div class="row">
-            <label for="fullName">Họ tên</label>
-            <input id="fullName" type="text" name="fullName" value="<%= fullNameValue %>" />
-        </div>
-
-
-        <button class="btn-primary" type="submit">Lưu thay đổi</button>
-    </form>
-=======
     .profile-card {
         background: #ffffff;
         border-radius: 16px;
@@ -402,21 +233,23 @@
     <div class="row">
         
         <!-- Left Side: Profile Setup -->
-        <div class="${(sessionScope.user.role.roleName eq 'Student' or sessionScope.user.role.roleName eq 'syllabusds') ? 'col-md-4' : 'col-md-6 mx-auto'}">
+        <div class="${requestScope.showCurriculumTree ? 'col-md-4' : 'col-md-6 mx-auto'}">
             <div class="profile-card">
                 <div class="profile-header">
                     <h3>Thông tin tài khoản</h3>
-                    <c:choose>
-                        <c:when test="${sessionScope.user.role.roleName eq 'Student' or sessionScope.user.role.roleName eq 'syllabusds'}">
-                            <div class="profile-subtitle">Xem & cấu hình hồ sơ và ngành học đào tạo.</div>
-                        </c:when>
-                        <c:otherwise>
-                            <div class="profile-subtitle">Xem và chỉnh sửa thông tin cá nhân của bạn.</div>
-                        </c:otherwise>
-                    </c:choose>
+                    <div class="profile-subtitle">
+                        <c:choose>
+                            <c:when test="${requestScope.showCurriculumTree}">
+                                Xem &amp; cấu hình hồ sơ và ngành học đào tạo.
+                            </c:when>
+                            <c:otherwise>
+                                Xem &amp; cập nhật thông tin hồ sơ cá nhân.
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
 
-                <c:if test="${not empty requestScope.curriculumFallbackNotice}">
+                <c:if test="${requestScope.showCurriculumTree and not empty requestScope.curriculumFallbackNotice}">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i> ${requestScope.curriculumFallbackNotice}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -456,10 +289,10 @@
                         <input id="fullName" type="text" name="fullName" class="form-control" value="${sessionScope.user.fullName}" required />
                     </div>
 
-                    <!-- Curriculum Select Dropdown - Only for Student and syllabusds -->
-                    <c:if test="${sessionScope.user.role.roleName eq 'Student' or sessionScope.user.role.roleName eq 'syllabusds'}">
+                    <!-- Curriculum Select — only for Student / learner roles -->
+                    <c:if test="${requestScope.showCurriculumTree}">
                         <div class="mb-4">
-                            <label for="curriculumId" class="form-label">Ngành học & Chương trình (Curriculum)</label>
+                            <label for="curriculumId" class="form-label">Ngành học &amp; Chương trình (Curriculum)</label>
                             <select name="curriculumId" id="curriculumId" class="form-select" onchange="this.form.submit()">
                                 <c:forEach var="c" items="${requestScope.curriculums}">
                                     <option value="${c.curriculumId}" ${c.curriculumId == requestScope.selectedCurId ? 'selected' : ''}>
@@ -484,10 +317,10 @@
             </div>
         </div>
 
-        <!-- Right Side: Interactive Study Tree Map - Only for Student and syllabusds -->
-        <c:if test="${sessionScope.user.role.roleName eq 'Student' or sessionScope.user.role.roleName eq 'syllabusds'}">
-            <div class="col-md-8">
-                <div class="tree-section">
+        <!-- Right Side: Interactive Study Tree Map (Student only) -->
+        <c:if test="${requestScope.showCurriculumTree}">
+        <div class="col-md-8">
+            <div class="tree-section">
                 
                 <div class="tree-filter-bar">
                     <div>
@@ -597,40 +430,32 @@
             </div>
         </div>
         </c:if>
->>>>>>> Stashed changes
 
-    <div class="links">
-        <a href="<%=request.getContextPath()%>/change-password">Đổi mật khẩu</a>
-        <a href="<%=request.getContextPath()%>/logout">Đăng xuất</a>
     </div>
 </div>
-<<<<<<< Updated upstream
-</body>
-</html>
-=======
 
-<c:if test="${sessionScope.user.role.roleName eq 'Student' or sessionScope.user.role.roleName eq 'syllabusds'}">
+<c:if test="${requestScope.showCurriculumTree}">
 <script>
     // Deserialize prerequisites mapping from request
     const prerequisiteMap = JSON.parse('${requestScope.prereqsJson}');
     
     // Render prerequisites badges on page load
-    document.addEventListener("DOMContentLoaded", function() {
-        Object.keys(prerequisiteMap).forEach(function(target) {
+    document.addEventListener("DOMContentLoaded", () => {
+        Object.keys(prerequisiteMap).forEach(target => {
             const reqList = prerequisiteMap[target];
             if (reqList && reqList.length > 0) {
                 // For column layout
-                const container = document.getElementById('prereq-container-' + target);
+                const container = document.getElementById(`prereq-container-${target}`);
                 if (container) {
-                    reqList.forEach(function(req) {
-                        container.innerHTML += '<span class="prereq-badge"><i class="bi bi-arrow-return-right"></i> Tiên quyết: ' + req + '</span>';
+                    reqList.forEach(req => {
+                        container.innerHTML += `<span class="prereq-badge"><i class="bi bi-arrow-return-right"></i> Tiên quyết: ${req}</span>`;
                     });
                 }
                 // For list layout
-                const listContainer = document.getElementById('prereq-list-container-' + target);
+                const listContainer = document.getElementById(`prereq-list-container-${target}`);
                 if (listContainer) {
-                    reqList.forEach(function(req) {
-                        listContainer.innerHTML += '<span class="prereq-badge me-1"><i class="bi bi-arrow-return-right"></i> Tiên quyết: ' + req + '</span>';
+                    reqList.forEach(req => {
+                        listContainer.innerHTML += `<span class="prereq-badge me-1"><i class="bi bi-arrow-return-right"></i> Tiên quyết: ${req}</span>`;
                     });
                 }
             }
@@ -662,8 +487,8 @@
         const totalSemesters = ${fn:length(requestScope.selectedCurriculum.semesterSubjects)};
         
         for (let i = 1; i <= 10; i++) {
-            const col = document.getElementById('col-sem-' + i);
-            const lane = document.getElementById('lane-sem-' + i);
+            const col = document.getElementById(`col-sem-${i}`);
+            const lane = document.getElementById(`lane-sem-${i}`);
 
             if (semVal === 'all') {
                 if (col) col.classList.remove('d-none');
@@ -685,7 +510,7 @@
 
     function highlightPrerequisites(subjectCode) {
         // Clear all previous highlight classes
-        document.querySelectorAll('.subject-node').forEach(function(node) {
+        document.querySelectorAll('.subject-node').forEach(node => {
             node.classList.remove('highlighted');
             node.classList.remove('prereq-highlight');
         });
@@ -699,17 +524,17 @@
         currentActiveCode = subjectCode;
 
         // Highlight selected node
-        const colNode = document.getElementById('sub-node-' + subjectCode);
-        const listNode = document.getElementById('sub-list-' + subjectCode);
+        const colNode = document.getElementById(`sub-node-${subjectCode}`);
+        const listNode = document.getElementById(`sub-list-${subjectCode}`);
         if (colNode) colNode.classList.add('highlighted');
         if (listNode) listNode.classList.add('highlighted');
 
         // Highlight its prerequisite parent subjects (if mapped)
         const parents = prerequisiteMap[subjectCode];
         if (parents && parents.length > 0) {
-            parents.forEach(function(parentCode) {
-                const parentColNode = document.getElementById('sub-node-' + parentCode);
-                const parentListNode = document.getElementById('sub-list-' + parentCode);
+            parents.forEach(parentCode => {
+                const parentColNode = document.getElementById(`sub-node-${parentCode}`);
+                const parentListNode = document.getElementById(`sub-list-${parentCode}`);
                 if (parentColNode) parentColNode.classList.add('prereq-highlight');
                 if (parentListNode) parentListNode.classList.add('prereq-highlight');
             });
@@ -719,4 +544,3 @@
 </c:if>
 
 <jsp:include page="/view/layout/footer.jsp"/>
->>>>>>> Stashed changes

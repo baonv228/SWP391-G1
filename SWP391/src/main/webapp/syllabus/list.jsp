@@ -41,6 +41,8 @@
     <div class="alert alert-success">Đã gửi Syllabus để phê duyệt thành công!</div>
     <% } else if ("update".equals(success)) { %>
     <div class="alert alert-success">Cập nhật Syllabus thành công!</div>
+    <% } else if ("clone".equals(success)) { %>
+    <div class="alert alert-success">Tạo phiên bản mới thành công! Vui lòng chỉnh sửa và nộp lại.</div>
     <% } %>
 
     <!-- Table -->
@@ -88,14 +90,28 @@
                     <td>
                         <% if ("Draft".equals(s.getStatus())) { %>
                         <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=edit&id=<%= s.getSyllabusId() %>">
-                            ✏️ Sửa
+                            Sửa
                         </a>
                         <a class="btn-syl btn-danger-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=delete&id=<%= s.getSyllabusId() %>" onclick="return confirm('Bạn có chắc chắn muốn xóa Syllabus này không? Thao tác này không thể hoàn tác!');" style="margin-left: 5px;">
-                            🗑️ Xóa
+                            Xóa
+                        </a>
+                        <% } else if ("Rejected".equals(s.getStatus())) { %>
+                        <button class="btn-syl btn-danger-syl btn-sm" onclick="showReasonModal('<%= s.getNote() != null ? s.getNote().replace("'", "\\'").replace("\n", "\\n").replace("\r", "") : "" %>')">
+                            Xem lý do
+                        </button>
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=edit&id=<%= s.getSyllabusId() %>" style="margin-left: 5px;">
+                            Sửa
+                        </a>
+                        <% } else if ("Approved".equals(s.getStatus())) { %>
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=view&id=<%= s.getSyllabusId() %>" style="border-color:#1565c0; color:#1565c0;">
+                            Xem
+                        </a>
+                        <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=clone_approved&id=<%= s.getSyllabusId() %>" style="margin-left: 5px;" onclick="return confirm('Hệ thống sẽ tạo ra một phiên bản nháp (Draft) mới từ phiên bản này để bạn chỉnh sửa. Bạn có muốn tiếp tục?');">
+                            Sửa
                         </a>
                         <% } else { %>
                         <a class="btn-syl btn-outline-syl btn-sm" href="<%=request.getContextPath()%>/syllabus-manage?action=view&id=<%= s.getSyllabusId() %>" style="border-color:#1565c0; color:#1565c0;">
-                            👁️ Xem
+                            Xem
                         </a>
                         <% } %>
                     </td>
@@ -108,5 +124,59 @@
     </div>
 
 </div>
+
+<!-- CSS for Modals -->
+<style>
+.syl-modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;
+}
+.syl-modal {
+    background: #fff; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative;
+}
+.syl-modal-lg {
+    max-width: 800px;
+}
+.syl-modal-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+    border-bottom: 1px solid #eee; padding-bottom: 10px;
+}
+.syl-modal-title { font-size: 18px; font-weight: 600; color: #e65100; margin: 0; }
+.syl-modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+.syl-modal-body { font-size: 14px; color: #333; line-height: 1.5; margin-bottom: 20px; max-height: 60vh; overflow-y: auto;}
+.syl-modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
+.form-group-modal { margin-bottom: 15px; }
+.form-group-modal label { display: block; margin-bottom: 5px; font-weight: 500; }
+.form-group-modal textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+.history-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.history-table th, .history-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+.history-table th { background-color: #f8f9fa; }
+</style>
+
+<!-- Reason Modal -->
+<div class="syl-modal-overlay" id="reasonModal">
+    <div class="syl-modal">
+        <div class="syl-modal-header">
+            <h3 class="syl-modal-title">Lý do từ chối</h3>
+            <button class="syl-modal-close" onclick="closeModal('reasonModal')">&times;</button>
+        </div>
+        <div class="syl-modal-body" id="reasonContent" style="white-space: pre-wrap;"></div>
+        <div class="syl-modal-footer">
+            <button class="btn-syl btn-outline-syl" onclick="closeModal('reasonModal')">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+function showReasonModal(reason) {
+    document.getElementById('reasonContent').textContent = reason || 'Không có lý do.';
+    document.getElementById('reasonModal').style.display = 'flex';
+}
+</script>
+
 </body>
 </html>

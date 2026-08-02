@@ -22,6 +22,7 @@ import java.util.List;
 /**
  * Teacher Dashboard — shows summary stats for the logged-in teacher.
  * URL: /teacher/dashboard
+ * 
  */
 @WebServlet(name = "TeacherDashboardServlet", urlPatterns = {"/teacher/dashboard"})
 public class TeacherDashboardServlet extends HttpServlet {
@@ -49,13 +50,13 @@ public class TeacherDashboardServlet extends HttpServlet {
             request.setAttribute("recentRequests", recentRequests);
             request.setAttribute("teacher", teacher);
 
-            request.getRequestDispatcher("/views/teacher/dashboard.jsp")
+            request.getRequestDispatcher("/view/teacher/dashboard.jsp")
                     .forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("DB error in TeacherDashboardServlet", e);
             request.setAttribute("errorMessage", "Database error. Please try again later.");
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 }

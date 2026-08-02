@@ -22,10 +22,28 @@ public class SyllabusDTO {
     private Timestamp createdAt;
     private Timestamp approvedAt;
 
+    private String syllabusName;
+    private String syllabusEnglish;
+    private String degreeLevel;
+    private String timeAllocation;
+    private String preRequisiteText;
+    private String studentTasks;
+    private String tools;
+    private String decisionNo;
+    private String note;
+    private boolean isActive;
+    private Integer scoringScale;
+    private Double minAvgMarkToPass;
+
+    private List<model.SyllabusMaterial> textbooks = new java.util.ArrayList<>();
+    private List<model.CLO> clos = new java.util.ArrayList<>();
+    private List<model.SyllabusAssessment> assessments = new java.util.ArrayList<>();
+    private List<model.ConstructiveQuestion> constructiveQuestions = new java.util.ArrayList<>();
+
     // Extra display fields
-    private List<String> learningOutcomes; // parsed list from learningOutcome text
-    private List<SessionDTO> sessions;
-    private List<MaterialDTO> materials;  // from Learning_Material table
+    private List<String> learningOutcomes = new java.util.ArrayList<>();
+    private List<SessionDTO> sessions = new java.util.ArrayList<>();
+    private List<MaterialDTO> materials = new java.util.ArrayList<>();
 
     public static class SessionDTO {
         private int sessionNo;
@@ -54,6 +72,8 @@ public class SyllabusDTO {
         public void setStudentMaterials(String v) { this.studentMaterials = v; }
         public String getSDownload() { return sDownload; }
         public void setSDownload(String sDownload) { this.sDownload = sDownload; }
+        public String getStudentDownload() { return sDownload; }
+        public void setStudentDownload(String studentDownload) { this.sDownload = studentDownload; }
         public String getStudentTasks() { return studentTasks; }
         public void setStudentTasks(String v) { this.studentTasks = v; }
         public String getUrls() { return urls; }
@@ -69,7 +89,9 @@ public class SyllabusDTO {
     public void setSyllabusTitle(String syllabusTitle) { this.syllabusTitle = syllabusTitle; }
 
     // Alias for JSP compatibility — some JSPs use syllabusName
-    public String getSyllabusName() { return syllabusTitle; }
+    public String getSyllabusName() { 
+        return (syllabusName != null && !syllabusName.trim().isEmpty()) ? syllabusName : syllabusTitle; 
+    }
 
     public String getSyllabusEnglishName() { return syllabusEnglishName; }
     public void setSyllabusEnglishName(String v) { this.syllabusEnglishName = v; }
@@ -121,4 +143,50 @@ public class SyllabusDTO {
 
     public List<MaterialDTO> getMaterials() { return materials; }
     public void setMaterials(List<MaterialDTO> materials) { this.materials = materials; }
+
+    public void setSyllabusName(String v) { this.syllabusName = v; }
+
+    public String getSyllabusEnglish() { return syllabusEnglish; }
+    public void setSyllabusEnglish(String v) { this.syllabusEnglish = v; }
+
+    public String getDegreeLevel() { return degreeLevel; }
+    public void setDegreeLevel(String v) { this.degreeLevel = v; }
+
+    public String getTimeAllocation() { return timeAllocation; }
+    public void setTimeAllocation(String v) { this.timeAllocation = v; }
+
+    public String getPreRequisiteText() { return preRequisiteText; }
+    public void setPreRequisiteText(String v) { this.preRequisiteText = v; }
+
+    public String getStudentTasks() { return studentTasks; }
+    public void setStudentTasks(String v) { this.studentTasks = v; }
+
+    public String getTools() { return tools; }
+    public void setTools(String v) { this.tools = v; }
+
+    public String getDecisionNo() { return decisionNo; }
+    public void setDecisionNo(String v) { this.decisionNo = v; }
+
+    public String getNote() { return note; }
+    public void setNote(String v) { this.note = v; }
+
+    public boolean getIsActive() { return isActive; }
+    public void setIsActive(boolean v) { this.isActive = v; }
+
+    public Integer getScoringScale() { return scoringScale; }
+    public void setScoringScale(Integer v) { this.scoringScale = v; }
+
+    public Double getMinAvgMarkToPass() { return minAvgMarkToPass; }
+    public void setMinAvgMarkToPass(Double v) { this.minAvgMarkToPass = v; }
+
+    public List<model.SyllabusMaterial> getTextbooks() { return textbooks; }
+    public void setTextbooks(List<model.SyllabusMaterial> v) { this.textbooks = v; }
+
+    public List<model.CLO> getClos() { return clos; }
+    public void setClos(List<model.CLO> v) { this.clos = v; }
+
+    public List<model.SyllabusAssessment> getAssessments() { return assessments; }
+    public void setAssessments(List<model.SyllabusAssessment> v) { this.assessments = v; }
+    public List<model.ConstructiveQuestion> getConstructiveQuestions() { return constructiveQuestions; }
+    public void setConstructiveQuestions(List<model.ConstructiveQuestion> v) { this.constructiveQuestions = v; }
 }

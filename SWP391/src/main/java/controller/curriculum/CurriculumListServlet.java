@@ -8,6 +8,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import model.User;
 import utils.PaginationUtil;
 import utils.ValidationUtil;
 
@@ -20,6 +22,7 @@ public class CurriculumListServlet extends HttpServlet {
 
     private static final int PAGE_SIZE = 10;
     private static final String[] ALLOWED_SEARCH_TYPES = {"code", "name"};
+    private static final String TRAINING_DEPARTMENT_ROLE = "Training Department";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -43,13 +46,14 @@ public class CurriculumListServlet extends HttpServlet {
 
         String displayKeyword = (keyword != null) ? keyword.trim() : "";
         int page = ValidationUtil.parsePageNumber(pageParam);
+        boolean activeOnly = !isTrainingDepartment(request);
 
         try {
             CurriculumDAO dao = new CurriculumDAO();
-            int totalRecords = dao.countCurricula(searchType, displayKeyword);
+            int totalRecords = dao.countCurricula(searchType, displayKeyword, activeOnly);
             PaginationDTO pagination = PaginationUtil.buildPagination(totalRecords, page, PAGE_SIZE);
             List<CurriculumDTO> curricula = dao.searchCurricula(searchType, displayKeyword,
-                    pagination.getCurrentPage(), PAGE_SIZE);
+                    pagination.getCurrentPage(), PAGE_SIZE, activeOnly);
 
             request.setAttribute("curricula", curricula);
             request.setAttribute("pagination", pagination);
@@ -70,5 +74,23 @@ public class CurriculumListServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         doGet(request, response);
+    }
+
+    private boolean isTrainingDepartment(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return false;
+        }
+
+        Object roleNameAttr = session.getAttribute("roleName");
+        if (roleNameAttr instanceof String roleName && TRAINING_DEPARTMENT_ROLE.equalsIgnoreCase(roleName.trim())) {
+            return true;
+        }
+
+        Object userAttr = session.getAttribute("user");
+        if (!(userAttr instanceof User user) || user.getRole() == null) {
+            return false;
+        }
+        return TRAINING_DEPARTMENT_ROLE.equalsIgnoreCase(user.getRole().getRoleName());
     }
 }

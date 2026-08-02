@@ -92,6 +92,12 @@ public class DownloadMaterialServlet extends HttpServlet {
             return;
         }
 
+        String filePath = material.getFilePath();
+        if (filePath != null && (filePath.startsWith("http://") || filePath.startsWith("https://"))) {
+            response.sendRedirect(filePath);
+            return;
+        }
+
         // ── 4. Resolve the physical file path ─────────────────────────────
         File file = resolveFile(material.getFilePath());
 

@@ -1,6 +1,6 @@
 :root {
     --orange: #f59e3d;
-    --orange-dark: #c76b12;
+    --orange-dark: #C76B12;
     --orange-soft: #fff1df;
     --cream: #fffaf3;
     --ink: #2b2118;
@@ -38,7 +38,7 @@ body {
 
 .page-header h1 {
     margin: 0;
-    color: #b90000;
+    color: var(--orange-dark);
     font-size: clamp(28px, 4vw, 42px);
     font-weight: 900;
 }
@@ -83,10 +83,10 @@ body {
 .error {
     margin-bottom: 16px;
     padding: 12px 14px;
-    border: 1px solid rgba(185, 0, 0, 0.28);
+    border: 1px solid rgba(189, 93, 16, 0.28);
     border-radius: 8px;
-    background: rgba(185, 0, 0, 0.08);
-    color: #9d1616;
+    background: var(--orange-soft);
+    color: var(--orange-dark);
     font-weight: 700;
 }
 
@@ -223,7 +223,7 @@ textarea:focus {
 }
 
 .remove-row {
-    color: #9d1616;
+    color: var(--orange-dark);
 }
 
 .form-actions {

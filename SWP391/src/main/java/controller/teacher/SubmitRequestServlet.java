@@ -24,11 +24,12 @@ import java.util.List;
  *
  * GET  /teacher/submit-request          → Show submission form + request history
  * POST /teacher/submit-request          → Save new request (Pending)
+ * 
  */
 @WebServlet(name = "SubmitRequestServlet", urlPatterns = {"/teacher/submit-request"})
 public class SubmitRequestServlet extends HttpServlet {
 
-    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_SIZE = PaginationUtil.TEACHER_PAGE_SIZE;
 
     // ----------------------------------------------------------------
     //  GET — Show form + history
@@ -52,7 +53,7 @@ public class SubmitRequestServlet extends HttpServlet {
             // My submission history with pagination
             int page = ValidationUtil.parsePageNumber(request.getParameter("page"));
             int total = requestDAO.countRequestsByUser(teacher.getUserId());
-            PaginationDTO pagination = PaginationUtil.buildPagination(page, PAGE_SIZE, total);
+            PaginationDTO pagination = PaginationUtil.buildPagination(total, page, PAGE_SIZE);
             List<SyllabusRequestDTO> myRequests =
                     requestDAO.getRequestsByUser(teacher.getUserId(), page, PAGE_SIZE);
 
@@ -60,12 +61,12 @@ public class SubmitRequestServlet extends HttpServlet {
             request.setAttribute("pagination", pagination);
             request.setAttribute("totalRequests", total);
 
-            request.getRequestDispatcher("/views/teacher/submitRequest.jsp")
+            request.getRequestDispatcher("/view/teacher/submitRequest.jsp")
                     .forward(request, response);
 
         } catch (SQLException e) {
             getServletContext().log("DB error in SubmitRequestServlet GET", e);
-            request.getRequestDispatcher("/views/error/dbError.jsp").forward(request, response);
+            request.getRequestDispatcher("/view/error/dbError.jsp").forward(request, response);
         }
     }
 
