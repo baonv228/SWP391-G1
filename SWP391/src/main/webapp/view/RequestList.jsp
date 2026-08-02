@@ -18,6 +18,8 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/RequestList.css" />
     </head>
     <body>
+        <%@ include file="header.jsp" %>
+
         <main class="request-page">
             <header class="request-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/home">Home</a>
@@ -87,5 +89,7 @@
 
             <div class="summary">Total: <%= requests.size() %> request(s)</div>
         </main>
+
+        <%@ include file="footer.jsp" %>
     </body>
 </html>
