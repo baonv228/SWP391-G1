@@ -32,20 +32,7 @@
 </head>
 <body>
 <main class="page">
-    <header class="topbar">
-        <div class="brand">Training Program Management System</div>
-
-        <div class="top-actions" aria-label="Tài khoản">
-            <a class="profile" href="<%=request.getContextPath()%>/profile" title="<%= displayName %>">
-                <span class="avatar">TD</span>
-                <span>Xin chào, <%= displayName %></span>
-            </a>
-
-            <a class="logout-button" href="<%=request.getContextPath()%>/logout">
-                Đăng xuất
-            </a>
-        </div>
-    </header>
+    <%@ include file="header.jsp" %>
 
     <section class="content">
         <div class="welcome">
@@ -126,9 +113,7 @@
         </nav>
     </section>
 
-    <footer class="footer">
-        © 2026 Training Management System. All rights reserved.
-    </footer>
+    <%@ include file="footer.jsp" %>
 </main>
 </body>
 </html>
