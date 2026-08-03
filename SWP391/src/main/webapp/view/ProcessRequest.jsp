@@ -33,9 +33,10 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/ProcessRequest.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="process-page">
             <header class="process-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/request-list">Back</a>
+                <a class="back-link" href="<%=request.getContextPath()%>/request-list">Back to List</a>
                 <div>
                     <h1>Process Request</h1>
                     <p><%= syllabus != null ? h(syllabus.getSubjectCode()) + " - " + h(syllabus.getSubjectName()) : "" %></p>
@@ -233,6 +234,7 @@
             </section>
             <% } %>
         </main>
+    <%@ include file="footer.jsp" %>
 
         <% if (syllabus != null) { %>
         <div class="modal-backdrop" id="rejectModal" aria-hidden="true">

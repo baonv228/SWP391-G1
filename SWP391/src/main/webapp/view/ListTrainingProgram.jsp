@@ -33,10 +33,10 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="tp-page">
             <header class="tp-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/home">Home</a>
-                <h1>Department Management System</h1>
+                <h1>Department Management</h1>
             </header>
 
             <section class="toolbar" aria-label="Department filters">
@@ -132,5 +132,6 @@
 
             <div class="summary">Total: <%= totalItems %> department(s)</div>
         </main>
+    <%@ include file="footer.jsp" %>
     </body>
 </html>

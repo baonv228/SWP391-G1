@@ -20,6 +20,7 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/createElective.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="elective-create-page">
             <header class="elective-create-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/curriculum/elective?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Back to Elective List</a>
@@ -94,6 +95,7 @@
                 </div>
             </form>
         </main>
+    <%@ include file="footer.jsp" %>
 
         <script>
             const subjectSearch = document.getElementById("subjectSearch");

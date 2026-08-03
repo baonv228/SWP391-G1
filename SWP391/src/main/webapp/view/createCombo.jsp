@@ -22,9 +22,10 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/createCombo.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="combo-create-page">
             <header class="combo-create-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/combo?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Back to Combo List</a>
+                <a class="back-link" href="<%=request.getContextPath()%>/combo?action=list&curriculumId=<%= curriculum.getCurriculumId() %>">Back to List</a>
                 <h1>Create Combo</h1>
                 <p><%= curriculum.getProgramCode() %> - <%= curriculum.getCurriculumName() %></p>
             </header>
@@ -114,6 +115,7 @@
                 </div>
             </form>
         </main>
+    <%@ include file="footer.jsp" %>
 
         <div class="modal-backdrop" id="confirmModal" aria-hidden="true">
             <div class="modal">

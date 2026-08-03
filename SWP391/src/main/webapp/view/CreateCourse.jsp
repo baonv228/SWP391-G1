@@ -26,10 +26,11 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/CreateCourse.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="create-course-page">
             <header class="page-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/course?action=list">Back to list</a>
-                <h1>Training Program Management System</h1>
+                <h1>Create Course</h1>
             </header>
 
             <section class="create-shell">
@@ -126,6 +127,7 @@
                 </form>
             </section>
         </main>
+    <%@ include file="footer.jsp" %>
 
         <script>
             const selectedPrerequisiteIds = new Set(
