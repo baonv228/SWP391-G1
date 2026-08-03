@@ -19,10 +19,11 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/theme-orange.css" />
 </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="create-page">
             <header class="page-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=list">Back to list</a>
-                <h1>Department Management System</h1>
+                <h1>Create Department</h1>
             </header>
 
             <section class="create-shell">
@@ -66,6 +67,7 @@
                 </form>
             </section>
         </main>
+    <%@ include file="footer.jsp" %>
 
         <script>
             function validateCreateForm() {

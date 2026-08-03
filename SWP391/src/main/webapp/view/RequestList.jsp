@@ -22,7 +22,6 @@
 
         <main class="request-page">
             <header class="request-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/home">Home</a>
                 <div>
                     <h1>Request List</h1>
                 </div>

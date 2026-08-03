@@ -29,10 +29,11 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/TrainingProgramDetail.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="detail-page">
             <header class="page-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=list">Back</a>
-                <h1>Department Management System</h1>
+                <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=list">Back to List</a>
+                <h1>Department Management</h1>
             </header>
 
             <section class="detail-toolbar">
@@ -109,5 +110,6 @@
                 </table>
             </section>
         </main>
+    <%@ include file="footer.jsp" %>
     </body>
 </html>

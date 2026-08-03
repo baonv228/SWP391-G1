@@ -76,11 +76,12 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/CreateCurriculum.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="curriculum-page">
             <header class="page-header">
                 <a class="back-link" href="<%=request.getContextPath()%>/training-program?action=detail&id=<%= selectedProgramId %>">Back</a>
-                <h1>Department Management System</h1>
-                <p>Create Curriculum</p>
+                <h1>Create Curriculum</h1>
+
             </header>
 
             <% if (error != null && !error.isBlank()) { %>
@@ -91,7 +92,7 @@
                 <input type="hidden" name="action" value="create" />
                 <section class="info-card">
                     <div class="card-title">
-                        <span>Create Curriculum</span>
+                        <span>Curriculum Information</span>
                     </div>
 
                     <div class="tab-list" role="tablist" aria-label="Curriculum create sections">
@@ -234,6 +235,7 @@
                 </div>
             </form>
         </main>
+    <%@ include file="footer.jsp" %>
 
         <div class="modal-backdrop" id="subjectModal" aria-hidden="true">
             <div class="modal">

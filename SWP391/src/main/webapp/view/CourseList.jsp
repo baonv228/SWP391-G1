@@ -48,9 +48,10 @@
         <link rel="stylesheet" href="<%=request.getContextPath()%>/css/CourseList.css" />
     </head>
     <body>
+    <%@ include file="header.jsp" %>
         <main class="course-page">
             <header class="course-header">
-                <a class="back-link" href="<%=request.getContextPath()%>/home">Home</a>
+
                 <div>
                     <h1>Course List</h1>
                 </div>
@@ -169,5 +170,6 @@
 
             <div class="summary">Total: <%= totalItems %> course(s)</div>
         </main>
+    <%@ include file="footer.jsp" %>
     </body>
 </html>
