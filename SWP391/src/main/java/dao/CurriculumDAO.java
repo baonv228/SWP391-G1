@@ -527,6 +527,13 @@ public class CurriculumDAO extends DBContext {
                 FROM dbo.[Curriculum_Subject] cs
                 JOIN dbo.[Subject] s ON cs.SubjectID = s.SubjectID
                 WHERE cs.CurriculumID = ?
+                  AND EXISTS (
+                      SELECT 1
+                      FROM dbo.[Syllabus] activeSyllabus
+                      WHERE activeSyllabus.SubjectID = s.SubjectID
+                        AND activeSyllabus.IsCurrentVersion = 1
+                        AND activeSyllabus.ApprovedBy IS NOT NULL
+                  )
                 ORDER BY cs.SemesterNo, s.SubjectCode
                 """;
 

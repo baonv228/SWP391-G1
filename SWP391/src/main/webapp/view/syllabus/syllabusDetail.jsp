@@ -15,23 +15,23 @@
 }
 .syllabus-property-table td {
     padding: 8px 16px;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--border-light);
     vertical-align: top;
     line-height: 1.5;
 }
 .syllabus-property-table td.property-label {
     width: 20%;
     font-weight: 600;
-    color: #495057;
-    background-color: #f8f9fa;
+    color: var(--text-secondary);
+    background-color: var(--fpt-orange-soft);
     text-align: right;
-    border-right: 2px solid #dee2e6;
+    border-right: 2px solid var(--border-light);
 }
 .syllabus-property-table td.property-value {
-    color: #212529;
+    color: var(--text-primary);
 }
 .section-header-orange {
-    background-color: #f3722c;
+    background-color: var(--fpt-orange);
     color: white;
     padding: 8px 16px;
     font-weight: bold;
@@ -40,7 +40,7 @@
     margin-bottom: 0;
 }
 .materials-section-title {
-    color: #f3722c;
+    color: var(--fpt-orange-dark);
     font-size: 0.9rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
@@ -52,16 +52,16 @@
     width: 100%;
 }
 .table-syllabus-detail th {
-    background-color: #f3722c;
+    background-color: var(--fpt-orange);
     color: white;
     font-weight: 600;
     padding: 8px 12px;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--border-light);
     text-align: left;
 }
 .table-syllabus-detail td {
     padding: 8px 12px;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--border-light);
     vertical-align: middle;
 }
 .syllabus-table-scroll { overflow-x: auto; margin-bottom: 2rem; }
@@ -252,7 +252,7 @@
                 </div>
                 <c:if test="${not empty syllabus.materials}">
                     <button class="btn btn-sm btn-upload-submit py-1 px-3 d-inline-flex align-items-center gap-1"
-                            style="background-color: #f3722c; color: white;"
+                            style="background-color: var(--fpt-orange); color: white;"
                             id="btn-download-all" onclick="downloadAllMaterials()" type="button">
                         <i class="bi bi-cloud-arrow-down-fill"></i> Download All
                     </button>
@@ -281,10 +281,10 @@
                                 <tr>
                                     <td class="text-center">${s.index + 1}</td>
                                     <td>
-                                        <i class="bi ${mat.typeIconClass} me-1" style="color: #f3722c;"></i>
+                                        <i class="bi ${mat.typeIconClass} me-1" style="color: var(--fpt-orange-dark);"></i>
                                         <a href="javascript:void(0)" data-file-path="${fn:escapeXml(mat.filePath)}"
                                            onclick="downloadSessionMaterial(this.dataset.filePath)"
-                                           class="text-decoration-none fw-semibold" style="color: #f3722c;"
+                                           class="text-decoration-none fw-semibold" style="color: var(--fpt-orange-dark);"
                                            title="Download ${fn:escapeXml(mat.materialName)}">
                                             <c:out value="${mat.materialName}"/>
                                         </a>
@@ -307,7 +307,7 @@
                                         <a href="javascript:void(0)" data-file-path="${fn:escapeXml(mat.filePath)}"
                                            onclick="downloadSessionMaterial(this.dataset.filePath)"
                                            class="btn btn-sm py-0 px-2 d-inline-flex align-items-center"
-                                           style="background-color: #f3722c; color: white;"
+                                           style="background-color: var(--fpt-orange); color: white;"
                                            title="Download ${fn:escapeXml(mat.materialName)}">
                                             <i class="bi bi-cloud-arrow-down-fill"></i>
                                         </a>
@@ -362,13 +362,13 @@
             </table>
 
             <a class="btn btn-link text-decoration-none p-0 mb-4 fw-semibold text-orange d-inline-flex align-items-center gap-1"
-               style="color: #f3722c;"
+               style="color: var(--fpt-orange-dark);"
                data-bs-toggle="collapse" href="#cloPloMappingCollapse" role="button" aria-expanded="false">
                 <i class="bi bi-grid-3x3-gap-fill"></i> View mapping of CLOs to PLOs
             </a>
             <div class="collapse" id="cloPloMappingCollapse">
                 <div class="card card-body mb-4 bg-light border-0 shadow-sm p-3">
-                    <h6 class="fw-bold mb-3" style="color: #f3722c;"><i class="bi bi-link-45deg me-1"></i>Course Outcomes Mapped to Program Outcomes (PLOs)</h6>
+                    <h6 class="fw-bold mb-3" style="color: var(--fpt-orange-dark);"><i class="bi bi-link-45deg me-1"></i>Course Outcomes Mapped to Program Outcomes (PLOs)</h6>
                     <table class="table table-bordered table-sm text-center align-middle bg-white mb-0" style="font-size:0.85rem;">
                         <thead class="table-dark">
                             <tr>
@@ -443,7 +443,7 @@
                                             <c:when test="${not empty s.SDownload}">
                                                 <a href="javascript:void(0)"
                                                    onclick="downloadSessionMaterial('${s.SDownload}')"
-                                                   class="text-decoration-none fw-bold" style="color: #f3722c;">
+                                                   class="text-decoration-none fw-bold" style="color: var(--fpt-orange-dark);">
                                                     <i class="bi bi-file-earmark-arrow-down-fill me-1"></i>${s.SDownload}
                                                 </a>
                                             </c:when>
