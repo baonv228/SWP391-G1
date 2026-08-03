@@ -163,8 +163,26 @@ public class SyllabusServlet extends HttpServlet {
 
     private void showList(HttpServletRequest request, HttpServletResponse response, User user)
             throws ServletException, IOException {
-        List<Syllabus> syllabuses = syllabusDAO.getSyllabusesByCreator(user.getUserId());
+        String keyword = request.getParameter("keyword");
+        String statusFilter = request.getParameter("status");
+        String sortBy = request.getParameter("sort");
+        int page = parseInt(request.getParameter("page"), 1);
+        int pageSize = 10;
+
+        List<Syllabus> syllabuses = syllabusDAO.getSyllabusesByCreatorFiltered(
+                user.getUserId(), keyword, statusFilter, sortBy, page, pageSize);
+        int totalCount = syllabusDAO.countSyllabusesByCreatorFiltered(
+                user.getUserId(), keyword, statusFilter);
+        int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+
         request.setAttribute("syllabuses", syllabuses);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalCount", totalCount);
+        request.setAttribute("keyword", keyword);
+        request.setAttribute("statusFilter", statusFilter);
+        request.setAttribute("sortBy", sortBy);
+
         request.getRequestDispatcher("/syllabus/list.jsp").forward(request, response);
     }
 
@@ -761,9 +779,24 @@ public class SyllabusServlet extends HttpServlet {
 
     private void handleTeacherRequests(HttpServletRequest request, HttpServletResponse response, User user) throws ServletException, IOException {
         try {
+            String statusFilter = request.getParameter("statusFilter");
+            if (statusFilter == null || statusFilter.trim().isEmpty()) statusFilter = "all";
+            int page = parseInt(request.getParameter("page"), 1);
+            int pageSize = 10;
+
             dao.SyllabusRequestDAO requestDAO = new dao.SyllabusRequestDAO();
-            List<dto.SyllabusRequestDTO> requests = requestDAO.getAllRequests("Pending", 1, 100);
+            List<dto.SyllabusRequestDTO> requests = requestDAO.getAllRequests(
+                    "all".equalsIgnoreCase(statusFilter) ? null : statusFilter, page, pageSize);
+            int totalCount = requestDAO.countAllRequests(
+                    "all".equalsIgnoreCase(statusFilter) ? null : statusFilter);
+            int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+
             request.setAttribute("requests", requests);
+            request.setAttribute("currentPage", page);
+            request.setAttribute("totalPages", totalPages);
+            request.setAttribute("totalCount", totalCount);
+            request.setAttribute("statusFilter", statusFilter);
+
             request.getRequestDispatcher("/syllabus/teacher_requests.jsp").forward(request, response);
         } catch (Exception e) {
             System.out.println("handleTeacherRequests error: " + e.getMessage());
