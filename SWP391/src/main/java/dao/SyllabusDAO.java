@@ -965,7 +965,15 @@ public class SyllabusDAO extends DBContext {
                        sy.LearningOutcome, sy.AssessmentMethod,
                        sy.CreatedAt, sy.ApprovedAt,
                        su.SubjectCode, su.SubjectName, su.Credits
-                FROM dbo.[Syllabus] sy
+                FROM (
+                    SELECT syllabus.*,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY syllabus.SubjectID
+                               ORDER BY syllabus.CreatedAt DESC, syllabus.SyllabusID DESC
+                           ) AS VersionRank
+                    FROM dbo.[Syllabus] syllabus
+                    WHERE syllabus.IsActive = 1
+                ) sy
                 JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
                 """ + whereClause + """
                 ORDER BY sy.CreatedAt DESC, sy.SyllabusID DESC
@@ -994,7 +1002,15 @@ public class SyllabusDAO extends DBContext {
 
         String sql = """
                 SELECT COUNT(*)
-                FROM dbo.[Syllabus] sy
+                FROM (
+                    SELECT syllabus.*,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY syllabus.SubjectID
+                               ORDER BY syllabus.CreatedAt DESC, syllabus.SyllabusID DESC
+                           ) AS VersionRank
+                    FROM dbo.[Syllabus] syllabus
+                    WHERE syllabus.IsActive = 1
+                ) sy
                 JOIN dbo.[Subject] su ON sy.SubjectID = su.SubjectID
                 """ + whereClause;
 
@@ -1131,7 +1147,7 @@ public class SyllabusDAO extends DBContext {
     }
 
     private String buildWhereClause(String searchType, String keyword) {
-        String eligibleClause = "sy.IsCurrentVersion = 1 AND sy.ApprovedBy IS NOT NULL";
+        String eligibleClause = "sy.VersionRank = 1";
         if (keyword == null || keyword.trim().isEmpty()) {
             return " WHERE " + eligibleClause + " ";
         }
