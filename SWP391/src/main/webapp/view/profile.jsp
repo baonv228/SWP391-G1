@@ -7,8 +7,8 @@
 
 <style>
     :root {
-        --fpt-orange: #f37021;
-        --fpt-orange-dark: #e05e1a;
+        --fpt-orange: #f59e3d;
+        --fpt-orange-dark: #c76b12;
         --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         --border-color: #e2e8f0;
     }
