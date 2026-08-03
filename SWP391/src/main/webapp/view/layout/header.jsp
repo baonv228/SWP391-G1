@@ -9,7 +9,7 @@
     <meta name="description" content="${not empty pageDescription ? pageDescription : 'TPMS Learning Materials - Curriculum, Syllabus and Subject management system.'}"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"/>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css"/>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/style.css?v=20260803-2"/>
 </head>
 <body>
 
@@ -23,10 +23,10 @@
         <h1 class="header-title">Training Program Management System</h1>
     </div>
     <div class="header-right">
-        <select class="form-select lang-select" id="lang-select" aria-label="Language selection" onchange="changeLanguage(this.value)">
-            <option value="en" selected>English</option>
-            <option value="vi">Vietnamese</option>
-        </select>
+<%--        <select class="form-select lang-select" id="lang-select" aria-label="Language selection" onchange="changeLanguage(this.value)">--%>
+<%--            <option value="en" selected>English</option>--%>
+<%--            <option value="vi">Vietnamese</option>--%>
+<%--        </select>--%>
         <c:choose>
             <c:when test="${not empty sessionScope.user}">
                 <a href="${pageContext.request.contextPath}/profile" class="text-white fw-bold me-3 text-decoration-none" style="font-size: 0.9rem;" id="header-user-greeting" title="Xem hồ sơ & Sơ đồ cây đào tạo">
