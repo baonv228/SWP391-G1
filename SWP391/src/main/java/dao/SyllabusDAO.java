@@ -246,6 +246,103 @@ public class SyllabusDAO extends DBContext {
         return list;
     }
 
+    // =========================================================================
+    // LIST with Search / Filter / Sort / Pagination
+    // =========================================================================
+    public List<Syllabus> getSyllabusesByCreatorFiltered(int userId, String keyword,
+            String statusFilter, String sortBy, int page, int pageSize) {
+        List<Syllabus> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT s.*, sub.SubjectCode, sub.SubjectName, u.FullName AS CreatedByName ");
+        sql.append("FROM dbo.[Syllabus] s ");
+        sql.append("JOIN dbo.[Subject] sub ON s.SubjectID = sub.SubjectID ");
+        sql.append("JOIN dbo.[User] u ON s.CreatedBy = u.UserID ");
+        sql.append("WHERE s.CreatedBy = ? AND s.IsActive = 1 ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (sub.SubjectCode LIKE ? OR sub.SubjectName LIKE ? OR s.SyllabusTitle LIKE ?) ");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+        }
+        if (statusFilter != null && !statusFilter.trim().isEmpty() && !"all".equalsIgnoreCase(statusFilter)) {
+            sql.append("AND s.Status = ? ");
+            params.add(statusFilter.trim());
+        }
+
+        // Sort
+        if ("oldest".equals(sortBy)) {
+            sql.append("ORDER BY s.CreatedAt ASC ");
+        } else if ("name_asc".equals(sortBy)) {
+            sql.append("ORDER BY sub.SubjectName ASC ");
+        } else if ("name_desc".equals(sortBy)) {
+            sql.append("ORDER BY sub.SubjectName DESC ");
+        } else {
+            sql.append("ORDER BY s.CreatedAt DESC ");
+        }
+
+        int offset = (page - 1) * pageSize;
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(pageSize);
+
+        try (Connection con = getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof Integer) ps.setInt(i + 1, (Integer) p);
+                else ps.setString(i + 1, (String) p);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapSyllabusRow(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("getSyllabusesByCreatorFiltered error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    public int countSyllabusesByCreatorFiltered(int userId, String keyword, String statusFilter) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(*) FROM dbo.[Syllabus] s ");
+        sql.append("JOIN dbo.[Subject] sub ON s.SubjectID = sub.SubjectID ");
+        sql.append("WHERE s.CreatedBy = ? AND s.IsActive = 1 ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (sub.SubjectCode LIKE ? OR sub.SubjectName LIKE ? OR s.SyllabusTitle LIKE ?) ");
+            String kw = "%" + keyword.trim() + "%";
+            params.add(kw);
+            params.add(kw);
+            params.add(kw);
+        }
+        if (statusFilter != null && !statusFilter.trim().isEmpty() && !"all".equalsIgnoreCase(statusFilter)) {
+            sql.append("AND s.Status = ? ");
+            params.add(statusFilter.trim());
+        }
+
+        try (Connection con = getConnection();
+                PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof Integer) ps.setInt(i + 1, (Integer) p);
+                else ps.setString(i + 1, (String) p);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            System.out.println("countSyllabusesByCreatorFiltered error: " + e.getMessage());
+        }
+        return 0;
+    }
+
     public List<Syllabus> getPendingApprovalSyllabuses() {
         List<Syllabus> list = new ArrayList<>();
         String sql = """

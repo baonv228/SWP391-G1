@@ -94,6 +94,25 @@ public class SyllabusRequestDAO {
     }
 
     // ----------------------------------------------------------------
+    //  Count: Total requests (for pagination)
+    // ----------------------------------------------------------------
+
+    public int countAllRequests(String statusFilter) throws SQLException {
+        boolean hasFilter = statusFilter != null && !statusFilter.trim().isEmpty()
+                && !"all".equalsIgnoreCase(statusFilter);
+        String whereClause = hasFilter ? "WHERE r.Status = ? " : "";
+        String sql = "SELECT COUNT(*) FROM Syllabus_Approval_Request r " + whereClause;
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (hasFilter) ps.setString(1, statusFilter.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    // ----------------------------------------------------------------
     //  Write: Insert new request
     // ----------------------------------------------------------------
 
