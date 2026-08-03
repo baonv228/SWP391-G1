@@ -91,16 +91,6 @@
                 <span class="nav-ico">📊</span> System Reports
             </a>
         </nav>
-
-        <div class="quick-box">
-            <div class="quick-label">QUICK ACTION</div>
-            <a class="quick-link" href="#guide" onclick="alert('Hướng dẫn sử dụng sẽ được cập nhật.'); return false;">
-                📖 Hướng dẫn sử dụng
-            </a>
-            <a class="quick-link" href="#support" onclick="alert('Liên hệ hỗ trợ: admin@tpms.local'); return false;">
-                🛟 Hỗ trợ hệ thống
-            </a>
-        </div>
     </aside>
 
     <div class="main-wrap">
@@ -111,14 +101,6 @@
             </div>
 
             <div class="header-right">
-                <button type="button" class="bell-btn" aria-label="Thông báo"
-                        title="<%= pendingNoti %> yêu cầu đang chờ xử lý">
-                    🔔
-                    <% if (pendingNoti > 0) { %>
-                    <span class="bell-badge"><%= pendingNoti > 99 ? "99+" : pendingNoti %></span>
-                    <% } %>
-                </button>
-
                 <div class="user-menu" id="adminUserMenu">
                     <button type="button" class="user-menu-toggle" id="adminUserMenuBtn"
                             aria-haspopup="true" aria-expanded="false" aria-controls="adminUserDropdown">
@@ -227,9 +209,7 @@
         </main>
 
         <footer class="admin-footer">
-            <div class="footer-left">🛡️ Bảo mật • Ổn định • Hiệu quả</div>
             <div class="footer-center">© 2026 Training Program Management System. All rights reserved.</div>
-            <div class="footer-right">Version 2.0.0</div>
         </footer>
     </div>
 </div>
