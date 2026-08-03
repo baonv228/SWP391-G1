@@ -199,7 +199,7 @@ public class SubjectDAO extends DBContext {
         List<LearningPathDTO> result = new ArrayList<>();
 
         String sql = """
-                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
+                SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.DecisionNo, sy.Status,
                        s.SubjectCode, s.SubjectName
                 FROM (
                     SELECT syllabus.*,
@@ -227,7 +227,7 @@ public class SubjectDAO extends DBContext {
 
                     dto.setSyllabusId(rs.getInt("SyllabusID"));
                     dto.setSyllabusName(rs.getString("SyllabusTitle"));
-                    dto.setDecisionNo(rs.getString("VersionNo"));
+                    dto.setDecisionNo(rs.getString("DecisionNo"));
                     dto.setSubjectCode(rs.getString("SubjectCode"));
                     dto.setSubjectName(rs.getString("SubjectName"));
                     dto.setPrerequisiteMap(buildPrerequisiteMap(rs.getString("SubjectCode")));
