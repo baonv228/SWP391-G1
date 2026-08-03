@@ -201,10 +201,19 @@ public class SubjectDAO extends DBContext {
         String sql = """
                 SELECT sy.SyllabusID, sy.SyllabusTitle, sy.VersionNo, sy.Status,
                        s.SubjectCode, s.SubjectName
-                FROM dbo.[Syllabus] sy
+                FROM (
+                    SELECT syllabus.*,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY syllabus.SubjectID
+                               ORDER BY syllabus.CreatedAt DESC, syllabus.SyllabusID DESC
+                           ) AS VersionRank
+                    FROM dbo.[Syllabus] syllabus
+                    WHERE syllabus.IsActive = 1
+                ) sy
                 JOIN dbo.[Subject] s ON sy.SubjectID = s.SubjectID
                 WHERE LOWER(s.SubjectCode) LIKE LOWER(?)
-                ORDER BY sy.SyllabusID
+                  AND sy.VersionRank = 1
+                ORDER BY s.SubjectCode
                 """;
 
         try (Connection con = getConnection();
