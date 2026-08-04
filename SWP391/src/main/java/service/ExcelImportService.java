@@ -33,36 +33,44 @@ public class ExcelImportService {
 
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-            // Sheet 0: General Info
-            Sheet generalSheet = workbook.getSheetAt(0);
+            // Sheet: General Info
+            Sheet generalSheet = workbook.getSheet("General Info");
             if (generalSheet != null) {
                 parseGeneralInfo(generalSheet, result);
             } else {
-                result.errors.add("Không tìm thấy Sheet 'General Info' (Sheet 1).");
+                result.errors.add("Không tìm thấy Sheet 'General Info'.");
             }
 
-            // Sheet 1: CLOs
-            if (workbook.getNumberOfSheets() > 1) {
-                Sheet cloSheet = workbook.getSheetAt(1);
-                if (cloSheet != null) parseCLOs(cloSheet, result);
+            // Sheet: CLOs
+            Sheet cloSheet = workbook.getSheet("CLOs");
+            if (cloSheet != null) {
+                parseCLOs(cloSheet, result);
+            } else {
+                result.errors.add("Không tìm thấy Sheet 'CLOs'.");
             }
 
-            // Sheet 2: Sessions
-            if (workbook.getNumberOfSheets() > 2) {
-                Sheet sessionSheet = workbook.getSheetAt(2);
-                if (sessionSheet != null) parseSessions(sessionSheet, result);
+            // Sheet: Sessions
+            Sheet sessionSheet = workbook.getSheet("Sessions");
+            if (sessionSheet != null) {
+                parseSessions(sessionSheet, result);
+            } else {
+                result.errors.add("Không tìm thấy Sheet 'Sessions'.");
             }
 
-            // Sheet 3: Materials
-            if (workbook.getNumberOfSheets() > 3) {
-                Sheet matSheet = workbook.getSheetAt(3);
-                if (matSheet != null) parseMaterials(matSheet, result);
+            // Sheet: Materials
+            Sheet matSheet = workbook.getSheet("Materials");
+            if (matSheet != null) {
+                parseMaterials(matSheet, result);
+            } else {
+                result.errors.add("Không tìm thấy Sheet 'Materials'.");
             }
 
-            // Sheet 4: Assessments
-            if (workbook.getNumberOfSheets() > 4) {
-                Sheet asmSheet = workbook.getSheetAt(4);
-                if (asmSheet != null) parseAssessments(asmSheet, result);
+            // Sheet: Assessments
+            Sheet asmSheet = workbook.getSheet("Assessments");
+            if (asmSheet != null) {
+                parseAssessments(asmSheet, result);
+            } else {
+                result.errors.add("Không tìm thấy Sheet 'Assessments'.");
             }
 
             // Cross-validate: CLOs referenced in Sessions must exist
