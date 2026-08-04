@@ -34,13 +34,15 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px;">
         <div style="background: #fff; border-radius: 12px; padding: 24px; border-left: 4px solid #f26d21; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
             <div style="font-size: 14px; color: #888; margin-bottom: 4px;">Trạng thái hệ thống</div>
-            <div style="font-size: 22px; font-weight: 700; color: #c55416;">Đang hoạt động</div>
-            <div style="font-size: 12px; color: #aaa; margin-top: 4px;"><i class="bi bi-check-circle-fill" style="color: #2e7d32;"></i> Online</div>
+            <div style="font-size: 22px; font-weight: 700; color: #c55416;" id="systemStatusText">Đang kiểm tra...</div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 4px;"><i class="bi bi-circle-fill" id="systemStatusIcon" style="font-size: 10px;"></i> <span id="systemStatusLabel">Đang kết nối</span></div>
         </div>
         <div style="background: #fff; border-radius: 12px; padding: 24px; border-left: 4px solid #2e7d32; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
-            <div style="font-size: 14px; color: #888; margin-bottom: 4px;">Vai trò</div>
-            <div style="font-size: 22px; font-weight: 700; color: #2e7d32;">Syllabus Designer</div>
-            <div style="font-size: 12px; color: #aaa; margin-top: 4px;"><i class="bi bi-person-badge"></i> Thiết kế đề cương</div>
+            <div style="font-size: 14px; color: #888; margin-bottom: 4px;">Vai trò hiện tại</div>
+            <div style="font-size: 22px; font-weight: 700; color: #2e7d32;">
+                <%= (user != null && user.getRole() != null) ? user.getRole().getRoleName() : "Syllabus Designer" %>
+            </div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 4px;"><i class="bi bi-person-badge"></i> Quyền hạn truy cập</div>
         </div>
         <div style="background: #fff; border-radius: 12px; padding: 24px; border-left: 4px solid #1565c0; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
             <div style="font-size: 14px; color: #888; margin-bottom: 4px;">Phiên làm việc</div>
@@ -110,6 +112,33 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // Network Status Tracker
+    function updateOnlineStatus() {
+        var isOnline = navigator.onLine;
+        var statusText = document.getElementById('systemStatusText');
+        var statusLabel = document.getElementById('systemStatusLabel');
+        var statusIcon = document.getElementById('systemStatusIcon');
+
+        if (isOnline) {
+            statusText.textContent = "Đang hoạt động";
+            statusText.style.color = "#c55416";
+            statusLabel.textContent = "Online";
+            statusLabel.style.color = "#2e7d32";
+            statusIcon.className = "bi bi-check-circle-fill";
+            statusIcon.style.color = "#2e7d32";
+        } else {
+            statusText.textContent = "Mất kết nối";
+            statusText.style.color = "#c62828";
+            statusLabel.textContent = "Offline";
+            statusLabel.style.color = "#c62828";
+            statusIcon.className = "bi bi-x-circle-fill";
+            statusIcon.style.color = "#c62828";
+        }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus(); // init on load
 </script>
 
 </body>
