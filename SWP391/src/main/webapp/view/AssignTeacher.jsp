@@ -37,13 +37,14 @@
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/AssignTeacher.css"/>
 </head>
 <body class="at-body">
+<%@ include file="header.jsp" %>
 <main class="at-page">
 
-    <nav class="at-breadcrumb" aria-label="Breadcrumb">
-        <a href="<%=request.getContextPath()%>/home">Home</a>
-        <span class="sep">&gt;</span>
-        <span class="current">Assign Teacher by Major</span>
-    </nav>
+<%--    <nav class="at-breadcrumb" aria-label="Breadcrumb">--%>
+<%--        <a href="<%=request.getContextPath()%>/home">Home</a>--%>
+<%--        <span class="sep">&gt;</span>--%>
+<%--        <span class="current">Assign Teacher by Major</span>--%>
+<%--    </nav>--%>
 
     <div class="at-title-row">
         <div class="at-title-icon" aria-hidden="true">
@@ -180,5 +181,6 @@
         </section>
     </div>
 </main>
+<%@ include file="footer.jsp" %>
 </body>
 </html>

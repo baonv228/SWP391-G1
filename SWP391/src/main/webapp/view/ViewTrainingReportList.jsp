@@ -222,17 +222,9 @@
     <% } %>
 </head>
 <body>
+<%@ include file="header.jsp" %>
 <main class="page">
-    <header class="topbar">
-        <div class="brand">Training Program Management System</div>
-        <div class="top-actions">
-            <a class="profile" href="<%=ctx%>/home" title="<%= displayName %>">
-                <span class="avatar">TD</span>
-                <span><%= displayName %></span>
-            </a>
-            <a class="logout-button" href="<%=ctx%>/logout">Đăng xuất</a>
-        </div>
-    </header>
+
 
     <section class="content" style="padding: 30px clamp(18px, 5vw, 64px);">
         <nav class="page-nav" aria-label="Điều hướng">
@@ -348,10 +340,9 @@
         </div>
     </section>
 
-    <footer class="footer">
-        © 2026 Training Program Management System. All rights reserved.
-    </footer>
+
 </main>
+<%@ include file="footer.jsp" %>
 <script>
     (function () {
         var btn = document.getElementById("btnBackPrevious");

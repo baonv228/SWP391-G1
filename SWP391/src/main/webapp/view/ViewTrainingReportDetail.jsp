@@ -173,6 +173,7 @@
     </style>
 </head>
 <body>
+<%@ include file="header.jsp" %>
 <main class="page">
     <header class="topbar">
         <div class="brand">Training Program Management System</div>
@@ -260,6 +261,7 @@
         © 2026 Training Program Management System. All rights reserved.
     </footer>
 </main>
+<%@ include file="footer.jsp" %>
 <script>
     (function () {
         var btn = document.getElementById("btnBackPrevious");

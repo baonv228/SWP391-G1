@@ -58,13 +58,13 @@ body {
 
 .module-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 28px;
     align-items: stretch;
 }
 
 .module-card {
-    grid-column: span 2;
+    grid-column: auto;
     min-height: 156px;
     display: flex;
     flex-direction: column;
@@ -85,14 +85,6 @@ body {
     transform: translateY(-4px);
     border-color: rgba(245, 158, 61, 0.8);
     box-shadow: 0 24px 58px rgba(199, 107, 18, 0.18);
-}
-
-.module-card:nth-child(4) {
-    grid-column: 2 / span 2;
-}
-
-.module-card:nth-child(5) {
-    grid-column: 4 / span 2;
 }
 
 .module-icon {
@@ -128,9 +120,7 @@ svg {
         gap: 18px;
     }
 
-    .module-card,
-    .module-card:nth-child(4),
-    .module-card:nth-child(5) {
+    .module-card {
         grid-column: auto;
     }
 }

@@ -377,7 +377,7 @@
 
         <div class="visual">
             <div class="visual-content">
-                <h2 class="guest-title">Guest's features of FPT University</h2>
+                <h2 class="guest-title">Guest's features </h2>
 
                 <a class="guest-btn"
                    href="<%=request.getContextPath()%>/curriculum">

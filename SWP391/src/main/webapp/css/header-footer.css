@@ -97,7 +97,7 @@ body {
     z-index: 1000;
     width: 286px;
     display: none;
-    min-height: calc(100vh - 68px);
+    min-height: calc(200vh - 68px);
     padding: 22px 12px;
     border-right: 1px solid var(--hf-line);
     background: rgba(255, 255, 255, 0.96);
