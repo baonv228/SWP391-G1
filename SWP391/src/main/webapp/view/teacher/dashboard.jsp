@@ -11,7 +11,7 @@
         </div>
         <div>
             <h2 class="mb-1">Welcome back, <span class="text-orange">${sessionScope.user.fullName}</span></h2>
-            <p class="text-muted mb-0">Teacher Portal — FPT University Learning Materials</p>
+            <p class="text-muted mb-0">Teacher Learning Materials</p>
         </div>
     </div>
 
